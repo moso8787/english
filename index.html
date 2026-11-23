@@ -871,6 +871,21 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
 .avwrap .avfirst{position:absolute;left:-8px;top:-6px;z-index:4;background:linear-gradient(180deg,#ffe066,#f59f00);color:#5c3c00;border:2px solid #fff;border-radius:99px;font:900 10px/14px -apple-system,sans-serif;padding:0 4px;box-shadow:0 1px 3px rgba(0,0,0,.3);transform:rotate(-12deg)}
 .avwrap.big .avfirst{font-size:13px;line-height:18px;padding:0 6px;left:-10px;top:-8px}
 .whobar{padding-top:16px}
+
+/* 🖼️ 自訂桌布 */
+#wpLayer{position:fixed;inset:0;z-index:-2;background:center/cover no-repeat;pointer-events:none;display:none}
+#wpShade{position:fixed;inset:0;z-index:-1;pointer-events:none;display:none;background:var(--bg)}
+html.haswp #wpLayer,html.haswp #wpShade{display:block}
+html.haswp body{background:transparent !important;background-image:none !important}
+html.haswp .whobar{background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+html.haswp .card,html.haswp section.card{box-shadow:0 6px 18px rgba(0,0,0,.18)}
+html.haswp header{background:color-mix(in srgb,var(--bg) 85%,transparent);border-radius:16px;padding:10px 14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+html.haswp .whobar{border-radius:14px}
+html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-radius:12px 12px 0 0}
+.wpbox .wppv{width:100%;aspect-ratio:4/3;border-radius:14px;border:2px solid var(--line);background:var(--line) center/cover no-repeat;position:relative;overflow:hidden;margin:8px 0}
+.wpbox .wppv .sh{position:absolute;inset:0;background:var(--bg)}
+.wpbox .wppv .demo{position:absolute;left:10%;right:10%;top:30%;padding:10px;border-radius:12px;background:var(--surface);font-weight:700;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.wpbox input[type=range]{width:100%}
 </style>
 </head>
 <body>
@@ -879,7 +894,8 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
     <h1>英文口說練習</h1>
     <p id="tabHelp">按麥克風講一句英文，講完停一下就會辨識，標出要加強的字，並用 AI 自然語音唸給你聽。快捷鍵：<kbd>空白鍵</kbd> 開始／結束，<kbd>R</kbd> 重播。</p>
   </header>
-  <div class="whobar" id="whoBar"><div class="readers" id="rReaders"></div><div class="whomanage" id="whoManage" hidden></div></div>
+  <div id="wpLayer"></div><div id="wpShade"></div>
+<div class="whobar" id="whoBar"><div class="readers" id="rReaders"></div><div class="whomanage" id="whoManage" hidden></div></div>
   <nav class="tabs" role="tablist">
     <button role="tab" id="tabBtnEcho" aria-selected="true">🔁 口說回音練習</button>
     <button role="tab" id="tabBtnChat" aria-selected="false">💬 對話練習</button>
@@ -1367,7 +1383,7 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/23 第 47 版";
+  const APP_VER = "11/23 第 48 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5205,7 +5221,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     const av = el("button","b","🖼️ 頭像"); av.title = "幫「" + readerName(curReader) + "」換頭像"; av.onclick = () => pickAvatar(curReader);
     const bud = el("button","b","🎭 慶祝夥伴"); bud.onclick = () => buddyPick();
     const thb = el("button","b","🎨 主題"); thb.onclick = () => themePick();
-    mg.append(el("span","muted","管理「" + readerName(curReader) + "」："), add, ren, av, bud, thb);
+    const wpb = el("button","b","🌄 桌布"); wpb.onclick = () => wpPick();
+    mg.append(el("span","muted","管理「" + readerName(curReader) + "」："), add, ren, av, bud, thb, wpb);
     if (readers.find(x => x.id === curReader).avatar){
       const avd = el("button","b","🚫 拿掉頭像"); avd.title = "拿掉頭像"; avd.onclick = () => { delete readers.find(x => x.id === curReader).avatar; saveReaders(); renderReaders(); renderLessons(); renderRHist(); };
       mg.appendChild(avd);
@@ -5690,7 +5707,47 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   };
   function themeOn(){ return !!document.documentElement.dataset.theme; }
   function themeStar(on){ if (!themeOn()) return el("span", null, on ? "⭐" : "☆"); return el("span","thstar"); }
+  // 🌄 自訂桌布：每個小朋友一張，圖片存在 IndexedDB（跟單字卡一樣會同步到雲端）
+  function wpApply(){
+    const me = readers.find(x => x.id === curReader) || {}, w = me.wp, root = document.documentElement;
+    const L = $("wpLayer"), S = $("wpShade"); if (!L) return;
+    if (!w || !w.id){ root.classList.remove("haswp"); L.style.backgroundImage = ""; return; }
+    const url = cardImg[w.id];
+    if (!url){ root.classList.remove("haswp"); if (cardLoaded) try{ cardFetch(w.id); }catch(_){} return; }
+    L.style.backgroundImage = "url(" + JSON.stringify(url) + ")"; S.style.opacity = String(w.dim != null ? w.dim : 0.35);
+    root.classList.add("haswp");
+  }
+  function wpShrink(file){
+    return new Promise((ok, no) => { const u = URL.createObjectURL(file), img = new Image();
+      img.onload = () => { const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight)), c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); ok(c.toDataURL("image/jpeg", 0.8)); };
+      img.onerror = () => { URL.revokeObjectURL(u); no(new Error("讀不到這張圖片")); }; img.src = u; });
+  }
+  function wpPick(){
+    const me = readers.find(x => x.id === curReader); if (!me) return;
+    const m = el("div","kcmodal"), b = el("div","kcbox wpbox"); m.onclick = e => { if (e.target === m) m.remove(); };
+    b.append(el("h3", null, "🌄 幫「" + me.name + "」換桌布"), el("p","muted","選一張喜歡的照片或圖片當背景。只有切到 " + me.name + " 時才會出現，其他人不受影響。"));
+    let url = me.wp && cardImg[me.wp.id] || "", dim = me.wp && me.wp.dim != null ? me.wp.dim : 0.35;
+    const pv = el("div","wppv"), sh = el("div","sh"), demo = el("div","demo","文字會在這種卡片上，看得清楚嗎？"); pv.append(sh, demo);
+    const show = () => { pv.style.backgroundImage = url ? "url(" + JSON.stringify(url) + ")" : ""; sh.style.opacity = url ? dim : 1; };
+    const file = el("input"); file.type = "file"; file.accept = "image/*"; file.hidden = true;
+    const pickB = el("button","b primary","📷 選一張圖片"); pickB.onclick = () => file.click();
+    file.onchange = async () => { const f = file.files[0]; if (!f) return; pickB.disabled = true; pickB.textContent = "處理中…"; try{ url = await wpShrink(f); show(); }catch(e){ ptToast("⚠️ " + e.message); } pickB.disabled = false; pickB.textContent = "📷 換一張"; };
+    const rl = el("label", null, "淡化背景（字比較好讀）"), rg = el("input"); rg.type = "range"; rg.min = "0"; rg.max = "0.8"; rg.step = "0.05"; rg.value = dim;
+    rg.oninput = () => { dim = +rg.value; show(); };
+    const save = el("button","b primary","✅ 用這張"), del = el("button","b","🗑 移除桌布"), no = el("button","b","取消");
+    save.onclick = async () => {
+      if (!url){ ptToast("先選一張圖片喔"); return; }
+      const old = me.wp && me.wp.id, same = old && cardImg[old] === url, id = same ? old : "wp_" + curReader + "_" + Date.now();
+      if (!same){ await cardPut(id, url); if (old) cardDel(old); }
+      me.wp = {id, dim: Math.round(dim * 100) / 100}; saveReaders(); m.remove(); wpApply();
+      ptToast("🌄 桌布換好了！");
+    };
+    del.onclick = () => { if (me.wp && me.wp.id) cardDel(me.wp.id); delete me.wp; saveReaders(); m.remove(); wpApply(); ptToast("已經移除桌布"); };
+    const row = el("div","btns"); row.append(pickB, save); if (me.wp) row.append(del); row.append(no); no.onclick = () => m.remove();
+    b.append(pv, rl, rg, row, file); m.appendChild(b); document.body.appendChild(m); show();
+  }
   function themeApply(){
+    try{ wpApply(); }catch(_){}
     const me = readers.find(x => x.id === curReader) || {}, t = THEMES[me.theme] ? (me.theme || "") : "";
     if (t) document.documentElement.dataset.theme = t; else delete document.documentElement.dataset.theme;
     try{ document.querySelector('meta[name="theme-color"]').content = THEMES[t].meta; }catch(_){}
@@ -6362,6 +6419,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       await new Promise(r => { const q = db.transaction("img").objectStore("img").openCursor(); q.onsuccess = () => { const c = q.result; if (c){ cardImg[c.key] = c.value; c.continue(); } else r(); }; q.onerror = r; });
     }catch(_){}
     cardLoaded = true;
+    try{ wpApply(); }catch(_){}
     try{ voDexRender(); }catch(_){}
   }
   function cropPic(url, box){
@@ -7772,7 +7830,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     try{
       const r = await fetch(ptCloud.url + (ptCloud.url.includes("?") ? "&" : "?") + "key=" + encodeURIComponent(ptCloud.key) + "&img=" + encodeURIComponent(id));
       const j = await r.json();
-      if (j.ok && j.data){ await cardPut(id, j.data); clearTimeout(imgRerender); imgRerender = setTimeout(() => { try{ voDexRender(); }catch(_){} try{ if (voSet && !$("voStudy").hidden) voOpenStudy(voSet); }catch(_){} }, 600); }
+      if (j.ok && j.data){ await cardPut(id, j.data); if (/^wp_/.test(id)) try{ wpApply(); }catch(_){} clearTimeout(imgRerender); imgRerender = setTimeout(() => { try{ voDexRender(); }catch(_){} try{ if (voSet && !$("voStudy").hidden) voOpenStudy(voSet); }catch(_){} }, 600); }
     }catch(_){ imgWant.delete(id); }
   }
   $("syncBtn").onclick = () => syncNow();
