@@ -858,6 +858,19 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
 .ckst .chico.big{display:block;margin:0 auto 2px}
 .lvcrow{display:flex;align-items:center;gap:6px;margin:4px 0;flex-wrap:wrap}
 .lvcrow input{width:64px}
+
+.chico.tap{cursor:pointer}
+.chodds-box h3{display:flex;align-items:center;gap:4px}
+.oddtable{display:grid;gap:6px;margin:10px 0}
+.oddrow{display:grid;grid-template-columns:64px 62px 1fr 52px;align-items:center;gap:8px}
+.oddrow b{font-size:17px;text-align:right}
+.oddrare{font-size:12px;font-weight:800;border:2px solid;border-radius:999px;text-align:center;padding:1px 0}
+.oddbar{height:12px;border-radius:99px;background:var(--line);overflow:hidden}
+.oddbar i{display:block;height:100%;border-radius:99px}
+.oddpct{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.avwrap .avfirst{position:absolute;left:-8px;top:-6px;z-index:4;background:linear-gradient(180deg,#ffe066,#f59f00);color:#5c3c00;border:2px solid #fff;border-radius:99px;font:900 10px/14px -apple-system,sans-serif;padding:0 4px;box-shadow:0 1px 3px rgba(0,0,0,.3);transform:rotate(-12deg)}
+.avwrap.big .avfirst{font-size:13px;line-height:18px;padding:0 6px;left:-10px;top:-8px}
+.whobar{padding-top:16px}
 </style>
 </head>
 <body>
@@ -1354,7 +1367,7 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/23 第 46 版";
+  const APP_VER = "11/23 第 47 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -4851,12 +4864,25 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   saveReaders();
   const readerName = id => (readers.find(x => x.id === id) || {}).name || "？";
   const AV_COLORS = ["#ff8787","#ffa94d","#ffd43b","#69db7c","#4dabf7","#9775fa","#f783ac","#38d9a9"];
+  // 🏆 依等級排名（同等級比經驗值）：第一名戴皇冠、掛 1st
+  function readersRanked(){
+    const sc = readers.map((x, i) => { let xp = 0; try{ xp = xpOf(x.id); }catch(_){} return {x, i, xp, L: (() => { try{ return lvOf(xp); }catch(_){ return 1; } })()}; });
+    sc.sort((a, b) => b.L - a.L || b.xp - a.xp || a.i - b.i);
+    return sc;
+  }
+  function leaderId(){
+    if (readers.length < 2) return null; const r = readersRanked();
+    if (!r[0].xp || (r[1] && r[1].L === r[0].L && r[1].xp === r[0].xp)) return null; // 都還沒練習或平手：不給皇冠
+    return r[0].x.id;
+  }
   function avatarEl(rid, size){
     const d = avatarBase(rid, size);
     if (size < 28) return d;
     let L = 1, t = 0; try{ L = lvOf(xpOf(rid)); t = lvTier(L); }catch(_){}
-    const w = el("span","avwrap" + (t ? " t" + t : "") + (size >= 60 ? " big" : "")); w.appendChild(d);
-    if (t === 5){ const c = el("span","avcrown","👑"); c.style.fontSize = Math.round(size * 0.42) + "px"; w.appendChild(c); }
+    let lead = false; try{ lead = leaderId() === rid; }catch(_){}
+    const w = el("span","avwrap" + (t ? " t" + t : "") + (size >= 60 ? " big" : "") + (lead ? " lead" : "")); w.appendChild(d);
+    if (t === 5 || lead){ const c = el("span","avcrown","👑"); c.style.fontSize = Math.round(size * 0.42) + "px"; w.appendChild(c); }
+    if (lead){ const f = el("span","avfirst","1st"); w.appendChild(f); w.title = "第一名！"; }
     if (size >= 34){ const b = el("span","avlv","Lv" + L); try{ const c = lvColor(L); b.style.background = "#15151f"; b.style.color = c; b.style.borderColor = c; }catch(_){} w.appendChild(b); }
     try{ w.title = "Lv" + L + " " + LV[L - 1][2] + " " + LV[L - 1][1]; }catch(_){}
     return w;
@@ -5154,7 +5180,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     try{ themeApply(); }catch(_){}
     const box = $("rReaders"); box.innerHTML = "";
     box.appendChild(el("span","rr-label","👧 現在是誰："));
-    readers.forEach(x => {
+    readersRanked().map(r => r.x).forEach(x => {
       const o = readerOverall(x.id);
       const b = el("button","rchip" + (x.id === curReader ? " on" : ""));
       b.appendChild(avatarEl(x.id, 40));
@@ -6946,10 +6972,31 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   const tierOk = t => CHEST_TIERS[t] ? t : "green";
   const tierName = t => CHEST_TIERS[tierOk(t)].name;
   // 小寶箱圖示（跟開箱的寶箱同顏色）
-  function chestIco(t, big){
-    const c = CHEST_TIERS[tierOk(t)].c, sp = el("span","chico" + (big ? " big" : "")); sp.title = tierName(t);
+  function chestIco(t, big, noTap){
+    const c = CHEST_TIERS[tierOk(t)].c, sp = el("span","chico" + (big ? " big" : "") + (noTap ? "" : " tap")); sp.title = tierName(t) + (noTap ? "" : "（點一下看機率）");
+    if (!noTap) sp.onclick = e => { e.stopPropagation(); e.preventDefault(); chestOddsPop(t); };
     sp.innerHTML = '<svg viewBox="0 0 26 22" aria-hidden="true"><path d="M2 10V7Q2 2 13 2T24 7v3z" fill="' + c[0] + '" stroke="' + c[4] + '" stroke-width="1.4" stroke-linejoin="round"/><rect x="2" y="10" width="22" height="10.5" rx="1.6" fill="' + c[2] + '" stroke="' + c[4] + '" stroke-width="1.4"/><rect x="5" y="2.6" width="2.6" height="17.9" fill="' + c[5] + '"/><rect x="18.4" y="2.6" width="2.6" height="17.9" fill="' + c[5] + '"/><rect x="1.4" y="9" width="23.2" height="2.2" rx="1" fill="' + c[5] + '" stroke="' + c[6] + '" stroke-width=".6"/><rect x="10.5" y="11" width="5" height="5.6" rx="1" fill="' + c[5] + '" stroke="' + c[6] + '" stroke-width=".8"/><circle cx="13" cy="13.3" r=".9" fill="' + c[4] + '"/></svg>';
     return sp;
+  }
+  // 點寶箱圖示：看這種寶箱可能抽到幾點、各多少機率
+  function chestOddsPop(t){
+    t = tierOk(t); const L = chestList(t), sum = L.reduce((a, x) => a + x.w, 0);
+    const m = el("div","kcmodal"), b = el("div","kcbox chodds-box"); m.onclick = () => m.remove();
+    const h = el("h3"); h.append(chestIco(t, true, true), " " + tierName(t)); b.appendChild(h);
+    const from = []; if (chestDay() && chestTier() === t) from.push("連續簽到 " + chestDay() + " 天");
+    ["wk","mo"].forEach(per => { try{ if (taskCfg(per).box === t) from.push(TASK_PER[per][0] + "全部完成"); }catch(_){} });
+    const lv = Object.entries(lvChests()).filter(([, x]) => x === t).map(([n]) => "Lv" + n); if (lv.length) from.push("升到 " + lv.join("、"));
+    if (t === "gold") from.push("爸媽送的特別獎勵");
+    if (from.length) b.appendChild(el("p","muted", "怎麼拿到：" + from.join("・")));
+    const tb = el("div","oddtable");
+    L.slice().reverse().forEach(x => {
+      const R = CHEST_RARE[x.tier], pct = Math.round(x.w / sum * 1000) / 10, row = el("div","oddrow");
+      const lab = el("span","oddrare", R[0]); lab.style.color = R[1] === "#e9ecef" ? "#868e96" : R[1]; lab.style.borderColor = lab.style.color;
+      const bar = el("span","oddbar"), bi = el("i"); bi.style.width = Math.max(3, pct) + "%"; bi.style.background = lab.style.color; bar.appendChild(bi);
+      row.append(el("b", null, x.amt + " 點"), lab, bar, el("span","oddpct", pct + "%")); tb.appendChild(row);
+    });
+    b.append(tb, el("p","muted", "平均每開一次約 " + r1(chestEV(t)) + " 點・點任何地方關閉"));
+    m.appendChild(b); document.body.appendChild(m);
   }
   // ⬆️ 升到特定等級送寶箱（家長可以改）
   const LVCHEST_DEF = "5:green,10:blue,15:green,20:purple,25:green,30:blue,35:green,40:purple,45:green,50:gold";
@@ -7032,7 +7079,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     const p = el("div","chestpop idle"); p._manual = true; p.dataset.tier = tier;
     p.style.setProperty("--chbg", CHEST_TIERS[tier].bg); p.style.setProperty("--chray", CHEST_TIERS[tier].ray);
     const h = el("h3", null, trial ? "🎲 試抽" + CHEST_TIERS[tier].name + "（不會給點）" : title ? title : "🎁 " + readerName(rid) + " 連續簽到 " + streak + " 天！");
-    const sub = el("div","chsub", trial ? "家長試玩用" : ""); if (!trial) sub.append("得到一個", chestIco(tier), tierName(tier) + "！");
+    const sub = el("div","chsub", trial ? "家長試玩用" : ""); if (!trial) sub.append("得到一個", chestIco(tier, false, true), tierName(tier) + "！");
     const stage = el("div","chstage"); stage.innerHTML = '<div class="chrays"></div>' + chestSvg(tier);
     const slot = el("div","chslot", ""), rare = el("div","chrare", ""), tap = el("div","chtap", "👆 點寶箱打開！");
     const L = chestList(tier), sum = L.reduce((a, x) => a + x.w, 0);
@@ -7151,7 +7198,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
         const a = el("div","tkall" + (T.allOk ? " ok" : ""));
         const prize = T.c.chest ? (() => { const f = document.createDocumentFragment(); f.append("開一個", chestIco(T.c.box), tierName(T.c.box)); return f; })() : "+" + T.c.all + " 點";
         if (T.allGot) a.textContent = "🏆 " + TASK_PER[per][1] + "任務全部完成，大獎已領取！";
-        else if (T.allOk){ a.append("🏆 全部完成！"); const b = el("button","b tkclaim", T.c.chest ? "" : "領取 +" + T.c.all); if (T.c.chest) b.append(chestIco(T.c.box), "開" + CHEST_TIERS[T.c.box].name); b.style.marginLeft = "8px"; b.onclick = () => { b.disabled = true; taskClaim(rid, T, null); }; a.appendChild(b); }
+        else if (T.allOk){ a.append("🏆 全部完成！"); const b = el("button","b tkclaim", T.c.chest ? "" : "領取 +" + T.c.all); if (T.c.chest) b.append(chestIco(T.c.box, false, true), "開" + CHEST_TIERS[T.c.box].name); b.style.marginLeft = "8px"; b.onclick = () => { b.disabled = true; taskClaim(rid, T, null); }; a.appendChild(b); }
         else a.append("🏆 上面全部打卡完成，再拿：", prize);
         box.appendChild(a);
       }
@@ -7339,7 +7386,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   }); }
   function ckRender(){
     const box = $("ckList"); if (!box) return; box.innerHTML = "";
-    readers.forEach(x => {
+    readersRanked().map(r => r.x).forEach(x => {
       const st = ckState(x.id), r = el("div","ckrow");
       const w = el("div","ckwho"); w.append(avatarEl(x.id, 46), x.name); r.appendChild(w);
       r.appendChild(ckStamps(st, true));
@@ -7366,7 +7413,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (skipFetch) readers.forEach(x => { try{ lvCheck(x.id); }catch(_){} });
     const cards = $("ptCards"); cards.innerHTML = "";
     const weekAgo = Date.now() - 7 * 864e5;
-    readers.forEach(x => {
+    readersRanked().map(r => r.x).forEach(x => {
       const c = el("div","ptcard"); c.appendChild(avatarEl(x.id, 66));
       const xp = xpOf(x.id), L = lvOf(xp), nx = LV[L];
       const bar = el("div","xpbar"), bi = el("i"); bi.style.width = (nx ? Math.min(100, (xp - LV[L - 1][0]) / (nx[0] - LV[L - 1][0]) * 100) : 100) + "%"; bar.appendChild(bi);

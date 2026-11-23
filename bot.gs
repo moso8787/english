@@ -112,16 +112,24 @@ function doPost(e) {
 }
 
 // ── LINE 指令 ──
-const HELP = '🎁 英文練習點數小幫手\n' +
-  '・家事 Yuna 洗碗 → 幫 Yuna 登記家事加點（家長）\n' +
-  '・家事 → 看家事清單和編號\n' +
+const HELP = '🎁 點數小幫手 功能說明\n' +
+  '\n【大家都能用】\n' +
+  '・點數 → 每個人現在有幾點\n' +
+  '・紀錄 Yuna → Yuna 最近 10 筆紀錄\n' +
+  '・總結 → 今天大家練了多少、拿了幾點\n' +
+  '・家事 → 家事清單和編號\n' +
+  '・說明（或 功能、指令）→ 看這份說明\n' +
+  '\n【家長才能用】\n' +
+  '・家事 Yuna 洗碗 → 登記家事並加點\n' +
+  '　家事 Yuna 1 3 → 用編號一次登記好幾項\n' +
+  '　家事 Yuna 搬東西 2 → 清單沒有的，自己寫點數\n' +
   '・取消家事 Yuna → 撤銷 Yuna 最後一筆家事\n' +
-  '・點數 → 看每個人有幾點\n' +
-  '・總結 → 看今天大家練了多少\n' +
-  '・紀錄 Yuna → 看 Yuna 最近的紀錄\n' +
-  '・扣 100 Yuna 換Roblox → 扣點（家長）\n' +
-  '・加 20 Yuna 幫忙洗碗 → 加點（家長）\n' +
-  '・綁定 → 練習通知傳到這個群組（家長）';
+  '・加 20 Yuna 幫忙搬家 → 加點\n' +
+  '・扣 100 Yuna 換Roblox → 扣點（換獎勵）\n' +
+  '・綁定 → 每日總結傳到這個群組\n' +
+  '・我是家長 暗號 → 私訊我，設定自己是家長\n' +
+  '\n【App 裡的功能】\n' +
+  '英文跟讀、單字小考、對話練習、作業小幫手會自動加點；每日簽到、每週・每月任務、升級和寶箱都在 App 的「🎁 點數」頁。';
 
 function handleEvent_(ev) {
   const src = ev.source || {};
@@ -177,6 +185,7 @@ function handleEvent_(ev) {
     add_(name, amt, why || (sign < 0 ? '換獎勵' : '額外獎勵'), sign < 0 ? 'spend' : 'give', 'LINE');
     return reply_(ev.replyToken, (sign < 0 ? '🎮 ' : '🎁 ') + name + (sign < 0 ? ' 用了 ' : ' 加了 ') + Math.abs(amt) + ' 點' + (why ? '（' + why + '）' : '') + '\n' + (sign < 0 ? '目前剩下 ' : '目前共 ') + balances_()[name] + ' 點');
   }
+  if (/^(家事|家事清單)$/.test(text)) return reply_(ev.replyToken, choreListText_());
   if (/家事/.test(text) && !/^(待確認|待確認家事)$/.test(text)) return reply_(ev.replyToken, isAdmin ? choreCmd_(text) : '只有家長可以登記家事喔 😉');
   if (/^(待確認|待確認家事)$/.test(text)) {
     if (!isAdmin) return reply_(ev.replyToken, '只有家長可以看待確認的家事喔');
@@ -196,7 +205,7 @@ function handleEvent_(ev) {
     return reply_(ev.replyToken, (ok ? '✅ 已通過：\n' : '🔁 已退回：\n') + pick.map(c => '・' + c.name + ' ' + c.chore + (ok ? ' +' + c.pts + ' 點（共 ' + (b[c.name] || 0) + ' 點）' : '')).join('\n') + (note && !ok ? '\n留言：' + note : ''));
   }
   if (/^(總結|今日總結|今天)$/.test(text)) return reply_(ev.replyToken, summaryText_());
-  if (/^(說明|help|\?|？)$/i.test(text)) return reply_(ev.replyToken, HELP);
+  if (/^(說明|功能|指令|選單|help|menu|\?|？)$/i.test(text)) return reply_(ev.replyToken, HELP);
   // 其他聊天內容不理會，免得在群組裡吵
 }
 
