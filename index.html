@@ -1354,7 +1354,7 @@ html[data-theme] .rlesson,html[data-theme] .ptcard{border-color:var(--line)}
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/23 第 45 版";
+  const APP_VER = "11/23 第 46 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -7736,7 +7736,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     try{ flushKeys(); }catch(_){}
     const o = {app: "kousuo", gkey: store.get("gkey2", "") || store.get("gkey", ""), gkey2: store.get("gkey2", "") ? store.get("gkey", "") : "", azKey: store.get("azKey", ""), azRegion: store.get("azRegion", ""), ptCloudUrl: ptCloud.url, ptCloudKey: ptCloud.key, ptPin: store.get("ptPin", "")};
     const code = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(o)))));
-    const url = location.origin.startsWith("http") ? location.origin + location.pathname : "https://lin-english.netlify.app/";
+    const url = location.origin.startsWith("http") ? location.origin + location.pathname : "https://moso8787.github.io/english/";
     const link = url + "#setup=" + code;
     box.hidden = false; box.innerHTML = "";
     box.appendChild(el("p","muted","用新 iPad 的「相機」對準這個 QR Code，點跳出來的黃色網址，再按「好」。⚠️ 這裡面有金鑰，掃完就關掉，不要拍照傳給別人。"));
