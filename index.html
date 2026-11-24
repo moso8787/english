@@ -886,6 +886,41 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
 .wpbox .wppv .sh{position:absolute;inset:0;background:var(--bg)}
 .wpbox .wppv .demo{position:absolute;left:10%;right:10%;top:30%;padding:10px;border-radius:12px;background:var(--surface);font-weight:700;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 .wpbox input[type=range]{width:100%}
+
+/* 📷 自訂夥伴（上傳的動圖） */
+.cbud{position:fixed;left:50%;top:auto;bottom:max(110px,12vh);width:230px;height:260px;margin-left:-115px;z-index:66;cursor:pointer;pointer-events:auto}
+.cbud.corner{top:auto;bottom:16px;left:12px;margin-left:0;width:170px;height:200px;z-index:97}
+.cbud img{position:absolute;left:15px;top:50px;width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.25))}
+.cbud.corner img{left:10px;top:40px;width:150px;height:150px}
+.cbud .bsay{position:absolute;left:50%;top:0;transform:translateX(-50%);background:#fff;color:#333;border:3px solid #333;border-radius:16px;padding:4px 12px;font-weight:900;font-size:17px;white-space:nowrap;animation:bsay .35s ease-out both;z-index:2}
+.cbud.corner .bsay{font-size:14px;top:4px}
+.cbud.in img{animation:cbIn .5s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes cbIn{0%{transform:scale(.2) translateY(60px);opacity:0}100%{transform:none;opacity:1}}
+.cbud.m-superhappy img{animation:cbIn .5s cubic-bezier(.3,1.6,.5,1) both,cbJump .7s .5s ease-in-out 3}
+@keyframes cbJump{0%,100%{transform:translateY(0) scale(1,1)}30%{transform:translateY(-46px) scale(.95,1.06)}60%{transform:translateY(0) scale(1.1,.9)}80%{transform:translateY(-8px)}}
+.cbud.m-happy img,.cbud.m-gift img{animation:cbIn .5s cubic-bezier(.3,1.6,.5,1) both,cbBob .8s .5s ease-in-out 3}
+@keyframes cbBob{50%{transform:translateY(-14px)}}
+.cbud.m-cheer img{animation:cbIn .5s cubic-bezier(.3,1.6,.5,1) both,cbPump .5s .5s ease-in-out 4}
+@keyframes cbPump{50%{transform:scale(1.08) rotate(-4deg)}}
+.cbud.m-sad img{animation:cbSad .9s ease-out both}
+@keyframes cbSad{0%{transform:translateY(-40px);opacity:0}60%{transform:translateY(6px) scale(1.04,.94);opacity:1}100%{transform:none}}
+.cbud.m-pout img{animation:cbIn .4s ease-out both,cbShake .12s .4s linear 6}
+@keyframes cbShake{25%{transform:translateX(-6px) rotate(-3deg)}75%{transform:translateX(6px) rotate(3deg)}}
+.cbud.m-wow img{animation:cbIn .4s cubic-bezier(.3,1.6,.5,1) both,cbBuzz .09s .4s linear 10}
+@keyframes cbBuzz{50%{transform:translate(2px,-2px) scale(1.03)}}
+.cbud.m-hi img{animation:cbHi .6s cubic-bezier(.3,1.4,.5,1) both,cbSway 1s .6s ease-in-out 2}
+@keyframes cbHi{0%{transform:translateX(-160px) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes cbSway{25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+.cbud.bye{animation:byebye .35s ease-in forwards}
+.cbud .bfx{position:absolute;left:50%;top:55%;pointer-events:none;animation:bfx 1.3s ease-out forwards}
+.cbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:10px 0}
+.cbslot{border:2px dashed var(--line);border-radius:14px;padding:6px;text-align:center;cursor:pointer;background:var(--bg);font:inherit;color:var(--fg)}
+.cbslot.has{border-style:solid;border-color:#b197fc}
+.cbslot img{width:96px;height:96px;object-fit:contain;display:block;margin:0 auto}
+.cbslot .em{font-size:40px;line-height:96px;height:96px;opacity:.4}
+.cbslot b{display:block;font-size:14px}
+.cbslot small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.cbslot .x{font-size:12px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -1383,7 +1418,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/23 第 48 版";
+  const APP_VER = "11/24 第 49 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5185,8 +5220,10 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     if (sorted.length > rHistShow){ const m = el("button","b","顯示更早的紀錄（還有 " + (sorted.length - rHistShow) + " 天）"); m.onclick = () => { rHistShow += 30; renderRHist(); }; box.appendChild(m); }
   }
   // 上方切換小朋友：所有分頁一起換人
+  var cbLastHi = "";
   function onReaderChange(){
     try{ taskBadge(); }catch(_){}
+    try{ if (cbLastHi !== curReader){ cbLastHi = curReader; setTimeout(() => buddyMood("hi", {ms: 2000}), 300); } }catch(_){}
     try{ themeApply(); }catch(_){}
     [renderReaders, renderLessons, voWhoFill, voRenderSets, voDexRender, hwWhoFill, renderRHist, renderHwHist, renderChatHist, gPrefRender].forEach(f => { try{ f(); }catch(_){} });
     try{ if (typeof ptRender === "function" && mode === "pt") ptRender(true); }catch(_){}
@@ -5528,6 +5565,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   // ⏭ 跳過這句：辨識不出來卡住時用（跳過的句子不給星星、不給點）
   $("rSkip").onclick = () => {
     if (!lesson) return;
+    try{ buddyMood("pout"); }catch(_){}
     try{ rCancelListen(); }catch(_){} stopAll(); clearTimeout(rAutoTimer);
     const me = sc(lesson); me.skip = me.skip || {}; me.skip[rIdx] = 1; saveLessons();
     renderDots(); updateNext();
@@ -5655,6 +5693,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   let buddyRun = 0;
   // lv：1＝小慶祝（⭐3）、2＝中（⭐4）、3＝大（⭐5、升級、簽到大獎）
   async function buddyShow(lv){
+    if (cbOn()) return buddyMood(lv >= 3 ? "superhappy" : lv === 2 ? "happy" : "cheer");
     const me = readers.find(x => x.id === curReader) || {}, B = BUDDIES[me.buddy];
     if (!B || !$("rAnim").checked) return false;
     const run = ++buddyRun;
@@ -5770,6 +5809,79 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     const c = el("button","b","關閉"); c.onclick = () => m.remove(); b.appendChild(c);
     m.appendChild(b); document.body.appendChild(m);
   }
+
+  // ── 📷 自訂夥伴：上傳自己的動圖（GIF／WebP／PNG），依情況跳出不同表情 ──
+  const CB_SLOTS = [
+    ["superhappy","🎉","超開心","5 星、升級、寶箱大獎、任務全完成",["超開心","superhappy","太棒","大笑"]],
+    ["happy","😊","開心","4 星、簽到、打卡領取",["開心","happy","笑"]],
+    ["cheer","💪","加油","3 星、這題沒過可以再試",["加油","cheer","fighting","握拳"]],
+    ["sad","😣","難過","分數很低",["難過","sad","哭"]],
+    ["wow","😮","驚訝","寶箱出現",["驚訝","wow","期待","surprise"]],
+    ["hi","👋","打招呼","打開 App、換人",["打招呼","招呼","hi","hello","揮手"]],
+    ["pout","😤","嘟嘴","按跳過",["嘟嘴","生氣","pout","angry","哼"]],
+    ["gift","🎁","送禮物","爸媽送寶箱、升級獎勵",["送禮","禮物","gift","present"]],
+    ["normal","🙂","平常","缺的表情用這張代替",["平常","normal","預設","default"]]
+  ];
+  const CB_FALL = {superhappy: ["happy"], cheer: ["happy"], wow: ["happy"], hi: ["happy"], gift: ["happy"], pout: ["sad"], sad: [], happy: [], normal: []};
+  const CB_SAY = {superhappy: ["太厲害了！","完美！{n} 最棒！","哇～滿分等級！"], happy: ["很棒喔！","做得好！","{n} 好厲害！"], cheer: ["加油加油！","差一點點！","再一次一定可以！"],
+    sad: ["沒關係，再試一次！","慢慢來喔","我陪你再唸一次"], wow: ["咦？是寶箱！","裡面會是什麼？","好期待～"], hi: ["Hi {n}！","{n} 來啦！","今天也一起加油！"], pout: ["哼！下次要唸完喔","不可以偷懶～","跳過要補回來喔"], gift: ["送你一個禮物！","這是給 {n} 的！","辛苦了，禮物來囉！"], normal: ["我在這裡喔"]};
+  const CB_FX = {superhappy: ["⭐","🎉","✨","🌟"], happy: ["💖","✨"], cheer: ["🔥","💪"], gift: ["💝","✨","🎁"], wow: ["❗","✨"], hi: ["👋","✨"], sad: ["💧"], pout: ["💢"]};
+  function cbImgId(rid, slot){ const me = readers.find(x => x.id === rid) || {}; return me.cbud && me.cbud[slot]; }
+  function cbUrl(rid, mood){
+    for (const s of [mood].concat(CB_FALL[mood] || [], ["normal","happy"])){ const id = cbImgId(rid, s); if (!id) continue; if (cardImg[id]) return cardImg[id]; try{ cardFetch(id); }catch(_){} }
+    return "";
+  }
+  const cbOn = (rid = curReader) => { const me = readers.find(x => x.id === rid) || {}; return me.buddy === "custom" && me.cbud && Object.keys(me.cbud).length > 0; };
+  var cbRun = 0;
+  function buddyMood(mood, opt){
+    opt = opt || {}; const rid = opt.rid || curReader;
+    if (!cbOn(rid) || !$("rAnim").checked) return false;
+    const url = cbUrl(rid, mood); if (!url) return false;
+    const run = ++cbRun; document.querySelectorAll(".cbud").forEach(x => x.remove());
+    const box = el("div","cbud in m-" + mood + (opt.corner ? " corner" : "")), img = el("img"); img.src = url; img.alt = "";
+    const says = CB_SAY[mood] || ["!"], line = (opt.say || says[Math.floor(Math.random() * says.length)]).replace("{n}", readerName(rid));
+    box.append(img, el("div","bsay", line)); document.body.appendChild(box);
+    const fx = CB_FX[mood]; if (fx && !lightFx){ const k = mood === "superhappy" ? 16 : 7; for (let i = 0; i < k; i++){ const b = el("div","bfx", fx[i % fx.length]), a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 90; b.style.fontSize = (16 + Math.random() * 14) + "px"; b.style.setProperty("--dx", Math.cos(a) * d + "px"); b.style.setProperty("--dy", Math.sin(a) * d + "px"); b.style.setProperty("--r", (Math.random() * 360) + "deg"); b.style.animationDelay = (Math.random() * .5) + "s"; box.appendChild(b); setTimeout(() => b.remove(), 2000); } }
+    try{ sfx("cute", mood === "superhappy" ? 3 : mood === "happy" || mood === "gift" ? 2 : 1); }catch(_){}
+    const close = () => { if (run !== cbRun) return; box.classList.add("bye"); setTimeout(() => box.remove(), 400); };
+    box.onclick = e => { e.stopPropagation(); cbRun++; box.remove(); };
+    setTimeout(close, opt.ms || (mood === "superhappy" ? 3200 : 2500));
+    return true;
+  }
+  function cbGuess(name){ const n = name.toLowerCase(); for (const [id, , , , keys] of CB_SLOTS) if (keys.some(k => n.includes(k.toLowerCase()))) return id; return null; }
+  function cbRead(file){ return new Promise((ok, no) => { if (file.size > 3 * 1024 * 1024){ no(new Error(file.name + " 太大了（超過 3 MB），請先縮小")); return; } const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(new Error("讀不到 " + file.name)); r.readAsDataURL(file); }); }
+  function cbEdit(){
+    const me = readers.find(x => x.id === curReader); if (!me) return;
+    me.cbud = me.cbud || {};
+    const m = el("div","kcmodal"), b = el("div","kcbox"); m.onclick = e => { if (e.target === m) m.remove(); };
+    b.append(el("h3", null, "📷 「" + me.name + "」的自訂夥伴"), el("p","muted","上傳會動的 GIF、WebP 或透明背景的 PNG。可以一次選全部，檔名有「開心、難過、加油…」會自動放到對的格子；也可以點格子一張一張放。缺的表情會用「平常」或「開心」代替。"));
+    const multi = el("input"); multi.type = "file"; multi.accept = "image/gif,image/webp,image/png,image/apng"; multi.multiple = true; multi.hidden = true;
+    const one = el("input"); one.type = "file"; one.accept = multi.accept; one.hidden = true; let target = null;
+    const grid = el("div","cbgrid"), note = el("div","muted");
+    const put = async (slot, file) => { const url = await cbRead(file); const old = me.cbud[slot], id = "bud_" + me.id + "_" + slot + "_" + Date.now(); await cardPut(id, url); if (old) cardDel(old); me.cbud[slot] = id; };
+    const draw = () => {
+      grid.innerHTML = "";
+      CB_SLOTS.forEach(([id, em, nm, when]) => {
+        const has = me.cbud[id] && cardImg[me.cbud[id]], c = el("button","cbslot" + (has ? " has" : ""));
+        if (has){ const im = el("img"); im.src = cardImg[me.cbud[id]]; c.appendChild(im); } else c.appendChild(el("div","em", em));
+        c.append(el("b", null, em + " " + nm), el("small", null, when));
+        c.onclick = () => { if (has){ me.buddy = "custom"; buddyMood(id, {ms: 2200}); } else { target = id; one.click(); } };
+        if (has){ const row = el("div","x"), ch = el("span", null, "🔄換 "), dl = el("span", null, " 🗑刪"); ch.onclick = e => { e.stopPropagation(); target = id; one.click(); }; dl.onclick = e => { e.stopPropagation(); cardDel(me.cbud[id]); delete me.cbud[id]; saveReaders(); draw(); }; row.append(ch, dl); c.appendChild(row); }
+        grid.appendChild(c);
+      });
+    };
+    one.onchange = async () => { const f = one.files[0]; one.value = ""; if (!f || !target) return; try{ await put(target, f); me.buddy = "custom"; saveReaders(); draw(); note.textContent = "✅ 已放進「" + CB_SLOTS.find(x => x[0] === target)[2] + "」"; }catch(e){ note.textContent = "⚠️ " + e.message; } };
+    multi.onchange = async () => {
+      const fs = [...multi.files]; multi.value = ""; const done = [], miss = [];
+      for (const f of fs){ const slot = cbGuess(f.name); if (!slot){ miss.push(f.name); continue; } try{ await put(slot, f); done.push(CB_SLOTS.find(x => x[0] === slot)[2]); }catch(e){ miss.push(f.name + "（" + e.message + "）"); } }
+      if (done.length){ me.buddy = "custom"; saveReaders(); }
+      draw(); note.textContent = (done.length ? "✅ 放好了：" + done.join("、") : "") + (miss.length ? "　⚠️ 看不出是哪個表情：" + miss.join("、") + "（請點格子手動放）" : "");
+    };
+    const all = el("button","b primary","📂 一次選全部檔案"); all.onclick = () => multi.click();
+    const use = el("button","b","✅ 完成"); use.onclick = () => { if (Object.keys(me.cbud).length){ me.buddy = "custom"; saveReaders(); renderReaders(); } m.remove(); };
+    const row = el("div","btns"); row.append(all, use);
+    b.append(row, note, grid, multi, one); m.appendChild(b); document.body.appendChild(m); draw();
+  }
   // 選夥伴
   function buddyPick(){
     const me = readers.find(x => x.id === curReader); if (!me) return;
@@ -5780,6 +5892,9 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     const g = el("div","bpick");
     const opt = (id, label, svg) => { const btn = el("button", (me.buddy || "") === id ? "on" : ""); btn.innerHTML = svg || '<div style="font-size:54px;line-height:80px">🚫</div>'; btn.appendChild(el("div", null, label)); btn.onclick = () => { if (id) me.buddy = id; else delete me.buddy; saveReaders(); m.remove(); renderReaders(); if (id) setTimeout(() => buddyShow(3), 200); }; g.appendChild(btn); };
     Object.entries(BUDDIES).forEach(([id, x]) => opt(id, x.name + "・" + x.desc, x.svg));
+    { const btn = el("button", me.buddy === "custom" ? "on" : ""), u = cbUrl(me.id, "happy");
+      btn.innerHTML = u ? '<img src="' + u.replace(/"/g, "&quot;") + '" style="width:80px;height:80px;object-fit:contain">' : '<div style="font-size:54px;line-height:80px">📷</div>';
+      btn.appendChild(el("div", null, "自訂夥伴・上傳自己的動圖")); btn.onclick = () => { m.remove(); cbEdit(); }; g.appendChild(btn); }
     opt("", "不要夥伴");
     b.appendChild(g);
     const x = el("button","b","關閉"); x.onclick = () => m.remove(); b.appendChild(x);
@@ -5790,6 +5905,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   function scoreStars(score){ return score >= 95 ? 5 : score >= 85 ? 4 : score >= 75 ? 3 : score >= 60 ? 2 : 1; }
   function scoreCelebrate(score){
     const st = scoreStars(score);
+    if ($("rAnim").checked && st <= 2) try{ buddyMood("sad"); }catch(_){}
     if (!$("rAnim").checked || st < 3) return st;
     document.querySelectorAll(".starbig").forEach(x => x.remove());
     const b = el("div","starbig"), s1 = el("div","st"); if (themeOn()){ for (let i = 0; i < 5; i++){ const t = themeStar(true); if (i >= st){ t.style.opacity = ".25"; t.style.filter = "grayscale(1)"; } s1.appendChild(t); } } else s1.innerHTML = "⭐".repeat(st) + "<i>" + "⭐".repeat(5 - st) + "</i>";
@@ -6730,7 +6846,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   }
   $("voNext").onclick = () => {
     if (!voQ) return;
-    if (!voQ.answered){ voQ.tries = Math.max(voQ.tries, 3); voQ.answered = true; voQ.skip = (voQ.skip || 0) + 1; voMark(false); } // 跳過＝算這題沒過
+    if (!voQ.answered){ voQ.tries = Math.max(voQ.tries, 3); voQ.answered = true; voQ.skip = (voQ.skip || 0) + 1; voMark(false); try{ buddyMood("pout"); }catch(_){} } // 跳過＝算這題沒過
     if (listening && mode === "vo"){ try{ rec.__dead = true; rec.abort(); }catch(_){} listening = false; vocabUI.mic.classList.remove("on","prep"); }
     if (voQ.k < voQ.order.length - 1){ voQ.k++; voAsk(); } else voFinish();
   };
@@ -6947,6 +7063,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     p.onclick = close; document.body.appendChild(p); setTimeout(close, 6500);
   }
   function lvPop(rid, from, L, bonus){
+    setTimeout(() => { try{ buddyMood("gift", {rid, corner: true, say: "升到 Lv" + L + " 了！送你禮物～", ms: 3000}); }catch(_){} }, 1200);
     setTimeout(() => popShow(() => {
       const p = el("div","ckpop lvpop"), t = lvTier(L), t0 = lvTier(from);
       const a = avatarEl(rid, 96); a.style.margin = "14px auto 4px"; p.appendChild(a);
@@ -7145,6 +7262,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     p.append(h, sub, stage, slot, rare, tap, table);
     let phase = 0; const wait = ms => new Promise(r => setTimeout(r, ms));
     const coins = k => { for (let i = 0; i < (lightFx ? Math.ceil(k / 2) : k); i++){ const c = el("div","coin", ["🪙","✨","💰","⭐","💎"][i % 5]); const a = Math.random() * Math.PI * 2, d = 120 + Math.random() * 200; c.style.setProperty("--dx", Math.cos(a) * d + "px"); c.style.setProperty("--dy", (Math.sin(a) * d - 80) + "px"); c.style.setProperty("--r", (Math.random() * 720 - 360) + "deg"); c.style.animationDelay = (Math.random() * .25) + "s"; stage.appendChild(c); setTimeout(() => c.remove(), 1700); } };
+    if (!trial) setTimeout(() => { try{ buddyMood("wow", {rid, corner: true, ms: 2600}); }catch(_){} }, 700);
     const open = async () => {
       phase = 1; tap.textContent = ""; sub.textContent = "咚咚咚……"; p.className = "chestpop shake"; sfx("cute", 1);
       await wait(900); p.className = "chestpop open"; sub.textContent = "抽獎中……"; coins(14); sfx("px", 3);
@@ -7154,7 +7272,9 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       slot.classList.remove("spin"); slot.textContent = "+" + pz.amt + " 點"; slot.classList.remove("win"); void slot.offsetWidth; slot.classList.add("win");
       const R = CHEST_RARE[pz.tier]; rare.textContent = (pz.tier >= 3 ? "🌟 " : "") + R[0] + "（機率 " + Math.round(pz.w / sum * 1000) / 10 + "%）"; rare.style.color = R[1]; rare.classList.add("show");
       sub.textContent = trial ? "（試抽，不會給點）" : pz.tier >= 3 ? "哇！手氣超好！" : pz.tier >= 2 ? "很不錯喔！" : "恭喜抽中！";
-      coins(pz.tier >= 3 ? 30 : 16); celebrate(pz.tier >= 2 ? 5 : 4);
+      coins(pz.tier >= 3 ? 30 : 16);
+      if (cbOn(rid) && !trial){ try{ buddyMood(title && /爸媽送/.test(title) || /升到/.test(title || "") ? "gift" : pz.tier >= 2 ? "superhappy" : "happy", {rid, corner: true, ms: 3000}); }catch(_){} }
+      else celebrate(pz.tier >= 2 ? 5 : 4);
       if (!trial) try{ ptRender(true); renderReaders(); }catch(_){}
       phase = 2; await wait(900); tap.textContent = trial ? "點一下關閉" : "點一下收下點數 ✅";
     };
