@@ -303,7 +303,7 @@ html{scroll-padding-bottom:230px}
 .rfbrow{margin-top:8px;font-size:14px}
 .rfbrow select{max-width:100%}
 .celebrate{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}
-.buddy{position:fixed;left:50%;top:16%;width:240px;height:250px;margin-left:-120px;z-index:65;pointer-events:auto;cursor:pointer}
+.buddy{position:fixed;left:50%;top:16%;width:240px;height:250px;margin-left:-120px;z-index:3000;pointer-events:auto;cursor:pointer}
 .buddy svg{width:200px;height:200px;position:absolute;left:20px;top:40px;overflow:visible;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
 .buddy .bsay{position:absolute;left:50%;top:0;transform:translateX(-50%);background:#fff;color:#333;border:3px solid #333;border-radius:16px;padding:4px 12px;font-weight:900;font-size:17px;white-space:nowrap;animation:bsay .35s ease-out both}
 @keyframes bsay{from{transform:translateX(-50%) scale(.3);opacity:0}to{transform:translateX(-50%) scale(1);opacity:1}}
@@ -338,7 +338,7 @@ html{scroll-padding-bottom:230px}
 @keyframes bhatpx{40%{transform:translateY(-6px)}60%{transform:translateY(-6px) rotate(180deg)}100%{transform:rotate(360deg)}}
 .buddy .antenna{animation:bant .8s steps(2) infinite}
 @keyframes bant{50%{fill:#ffd43b}}
-.buddy .bfx{position:absolute;left:50%;top:52%;pointer-events:none;animation:bfly 1.3s ease-out forwards}
+.buddy .bfx{position:absolute;z-index:0;left:50%;top:52%;pointer-events:none;animation:bfly 1.3s ease-out forwards}
 @keyframes bfly{to{transform:translate(var(--dx),var(--dy)) rotate(var(--r));opacity:0}}
 .buddy .bcoin{position:absolute;left:48%;top:50%;width:16px;height:16px;background:#ffd43b;border:3px solid #e67700;pointer-events:none;animation:bcoin 1s ease-out forwards}
 @keyframes bcoin{40%{transform:translate(var(--dx),-100px)}100%{transform:translate(var(--dx),40px);opacity:0}}
@@ -888,11 +888,11 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
 .wpbox input[type=range]{width:100%}
 
 /* 📷 自訂夥伴（上傳的動圖） */
-.cbud{position:fixed;left:50%;top:auto;bottom:max(110px,12vh);width:230px;height:260px;margin-left:-115px;z-index:66;cursor:pointer;pointer-events:auto}
-.cbud.corner{top:auto;bottom:16px;left:12px;margin-left:0;width:170px;height:200px;z-index:97}
-.cbud img{position:absolute;left:15px;top:50px;width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.25))}
+.cbud{position:fixed;left:50%;top:auto;bottom:max(110px,12vh);width:230px;height:260px;margin-left:-115px;z-index:3000;cursor:pointer;pointer-events:auto}
+.cbud.corner{top:auto;bottom:16px;left:12px;margin-left:0;width:170px;height:200px;z-index:3001}
+.cbud img{position:absolute;z-index:2;left:15px;top:50px;width:200px;height:200px;object-fit:contain;filter:drop-shadow(0 8px 12px rgba(0,0,0,.25))}
 .cbud.corner img{left:10px;top:40px;width:150px;height:150px}
-.cbud .bsay{position:absolute;left:50%;top:0;transform:translateX(-50%);background:#fff;color:#333;border:3px solid #333;border-radius:16px;padding:4px 12px;font-weight:900;font-size:17px;white-space:nowrap;animation:bsay .35s ease-out both;z-index:2}
+.cbud .bsay{position:absolute;left:50%;top:0;transform:translateX(-50%);background:#fff;color:#333;border:3px solid #333;border-radius:16px;padding:4px 12px;font-weight:900;font-size:17px;white-space:nowrap;animation:bsay .35s ease-out both;z-index:3}
 .cbud.corner .bsay{font-size:14px;top:4px}
 .cbud.in img{animation:cbIn .5s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes cbIn{0%{transform:scale(.2) translateY(60px);opacity:0}100%{transform:none;opacity:1}}
@@ -912,7 +912,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
 @keyframes cbHi{0%{transform:translateX(-160px) rotate(-20deg);opacity:0}100%{transform:none;opacity:1}}
 @keyframes cbSway{25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
 .cbud.bye{animation:byebye .35s ease-in forwards}
-.cbud .bfx{position:absolute;left:50%;top:55%;pointer-events:none;animation:bfx 1.3s ease-out forwards}
+.cbud .bfx{position:absolute;z-index:1;left:50%;top:55%;pointer-events:none;animation:bfx 1.3s ease-out forwards}
 .cbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:10px 0}
 .cbslot{border:2px dashed var(--line);border-radius:14px;padding:6px;text-align:center;cursor:pointer;background:var(--bg);font:inherit;color:var(--fg)}
 .cbslot.has{border-style:solid;border-color:#b197fc}
@@ -1418,7 +1418,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/24 第 49 版";
+  const APP_VER = "11/24 第 50 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5825,7 +5825,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   const CB_FALL = {superhappy: ["happy"], cheer: ["happy"], wow: ["happy"], hi: ["happy"], gift: ["happy"], pout: ["sad"], sad: [], happy: [], normal: []};
   const CB_SAY = {superhappy: ["太厲害了！","完美！{n} 最棒！","哇～滿分等級！"], happy: ["很棒喔！","做得好！","{n} 好厲害！"], cheer: ["加油加油！","差一點點！","再一次一定可以！"],
     sad: ["沒關係，再試一次！","慢慢來喔","我陪你再唸一次"], wow: ["咦？是寶箱！","裡面會是什麼？","好期待～"], hi: ["Hi {n}！","{n} 來啦！","今天也一起加油！"], pout: ["哼！下次要唸完喔","不可以偷懶～","跳過要補回來喔"], gift: ["送你一個禮物！","這是給 {n} 的！","辛苦了，禮物來囉！"], normal: ["我在這裡喔"]};
-  const CB_FX = {superhappy: ["⭐","🎉","✨","🌟"], happy: ["💖","✨"], cheer: ["🔥","💪"], gift: ["💝","✨","🎁"], wow: ["❗","✨"], hi: ["👋","✨"], sad: ["💧"], pout: ["💢"]};
+  const CB_FX = {superhappy: ["⭐","🎉","🌟"], happy: ["💖","💛"], cheer: ["🔥"], gift: ["💝","💖"], wow: ["❗"], hi: ["💛","💖"], sad: ["💧"], pout: ["💢"]};
   function cbImgId(rid, slot){ const me = readers.find(x => x.id === rid) || {}; return me.cbud && me.cbud[slot]; }
   function cbUrl(rid, mood){
     for (const s of [mood].concat(CB_FALL[mood] || [], ["normal","happy"])){ const id = cbImgId(rid, s); if (!id) continue; if (cardImg[id]) return cardImg[id]; try{ cardFetch(id); }catch(_){} }
@@ -5923,7 +5923,9 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     document.querySelectorAll(".celebrate").forEach(x => x.remove());
     const layer = el("div","celebrate"); document.body.appendChild(layer);
     if (n === 4){
-      layer.appendChild(el("div","clapbig","👏"));
+      let hasBuddy = false; try{ hasBuddy = cbOn() || !!BUDDIES[(readers.find(x => x.id === curReader) || {}).buddy]; }catch(_){}
+      if (!hasBuddy) layer.appendChild(el("div","clapbig","👏")); // 有夥伴就不在中間放大拍手，免得擋住
+      
       for (let i = 0; i < 8; i++){ const c = el("div","clapsmall", i % 3 ? "👏" : "✨"); c.style.left = (5 + Math.random() * 88) + "%"; c.style.animationDelay = (Math.random() * 0.6) + "s"; layer.appendChild(c); }
       setTimeout(() => layer.remove(), 2300);
       return;
