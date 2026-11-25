@@ -297,7 +297,9 @@ function loadKids(){   // 名單跟英文 App 共用；這台沒開過英文 App
   kids = readers.filter(function(r){ return gradeOf(r); });
   if (!kids.length) kids = [{id:"yuna", name:"Yuna"}];
   var keep = kid && kids.filter(function(r){ return r.id === kid.id; })[0];
-  kid = keep || kids.filter(function(r){ return r.id === store.get("subMapKid", null); })[0] || kids.filter(function(r){ return r.id === store.get("reader", null); })[0] || kids[0];
+  var urlKid = (location.search.match(/[?&]kid=([^&]+)/) || [])[1];
+  kid = keep || kids.filter(function(r){ return r.id === (urlKid && decodeURIComponent(urlKid)); })[0] || kids.filter(function(r){ return r.id === store.get("reader", null); })[0] || kids.filter(function(r){ return r.id === store.get("subMapKid", null); })[0] || kids[0];
+  store.set("reader", kid.id);   // 跟英文口說練習、學科測驗用同一個「目前的小朋友」
 }
 loadKids();
 
@@ -362,7 +364,7 @@ function renderAcct(){
     h += '<div class="others">' + kids.filter(function(r){ return r.id !== kid.id; }).map(function(r){ return '<button class="sw" data-id="' + esc(r.id) + '" title="切換到 ' + esc(r.name) + '">' + avatarHTML(r, 38, acctOf(r)) + '<span>換 ' + esc(r.name) + "</span></button>"; }).join("") + "</div>";
   }
   box.innerHTML = h;
-  Array.prototype.forEach.call(box.querySelectorAll(".others button"), function(b){ b.onclick = function(){ kid = kids.filter(function(r){ return r.id === b.getAttribute("data-id"); })[0] || kid; store.set("subMapKid", kid.id); refresh(); }; });
+  Array.prototype.forEach.call(box.querySelectorAll(".others button"), function(b){ b.onclick = function(){ kid = kids.filter(function(r){ return r.id === b.getAttribute("data-id"); })[0] || kid; store.set("subMapKid", kid.id); store.set("reader", kid.id); refresh(); toast("👋 換成 " + kid.name + "（英文口說練習和學科測驗也會換成 " + kid.name + "）", 3000); }; });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1344,8 +1346,8 @@ flushQ();
 if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
 
 // 從數學測驗按「回數學島」或返回鍵回來時，重新讀成績
-addEventListener("pageshow", function(e){ if (e.persisted) refresh(); });
-document.addEventListener("visibilitychange", function(){ if (!document.hidden){ refresh(); acctFetch(true); } });
+addEventListener("pageshow", function(e){ if (e.persisted){ var rd = store.get("reader", null), k2 = rd && kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; refresh(); } });
+document.addEventListener("visibilitychange", function(){ if (!document.hidden){ var rd = store.get("reader", null); if (rd && kid && rd !== kid.id){ var k2 = kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; } refresh(); acctFetch(true); } });
 
 setWorld(wi, true);
 refresh();

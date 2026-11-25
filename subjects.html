@@ -907,7 +907,7 @@
       var b = document.createElement("button");
       b.className = "kid" + (r.id === cur.kid ? " on" : "");
       b.textContent = (r.avatar || "🙂") + " " + r.name + "（" + gradeOf(r) + " 年級）";
-      b.onclick = function(){ cur.kid = r.id; renderHome(); };
+      b.onclick = function(){ cur.kid = r.id; store.set("reader", r.id); renderHome(); };   // 跟英文口說練習、地圖同一個人
       box.appendChild(b);
     });
     $("cloudNote").textContent = cloudOn() ? "☁️ 點數會自動記到 LINE 點數帳本" : "⚠️ 這台還沒設定點數雲端（先在英文 App 設定），這次的點數不會記錄";
@@ -1994,7 +1994,7 @@
   // 測試用
   window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }};
 
-  if (MAP.kid && readers.some(function(r){ return r.id === MAP.kid; })) cur.kid = MAP.kid;
+  if (MAP.kid && readers.some(function(r){ return r.id === MAP.kid; })){ cur.kid = MAP.kid; store.set("reader", MAP.kid); }
   renderHome();
   var mapUnit = MAP.unit && UNITS.filter(function(u){ return u.id === MAP.unit; })[0];
   if (mapUnit){ cur.unit = mapUnit; cur.scope = MAP.scope; renderUnit(); }
