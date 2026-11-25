@@ -1346,6 +1346,9 @@ flushQ();
 if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
 
 // 從數學測驗按「回數學島」或返回鍵回來時，重新讀成績
+function syncSharedKid(){ var rd = store.get("reader", null), k2 = rd && kid && rd !== kid.id && kids.filter(function(r){ return r.id === rd; })[0]; if (k2){ kid = k2; refresh(); } }
+addEventListener("storage", function(e){ if (e.key === "reader") syncSharedKid(); });
+addEventListener("focus", syncSharedKid);
 addEventListener("pageshow", function(e){ if (e.persisted){ var rd = store.get("reader", null), k2 = rd && kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; refresh(); } });
 document.addEventListener("visibilitychange", function(){ if (!document.hidden){ var rd = store.get("reader", null); if (rd && kid && rd !== kid.id){ var k2 = kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; } refresh(); acctFetch(true); } });
 

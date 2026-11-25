@@ -1989,6 +1989,15 @@
     var t = st.last ? new Date(st.last) : null, hm = t ? ("0" + t.getHours()).slice(-2) + ":" + ("0" + t.getMinutes()).slice(-2) : "";
     n.textContent = "☁️ 點數會自動記到 LINE 點數帳本　" + (st.busy ? "🔄 學習紀錄同步中…" : st.err ? "⚠️ 學習紀錄同步失敗（資料還在這台，等一下會再試）" : t ? "✅ 學習紀錄已同步 " + hm : "");
   });
+  // 🔁 別的頁面（地圖、英文口說練習）換了小朋友，回到這裡時跟著換（作答中不換）
+  function syncSharedKid(){
+    var rd = store.get("reader", null);
+    if (!rd || rd === cur.kid || !readers.some(function(r){ return r.id === rd && gradeOf(r); })) return;
+    if (["home","stats","parent"].some(function(x){ return !$(x).classList.contains("hide"); })){ cur.kid = rd; renderHome(); }
+  }
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) syncSharedKid(); });
+  addEventListener("pageshow", syncSharedKid); addEventListener("focus", syncSharedKid);
+  addEventListener("storage", function(e){ if (e.key === "reader") syncSharedKid(); });
   if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
 
   // 測試用
