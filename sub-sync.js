@@ -108,6 +108,13 @@
         var cur = collect(), readers = store.get("subReadersCloud", {}), eng = store.get("subEngCloud", {lesson: {}, vocab: {}});
         (j.items || []).forEach(function(it){
           if (it.k === "reader" && it.d && it.d.name){ if (it.del) delete readers[it.id]; else readers[it.id] = it.d; return; }
+          if (it.k === "hw"){   // 作業小幫手：只留地圖要用的（誰、哪個單元、還有幾題沒訂正）
+            var hw = store.get("subHwCloud", {});
+            if (it.del || !it.d) delete hw[it.id];
+            else { var hd = it.d, bad = 0; (hd.sections || []).forEach(function(sec){ (sec.questions || []).forEach(function(q){ if (/^(wrong|blank|unclear)$/.test(q.status)) bad++; }); });
+              hw[it.id] = {id: hd.id || it.id, at: hd.at, who: hd.who, title: hd.title, page: hd.page, unit: hd.unit, bad: bad}; }
+            store.set("subHwCloud", hw); return;
+          }
           if (it.k === "lesson" || it.k === "vocab"){   // 英文口說練習的課文、單字卡：只留地圖要用的欄位
             var box = eng[it.k] = eng[it.k] || {};
             if (it.del || !it.d){ delete box[it.id]; return; }

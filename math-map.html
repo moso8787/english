@@ -515,21 +515,39 @@ function engStat(it){
   words.forEach(function(w, i){ var a = say[i] === 1, b = spell[i] === 1; got += (a ? .5 : 0) + (b ? .5 : 0); if (say[i] != null || spell[i] != null) tried++; if (!(a && b)) wk.push((w && (w.en || w)) + (a ? "（要練拼寫）" : b ? "（要練唸）" : "")); });
   return {avg: got / m * 5, done: tried, total: words.length, unit: "個單字", at: sc.at || 0, weak: wk.slice(0, 4)};
 }
-// 📗 小朋友在補習班用的英文課本（何嘉仁）：依目次排關卡，課文／單字卡依頁數或標題自動歸到單元
-// key：名字小寫。p＝課本頁數範圍；re＝標題或單元欄位裡出現就算這個單元
+// 📗 小朋友在補習班用的英文課本（何嘉仁 Tree House）：照目次排關卡
+// 每個單元 8 頁、5 顆心：第 1 頁單字小考 ❤️、第 4 頁對話／第 7 頁發音閱讀／第 8 頁歌曲 跟讀各 ❤️（平均 4 星以上）、作業小幫手訂正到全對 ❤️
+// Review 2 頁：兩頁各一篇跟讀，最多 2 顆心
+// 課文／單字卡要有課本頁數（英文 App 拍照時記下來）才知道是哪一顆心；沒有頁數的請小朋友重拍
+var TH = function(name, list){ return {name: name, units: list.map(function(u){ return {k: u[0], tag: u[1], name: u[2], p: [u[3], u[3] + (u[4] ? 1 : 7)], review: !!u[4], re: u[5]}; })}; };
 var ENG_BOOKS = {
-  yuna: {name: "Tree House 8", units: [
-    {k: "u1", tag: "Unit 1", name: "Time for School",   p: [4, 11],  re: /unit\s*(one|1)\b|time for school/i},
-    {k: "u2", tag: "Unit 2", name: "At the Clinic",     p: [12, 19], re: /unit\s*(two|2)\b|clinic/i},
-    {k: "u3", tag: "Unit 3", name: "In Music Class",    p: [20, 27], re: /unit\s*(three|3)\b|music class/i},
-    {k: "r1", tag: "Review 1", name: "Review One",      p: [28, 29], re: /review\s*(one|1)\b/i, review: true},
-    {k: "u4", tag: "Unit 4", name: "Our Solar System",  p: [30, 37], re: /unit\s*(four|4)\b|solar system/i},
-    {k: "u5", tag: "Unit 5", name: "Stars",             p: [38, 45], re: /unit\s*(five|5)\b|(^|[—–\-:：]\s*)stars\b/i},
-    {k: "u6", tag: "Unit 6", name: "Humans and Space",  p: [46, 53], re: /unit\s*(six|6)\b|humans and space/i},
-    {k: "r2", tag: "Review 2", name: "Review Two",      p: [54, 55], re: /review\s*(two|2)\b/i, review: true},
-    {k: "hol", tag: "Holiday", name: "Lantern Festival", p: [56, 61], re: /holiday|lantern/i, review: true}
-  ], pts: [0, 1, 2, 4, 5, 6, 7, 8, 9], free: [3, 11, 12, 13, 10, 14]}
+  yuna: Object.assign(TH("Tree House 8", [
+    ["u1", "Unit 1", "Time for School", 4, 0, /unit\s*(one|1)\b|time for school/i],
+    ["u2", "Unit 2", "At the Clinic", 12, 0, /unit\s*(two|2)\b|clinic/i],
+    ["u3", "Unit 3", "In Music Class", 20, 0, /unit\s*(three|3)\b|music class/i],
+    ["r1", "Review 1", "Review One", 28, 1, /review\s*(one|1)\b/i],
+    ["u4", "Unit 4", "Our Solar System", 30, 0, /unit\s*(four|4)\b|solar system/i],
+    ["u5", "Unit 5", "Stars", 38, 0, /unit\s*(five|5)\b|(^|[—–\-:：]\s*)stars\b/i],
+    ["u6", "Unit 6", "Humans and Space", 46, 0, /unit\s*(six|6)\b|humans and space/i],
+    ["r2", "Review 2", "Review Two", 54, 1, /review\s*(two|2)\b/i],
+    ["hol", "Holiday", "Lantern Festival", 56, 0, /holiday|lantern/i]
+  ]), {pts: [0, 1, 2, 4, 5, 6, 7, 8, 9], free: [3, 11, 12, 13, 10, 14]}),
+  howard: Object.assign(TH("Tree House 5", [
+    ["u1", "Unit 1", "Weather", 4, 0, /unit\s*(one|1)\b|weather/i],
+    ["u2", "Unit 2", "Inside the House", 12, 0, /unit\s*(two|2)\b|inside the house/i],
+    ["u3", "Unit 3", "We Can Do It!", 20, 0, /unit\s*(three|3)\b|we can do it/i],
+    ["r1", "Review 1", "Review One", 28, 1, /review\s*(one|1)\b/i],
+    ["u4", "Unit 4", "Visiting Museums", 30, 0, /unit\s*(four|4)\b|visiting museums?/i],
+    ["u5", "Unit 5", "Dinosaurs", 38, 0, /unit\s*(five|5)\b|dinosaurs?/i],
+    ["u6", "Unit 6", "Amazing Kids", 46, 0, /unit\s*(six|6)\b|amazing kids/i],
+    ["r2", "Review 2", "Review Two", 54, 1, /review\s*(two|2)\b/i],
+    ["u7", "Unit 7", "In the Woods", 56, 0, /unit\s*(seven|7)\b|in the woods/i],
+    ["u8", "Unit 8", "Around the Campfire", 64, 0, /unit\s*(eight|8)\b|campfire/i],
+    ["u9", "Unit 9", "Getting There", 72, 0, /unit\s*(nine|9)\b|getting there/i],
+    ["r3", "Review 3", "Review Three", 80, 1, /review\s*(three|3)\b/i]
+  ]), {pts: [0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 14, 16], free: [3, 11, 12, 13, 15], noSchool: true})
 };
+var VOC_PASS = 0.8, READ_PASS = 4;   // 單字小考：唸、寫都要答對 8 成；跟讀：平均 4 星
 function engBook(){ return ENG_BOOKS[nameKey(kid.name)] || null; }
 function pageOf(x){
   var p = +x.page; if (p > 0) return p;
@@ -543,6 +561,26 @@ function unitOf(x, B){
   for (var j = 0; j < B.units.length; j++) if (B.units[j].re.test(txt)) return B.units[j];
   return null;
 }
+// 這個單元的每一顆心：{k, label, page, kind}
+function heartSlots(u){
+  var s = u.p[0];
+  if (u.review) return [{k: "rd1", label: "跟讀 第 " + s + " 頁", page: s, kind: "read"}, {k: "rd2", label: "跟讀 第 " + (s + 1) + " 頁", page: s + 1, kind: "read"}];
+  return [{k: "voc", label: "單字小考（第 " + s + " 頁的單字）", page: s, kind: "vocab"},
+          {k: "rd1", label: "跟讀・對話（第 " + (s + 3) + " 頁）", page: s + 3, kind: "read"},
+          {k: "rd2", label: "跟讀・發音閱讀（第 " + (s + 6) + " 頁）", page: s + 6, kind: "read"},
+          {k: "rd3", label: "跟讀・歌曲（第 " + (s + 7) + " 頁）", page: s + 7, kind: "read"},
+          {k: "hw", label: "作業小幫手（訂正到全對）", kind: "hw"}];
+}
+// 作業小幫手的紀錄（這台的＋雲端同步下來的）
+function hwList(){
+  var L = store.get("hwHist", []), c = store.get("subHwCloud", {}), seen = {}, out = [];
+  (L || []).concat(Object.keys(c).map(function(k){ return c[k]; })).forEach(function(h){
+    if (!h) return; var id = h.id || h.at; if (seen[id]) return; seen[id] = 1;
+    var bad = h.bad; if (bad == null && Array.isArray(h.sections)){ bad = 0; h.sections.forEach(function(sec){ (sec.questions || []).forEach(function(q){ if (/^(wrong|blank|unclear)$/.test(q.status)) bad++; }); }); }
+    out.push({id: id, at: h.at || 0, who: h.who, title: h.title || "", page: h.page, unit: h.unit, bad: bad == null ? 99 : bad});
+  });
+  return out;
+}
 function buildEng(){
   var w = WORLDS.filter(function(x){ return x.eng; })[0]; if (!w) return;
   var d = engData(), list = d.L.filter(engMine).map(function(x){ return {kind: "lesson", x: x}; }).concat(d.V.filter(engMine).map(function(x){ return {kind: "vocab", x: x}; }));
@@ -553,12 +591,14 @@ function buildEng(){
   var itemUid = function(it){ return "eng:" + (it.kind === "lesson" ? "L" : "V") + it.x.id; };
   var others = list, where = {};
   if (B){
-    var byU = {}; others = [];
+    var byU = {}, hws = hwList().filter(function(h){ return h.who === kid.id; }), hwU = {};
+    others = [];
     list.forEach(function(it){ var u = unitOf(it.x, B); if (u){ (byU[u.k] = byU[u.k] || []).push(it); where[itemUid(it)] = u.tag; } else others.push(it); });
+    hws.forEach(function(h){ var u = unitOf(h, B); if (u) (hwU[u.k] = hwU[u.k] || []).push(h); });
     B.units.forEach(function(u, i){
-      var pi = B.pts[i], uid = "eng:U:" + u.k, L = byU[u.k] || [];
-      engById[uid] = {kind: "unit", unit: u, list: L, book: B.name};
-      lv[pi] = {xy: w.pts[pi], labelUp: up(pi), uid: uid, eng: true, engUnit: true, review: !!u.review, tag: u.tag, name: u.name,
+      var pi = B.pts[i], uid = "eng:U:" + u.k;
+      engById[uid] = {kind: "unit", unit: u, list: byU[u.k] || [], hw: hwU[u.k] || [], book: B.name};
+      lv[pi] = {xy: w.pts[pi], labelUp: up(pi), uid: uid, eng: true, engUnit: true, review: u.review, heartMax: u.review ? 2 : 5, tag: u.tag, name: u.name,
         title: "📗 " + B.name + "　" + u.tag + "：" + u.name + "（課本 p." + u.p[0] + "–" + u.p[1] + "）"};
     });
   }
@@ -577,42 +617,69 @@ function buildEng(){
     lv.forEach(function(l){ if (!l.uid) return; var e = engById[l.uid]; if (!e) return; if ((e.kind === "unit" ? e.list : [e]).some(function(x){ return fresh.indexOf(x) >= 0; })) l.fresh = performance.now(); });
     setTimeout(function(){ toast("☁️ 天空之城多了 " + fresh.length + " 份：" + fresh.slice(0, 3).map(function(it){ return "「" + String(it.x.title || "").slice(0, 24) + "」→ " + (where[itemUid(it)] || "其他課文"); }).join("、"), 5000); }, 600);
   }
-  lv[15] = {xy: w.pts[15], uid: "e6a-1", review: true, tag: "學校英語", name: "段考複習一", title: "學校英語 段考複習（一）：Here We Go 7"};
-  lv[16] = {xy: w.pts[16], uid: "e6a-2", review: true, tag: "學校英語", name: "段考複習二", title: "學校英語 段考複習（二）：Here We Go 7"};
-  if (kidGrade() !== 6){ [15, 16].forEach(function(i){ lv[i] = {xy: w.pts[i], tag: "學校英語", gradeLock: kidGrade()}; }); }
+  if (!(B && B.noSchool) && kidGrade() === 6){
+    lv[15] = {xy: w.pts[15], uid: "e6a-1", review: true, tag: "學校英語", name: "段考複習一", title: "學校英語 段考複習（一）：Here We Go 7"};
+    lv[16] = {xy: w.pts[16], uid: "e6a-2", review: true, tag: "學校英語", name: "段考複習二", title: "學校英語 段考複習（二）：Here We Go 7"};
+  } else if (!B || !B.noSchool){ [15, 16].forEach(function(i){ if (!lv[i].uid) lv[i] = {xy: w.pts[i], tag: "學校英語", gradeLock: kidGrade()}; }); }
   w.levels = lv;
 }
-// 單元關卡的成績：這個單元每一課（課文、單字卡）的平均星星，還沒練的那一課算 0
-function unitStat(e){
-  var L = e.list; if (!L.length) return {avg: 0, done: 0, total: 0, unit: "份", at: 0, weak: [], n: 0};
-  var sum = 0, done = 0, at = 0, rows = [];
-  L.forEach(function(it){ var st = engStat(it); sum += st.avg; done += st.done; at = Math.max(at, st.at); rows.push({it: it, st: st}); });
-  rows.sort(function(a, b){ return a.st.avg - b.st.avg; });
-  return {avg: sum / L.length, done: done, total: L.length, unit: "份", at: at, n: L.length, nL: L.filter(function(x){ return x.kind === "lesson"; }).length,
-    weak: rows.filter(function(r){ return r.st.avg < 4; }).slice(0, 4).map(function(r){ return (r.it.kind === "lesson" ? "📖 " : "🔤 ") + String(r.it.x.title || "").slice(0, 30) + "：" + (r.st.done ? r.st.avg.toFixed(1) + " ★" : "還沒練"); }),
-    worst: rows[0] && rows[0].it};
+// 單元的心：每一顆心拿到了沒有、差多少
+function unitHearts(e){
+  var u = e.unit, rows = [], got = 0, at = 0, firstMiss = null;
+  heartSlots(u).forEach(function(sl){
+    var ok = false, info = "", target = null;
+    if (sl.kind === "vocab"){
+      var vs = e.list.filter(function(it){ return it.kind === "vocab"; }), best = null;
+      vs.forEach(function(it){
+        var sc = (it.x.scores || {})[kid.id] || {}, W = it.x.words || [], n = W.length || 1, a = 0, b = 0;
+        W.forEach(function(_, i){ if ((sc.say || {})[i] === 1) a++; if ((sc.spell || {})[i] === 1) b++; });
+        var r = {it: it, say: a / n, spell: b / n, at: sc.at || 0}; if (!best || Math.min(r.say, r.spell) > Math.min(best.say, best.spell)) best = r;
+      });
+      if (best){ ok = best.say >= VOC_PASS && best.spell >= VOC_PASS; info = "唸對 " + Math.round(best.say * 100) + "%・寫對 " + Math.round(best.spell * 100) + "%（各要 " + VOC_PASS * 100 + "%）"; target = best.it; at = Math.max(at, best.at); }
+      else info = vs.length ? "" : "還沒有這一頁的單字卡";
+    } else if (sl.kind === "read"){
+      var ls = e.list.filter(function(it){ return it.kind === "lesson" && pageOf(it.x) === sl.page; }), bestL = null;
+      ls.forEach(function(it){ var st = engStat(it); if (!bestL || st.avg > bestL.st.avg) bestL = {it: it, st: st}; });
+      if (bestL){ ok = bestL.st.avg >= READ_PASS; info = bestL.st.done ? "平均 " + bestL.st.avg.toFixed(1) + " 星（要 " + READ_PASS + " 星）" : "還沒開始唸"; target = bestL.it; at = Math.max(at, bestL.st.at); }
+      else info = "還沒拍這一頁";
+    } else {
+      var hs = e.hw.slice().sort(function(a, b){ return b.at - a.at; }), done = hs.filter(function(h){ return h.bad === 0; })[0];
+      ok = !!done; info = done ? "全對 ✅" : hs.length ? "還有 " + hs[0].bad + " 題要訂正，改好再檢查一次" : "還沒檢查這個單元的作業";
+      if (hs.length) at = Math.max(at, hs[0].at);
+    }
+    if (ok) got++; else if (!firstMiss) firstMiss = {sl: sl, it: target};
+    rows.push({sl: sl, ok: ok, info: info, it: target});
+  });
+  var noPage = e.list.filter(function(it){ return it.kind === "lesson" && !pageOf(it.x); }).length;
+  return {got: got, max: rows.length, rows: rows, at: at, firstMiss: firstMiss, noPage: noPage};
 }
 // 英文關卡的「成績」：從英文口說練習的分數算出來，格式跟其他關卡一樣
 function engRec(uid){
   var it = engById[uid]; if (!it) return null;
-  var isU = it.kind === "unit", s = isU ? unitStat(it) : engStat(it); if (!s.done) return null;
+  if (it.kind === "unit"){
+    var H = unitHearts(it); if (!H.got && !it.list.length && !it.hw.length) return null;
+    var dU = dstr(H.at), passU = H.max === 2 ? H.got >= 2 : H.got >= PASS;
+    return {eng: true, unitHearts: H, best: H.got, max: H.max, pass: passU, chest: false, avg: H.got, hist: [{d: dU, st: H.got}],
+      last: {d: dU, st: H.got, s: H.got, n: H.max, unit: "心", comment: "拿到 " + H.got + " / " + H.max + " 顆心。" + (H.got >= H.max ? "這個單元全部完成了！🎉" : passU ? "已經過關，把剩下的心也拿到吧！" : "照下面的清單一顆一顆拿。") + (H.noPage ? "（有 " + H.noPage + " 份課文沒有頁數，請重拍課本、拍到頁碼）" : ""),
+        good: H.rows.filter(function(r){ return r.ok; }).map(function(r){ return r.sl.label; }), focus: H.rows.filter(function(r){ return !r.ok; }).map(function(r){ return r.sl.label + "：" + r.info; })}};
+  }
+  var s = engStat(it); if (!s.done) return null;
   var best = Math.min(5, Math.floor(s.avg + 1e-9)), need = chestNeed(), d = dstr(s.at);
-  var comment = isU ? "這個單元有 " + s.n + " 份（課文 " + s.nL + "、單字卡 " + (s.n - s.nL) + "），平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "整個單元都很棒！🎉" : best >= PASS ? "已經過關，把星星少的那幾份練到滿分吧！" : "把下面這幾份多練幾次，就能過關！")
-    : (it.kind === "lesson" ? "跟讀" : "單字小考") + "練了 " + s.done + " / " + s.total + " " + s.unit + "，平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "全部都很棒！🎉" : best >= PASS ? "已經過關，再把星星少的練到滿分吧！" : "把下面這幾" + s.unit.replace("個", "") + "多練幾次，就能過關！");
+  var comment = (it.kind === "lesson" ? "跟讀" : "單字小考") + "練了 " + s.done + " / " + s.total + " " + s.unit + "，平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "全部都很棒！🎉" : best >= PASS ? "已經過關，再把星星少的練到滿分吧！" : "把下面這幾" + s.unit.replace("個", "") + "多練幾次，就能過關！");
   return {eng: true, best: best, pass: best >= PASS, chest: need > 0 && best >= need, avg: s.avg, hist: [{d: d, st: best}],
-    last: {d: d, st: best, s: isU ? s.n : s.done, n: s.total, unit: s.unit, comment: comment, good: [], focus: s.weak}};
+    last: {d: d, st: best, s: s.done, n: s.total, unit: s.unit, comment: comment, good: [], focus: s.weak}};
 }
 
 // ── 成績：數學測驗考完、AI 老師講評後寫進 subMap[名字][關卡uid] ──
 var mapData = {};
 function load(){ mapData = store.get("subMap", {}); }
 function recU(uid){ if (uid && uid.indexOf("eng:") === 0) return engRec(uid); var r = uid && (mapData[nameKey(kid.name)] || {})[uid]; return r && r.hist ? r : null; }
-function bestU(uid){ var r = recU(uid); return r ? r.best || 0 : 0; }
+function bestU(uid){ var r = recU(uid); return r ? (r.max && r.max !== 5 ? (r.pass ? 5 : Math.floor((r.best || 0) * 5 / r.max)) : r.best || 0) : 0; }
 function rules(){ return Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {})); }
 function chests(){ return store.get("subMapChest", {})[nameKey(kid.name)] || {}; }
 function openChest(uid, info){ var a = store.get("subMapChest", {}), k = nameKey(kid.name), d = new Date(); a[k] = a[k] || {}; a[k][uid] = Object.assign({d: d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2)}, info || {}); store.set("subMapChest", a); if (window.SubSync) SubSync.soon(500); }
 function chestDate(v){ return typeof v === "object" && v ? v.d : v; }
-function starHTML(n){ return "★".repeat(n) + '<span class="off">' + "★".repeat(5 - n) + "</span>"; }
+function starHTML(n, max, ch){ max = max || 5; ch = ch || "★"; return ch.repeat(n) + '<span class="off">' + ch.repeat(Math.max(0, max - n)) + "</span>"; }
 function md(d){ return d ? d.slice(5).replace("-", "/") : ""; }
 
 // ── 圖片：用到哪個世界才載入（前後一頁也先載）──
@@ -757,6 +824,7 @@ function gotoSubject(i){
 
 function teacherHTML(r){
   if (!r) return "";
+  if (r.unitHearts) return "<div><b>📗 單元進度</b>（" + md(r.last.d) + "）</div><div>" + esc(r.last.comment) + "</div>";
   var L = r.last, h = r.eng ? '<div><b>🔤 英文口說練習紀錄</b>（' + md(L.d) + (L.unit === "份" ? "・共 " + L.n + " 份" : "・練了 " + L.s + "/" + L.n + " " + L.unit) + "・平均 " + r.avg.toFixed(1) + " 顆星）</div>"
     : '<div><b>🧑‍🏫 AI 老師講評</b>（' + md(L.d) + "・得分 " + L.s + "/" + L.n + "・" + L.st + " 顆星）</div>";
   if (L.comment) h += "<div>" + esc(L.comment) + "</div>";
@@ -769,7 +837,7 @@ function startQuiz(lv){
   if (!lv.uid){ toast("🚧 這一關的題目還在準備中"); return; }
   if (lv.eng){
     var it = engById[lv.uid];
-    if (it && it.kind === "unit"){ var wst = it.list.length ? unitStat(it).worst : null; if (!wst){ location.href = ENG_PAGE; return; } it = wst; }
+    if (it && it.kind === "unit"){ var fm2 = unitHearts(it).firstMiss; if (!fm2 || !fm2.it){ location.href = ENG_PAGE + (fm2 && fm2.sl.kind === "hw" ? "#hw" : "#scan" + (fm2 && fm2.sl.page ? "=" + fm2.sl.page : "")); return; } it = fm2.it; }
     location.href = ENG_PAGE + "#" + (it && it.kind === "vocab" ? "vocab=" : "lesson=") + encodeURIComponent(it ? it.x.id : ""); return;
   }
   var back = location.pathname.split("/").pop() || "index.html";
@@ -809,11 +877,18 @@ function ui(){
   }
   var r = recU(lv.uid), b = bestU(lv.uid), ru = rules();
   h = '<div class="sub">' + w.emoji + " " + w.name + "</div><h2><span class=\"tagp\">" + lv.tag + "</span> " + esc(lv.title) + "</h2>";
+  if (lv.heartMax){
+    var hm = lv.heartMax, hg = r ? r.best : 0, need2 = hm === 2 ? 2 : PASS;
+    h += '<div class="stars" style="color:#ff5c7a">' + starHTML(hg, hm, "♥") + ' <span class="cnt">' + hg + " / " + hm + " 顆心" + (hg >= need2 ? "　✅ 過關" : "　拿到 " + need2 + " 顆心過關") + "</span></div>";
+    var HH = unitHearts(engById[lv.uid]);
+    h += '<div class="teacher" style="background:#fff3f6;border-color:#ffd1dc">' + HH.rows.map(function(rw){ return "<div>" + (rw.ok ? "❤️" : "🤍") + " " + esc(rw.sl.label) + '<span style="color:#7a6650">　' + esc(rw.info) + "</span></div>"; }).join("") +
+      (HH.noPage ? '<div style="color:#c0392b">⚠️ 有 ' + HH.noPage + " 份這個單元的課文沒有頁數，地圖不知道是哪一篇，請在英文口說練習重拍、拍到頁碼。</div>" : "") + "</div>";
+  } else
   h += '<div class="stars">' + starHTML(b) + ' <span class="cnt">最佳 ' + b + " / 5" + (b >= PASS ? "　✅ 過關" : r ? "　還差 " + (PASS - b) + " 顆星過關" : "") + "</span></div>";
   if (r){
     h += '<div class="teacher">' + teacherHTML(r) + "</div>";
-    h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
-  } else h += '<div class="teacher">' + (lv.engUnit ? (engById[lv.uid].list.length ? "這個單元有 " + engById[lv.uid].list.length + " 份課文／單字卡，還沒開始練。" : "還沒有這個單元的課文。") + "在英文口說練習用相機拍課本第 " + engById[lv.uid].unit.p[0] + "–" + engById[lv.uid].unit.p[1] + " 頁新增課文（照片拍到頁碼，或標題寫 " + engById[lv.uid].unit.tag + "），就會自動放進這一關。" : lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
+    if (!r.unitHearts) h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
+  } else h += '<div class="teacher">' + (lv.engUnit ? (engById[lv.uid].list.length ? "這個單元有 " + engById[lv.uid].list.length + " 份課文／單字卡，還沒開始練。" : "還沒有這個單元的課文。") + "在英文口說練習用相機拍課本第 " + engById[lv.uid].unit.p[0] + "–" + engById[lv.uid].unit.p[1] + " 頁新增課文（一定要拍到頁碼），就會自動放進這一關。" : lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
   if (!w.eng){
   var bt = boxOf(lv), op = chests()[lv.uid], need = chestNeed();
   h += '<div class="chline">' + chestIco(bt) + "<b>" + CHEST_TIERS[bt].name + "</b>　" +
@@ -823,9 +898,10 @@ function ui(){
   }
   var tiers = [];
   for (var k = 1; k <= 5; k++){ var p = +ru.pts[k] || 0; if (p || k === +ru.chest) tiers.push(k + "★" + (p ? " +" + p + " 點" : "") + (k === +ru.chest ? " 🎁開寶箱" : "")); }
-  h += lv.eng ? '<div class="rule">星星來自英文口說練習（跟讀每句的星星、單字小考唸對寫對）。練習的點數在英文 App 已經給過了，這裡不重複給，也沒有寶箱。4 顆星以上過關。</div>'
+  h += lv.heartMax ? '<div class="rule">' + (lv.heartMax === 2 ? "Review 有 2 頁，每一頁跟讀平均 " + READ_PASS + " 星以上得 1 顆心，2 顆心過關。" : "每個單元 5 顆心：單字小考 1 顆（唸、寫都答對 " + VOC_PASS * 100 + "%）、對話／發音閱讀／歌曲跟讀各 1 顆（平均 " + READ_PASS + " 星以上）、作業小幫手訂正到全對 1 顆。4 顆心過關。") + "練習的點數在英文 App 已經給過了，這裡不重複給。</div>"
+    : lv.eng ? '<div class="rule">星星來自英文口說練習（跟讀每句的星星、單字小考唸對寫對）。練習的點數在英文 App 已經給過了，這裡不重複給，也沒有寶箱。4 顆星以上過關。</div>'
     : '<div class="rule">獎勵（每關每個星等第一次拿到時給）：' + (tiers.join("、") || "家長還沒設定") + "。4 顆星以上過關。</div>";
-  h += '<button class="go" id="goQuiz">' + (lv.eng ? "🔤 去英文口說練習：" : "✏️ 出發測驗：") + lv.tag + " " + esc(lv.name) + "</button>";
+  h += '<button class="go" id="goQuiz">' + (lv.heartMax ? "🔤 去英文口說練習拿下一顆心：" : lv.eng ? "🔤 去英文口說練習：" : "✏️ 出發測驗：") + lv.tag + " " + esc(lv.name) + "</button>";
   $("panel").innerHTML = h;
   $("goQuiz").onclick = function(){ startQuiz(lv); };
 }
@@ -893,9 +969,10 @@ function examGlow(g, x, y, t, k, state, tier){
 function hexA(hex, a){ var h = hex.replace("#", ""); return "rgba(" + parseInt(h.slice(0, 2), 16) + "," + parseInt(h.slice(2, 4), 16) + "," + parseInt(h.slice(4, 6), 16) + "," + a + ")"; }
 var confetti = [];
 function burst(x, y){ for (var k = 0; k < 40; k++) confetti.push({x:x, y:y - 10, vx:(Math.random() - .5) * 9, vy:-Math.random() * 9 - 3, c:["#ffd84d","#3fd172","#ff8a3d","#6ec6ff","#ff6b9a"][k % 5], life:70}); }
-function drawStars(g, n, y){
+function drawStars(g, n, y, max, heart){
+  max = max || 5; var ch = heart ? "♥" : "★", on = heart ? "#ff5c7a" : "#ffd84d";
   g.font = "bold 17px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.lineJoin = "round";
-  for (var k = 0; k < 5; k++){ var x = (k - 2) * 15; g.lineWidth = 4; g.strokeStyle = "#5a3a00"; g.strokeText("★", x, y); g.fillStyle = k < n ? "#ffd84d" : "#c9c2b4"; g.fillText("★", x, y); }
+  for (var k = 0; k < max; k++){ var x = (k - (max - 1) / 2) * 15; g.lineWidth = 4; g.strokeStyle = "#5a3a00"; g.strokeText(ch, x, y); g.fillStyle = k < n ? on : "#c9c2b4"; g.fillText(ch, x, y); }
 }
 function edgePts(w, e){ return [w.levels[e[0]].xy].concat(e[2]).concat([w.levels[e[1]].xy]); }
 
@@ -937,7 +1014,7 @@ function renderWorld(g, w, t, opt){
     if (/-all$/.test(lv.uid || "")) pin = ok ? "✓" : "👑";
     if (/^e6a-/.test(lv.uid || "")) pin = ok ? "✓" : "🏫";
     g.font = "bold " + (pin.length > 1 ? 16 : 19) + "px system-ui"; g.fillText(pin, 0, -9);
-    if (lv.uid) labels.push({x: x, y: yy, lv: lv, b: b, sel: sel});
+    if (lv.uid) labels.push({x: x, y: yy, lv: lv, b: lv.heartMax ? (r ? r.best : 0) : b, sel: sel});
     g.restore();
     if (lv.uid && !w.eng) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));   // 天空之城（英文）先不放寶箱
   });
@@ -945,7 +1022,7 @@ function renderWorld(g, w, t, opt){
     var lv = o.lv, sel = o.sel;
     g.save(); g.translate(o.x, o.y); g.textAlign = "center"; g.textBaseline = "middle";
     {
-      drawStars(g, o.b, -42);
+      drawStars(g, o.b, -42, lv.heartMax, !!lv.heartMax);
       g.font = "bold 18px system-ui"; var w1 = g.measureText(lv.tag).width;
       g.font = "bold 20px system-ui"; var nm = lv.name; if (g.measureText(nm).width > 150){ while (nm.length > 1 && g.measureText(nm + "…").width > 150) nm = nm.slice(0, -1); nm += "…"; } var w2 = g.measureText(nm).width;
       var tw = Math.max(w1, w2) + 20, th = 50, ly = lv.labelUp ? -70 - th : 24;
