@@ -27,6 +27,8 @@ button.kid.on{border-color:#ffdb56;background:rgba(255,255,255,.28)}
 .acct .pts small{display:block;margin:0;font-size:12px;color:rgba(255,255,255,.7)}
 .others{display:flex;gap:6px}
 .others button{min-height:0;padding:0;border-radius:50%;background:none}
+.others button.sw{display:flex;flex-direction:column;align-items:center;gap:3px;border-radius:14px;padding:6px 8px;background:rgba(0,0,0,.22);color:#fff}
+.others button.sw span{font-size:13px;font-weight:700;white-space:nowrap}
 .avatar{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;overflow:hidden;flex:none;color:#fff;font-weight:800;line-height:1;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .avatar img{width:100%;height:100%;object-fit:cover}
 .avwrap{position:relative;display:inline-flex;flex:none;border-radius:50%}
@@ -286,10 +288,10 @@ function gradeOf(r){ var g = grades[nameKey(r.name)]; return g == null ? grades[
 function loadKids(){   // 名單跟英文 App 共用；這台沒開過英文 App 就用雲端同步下來的
   readers = window.SubSync ? SubSync.readers() : store.get("readers", []);
   grades = store.get("subGrades", {yuna:6, howard:4});
-  kids = readers.filter(function(r){ return gradeOf(r) === 6; });
+  kids = readers.filter(function(r){ return gradeOf(r); });
   if (!kids.length) kids = [{id:"yuna", name:"Yuna"}];
   var keep = kid && kids.filter(function(r){ return r.id === kid.id; })[0];
-  kid = keep || kids.filter(function(r){ return r.id === store.get("reader", null); })[0] || kids[0];
+  kid = keep || kids.filter(function(r){ return r.id === store.get("subMapKid", null); })[0] || kids.filter(function(r){ return r.id === store.get("reader", null); })[0] || kids[0];
 }
 loadKids();
 
@@ -351,10 +353,10 @@ function renderAcct(){
     '<div class="xp"><i style="width:' + Math.round(a.pct * 100) + '%"></i></div><div class="meta"><span>經驗值 ' + a.xp + "</span><span>" + (a.max ? "已經滿級 🌈" : "再 " + a.toNext + " 升級") + "</span></div></div>" +
     '<div class="pts">💰 ' + a.bal + '<small>點數' + (a.cloud ? "・☁️ 雲端" : "・這台") + "</small></div></div>";
   if (kids.length > 1){
-    h += '<div class="others">' + kids.filter(function(r){ return r.id !== kid.id; }).map(function(r){ return '<button data-id="' + esc(r.id) + '" title="切換到 ' + esc(r.name) + '">' + avatarHTML(r, 38, acctOf(r)) + "</button>"; }).join("") + "</div>";
+    h += '<div class="others">' + kids.filter(function(r){ return r.id !== kid.id; }).map(function(r){ return '<button class="sw" data-id="' + esc(r.id) + '" title="切換到 ' + esc(r.name) + '">' + avatarHTML(r, 38, acctOf(r)) + '<span>換 ' + esc(r.name) + "</span></button>"; }).join("") + "</div>";
   }
   box.innerHTML = h;
-  Array.prototype.forEach.call(box.querySelectorAll(".others button"), function(b){ b.onclick = function(){ kid = kids.filter(function(r){ return r.id === b.getAttribute("data-id"); })[0] || kid; refresh(); }; });
+  Array.prototype.forEach.call(box.querySelectorAll(".others button"), function(b){ b.onclick = function(){ kid = kids.filter(function(r){ return r.id === b.getAttribute("data-id"); })[0] || kid; store.set("subMapKid", kid.id); refresh(); }; });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -527,6 +529,7 @@ function buildEng(){
   if (fresh.length) setTimeout(function(){ toast("☁️ 天空之城多了 " + fresh.length + " 關：" + fresh.map(function(l){ return l.tag + "「" + l.name + "」"; }).join("、"), 4500); }, 600);
   lv[15] = {xy: w.pts[15], uid: "e6a-1", review: true, tag: "學校英語", name: "段考複習一", title: "學校英語 段考複習（一）：Here We Go 7"};
   lv[16] = {xy: w.pts[16], uid: "e6a-2", review: true, tag: "學校英語", name: "段考複習二", title: "學校英語 段考複習（二）：Here We Go 7"};
+  if (kidGrade() !== 6){ [15, 16].forEach(function(i){ lv[i] = {xy: w.pts[i], tag: "學校英語", gradeLock: kidGrade()}; }); }
   w.levels = lv;
 }
 // 英文關卡的「成績」：從英文口說練習的分數算出來，格式跟其他關卡一樣
@@ -568,8 +571,17 @@ var cur = 0, hover = -1, z = 1, ox = 0, oy = 0, drag = null, flipping = false;
 function toast(t, ms){ var el = $("toast"); el.textContent = t; el.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(function(){ el.classList.remove("show"); }, ms || 2800); }
 
 // 進來、切換小朋友、考完回來時：讀成績，有新的講評就提示
+function kidGrade(){ return +gradeOf(kid) || 6; }
+function gradeLevels(){
+  var g = kidGrade();
+  WORLDS.forEach(function(w){
+    if (w.eng) return;
+    if (!w.levels6) w.levels6 = w.levels;
+    w.levels = g === 6 ? w.levels6 : w.levels6.map(function(l, i){ return {xy: l.xy, tag: "第 " + (i + 1) + " 關", labelUp: l.labelUp, gradeLock: g}; });
+  });
+}
 function refresh(){
-  load(); buildEng();
+  load(); gradeLevels(); buildEng();
   var k = nameKey(kid.name), seenAll = store.get("subMapSeen", {}), first = typeof seenAll[k] !== "object", seen = first ? {} : seenAll[k], news = null;
   WORLDS.forEach(function(w, a){ w.levels.forEach(function(lv, i){ var r = recU(lv.uid); if (r && r.hist.length !== (seen[lv.uid] || 0)){ seen[lv.uid] = r.hist.length; if (!news) news = {w:a, i:i, r:r, lv:lv}; } }); });
   seenAll[k] = seen; store.set("subMapSeen", seenAll);
@@ -704,7 +716,7 @@ function ui(){
   document.body.style.background = w.bg;
   $("wName").textContent = w.emoji + " 第 " + (wi + 1) + " 世界・" + w.name;
   var sjx = SUBJECTS.filter(function(x){ return x.world === w.id; })[0];
-  $("wSub").textContent = (sjx ? sjx.name + "・" : w.id === "boss" ? "👑 跨科總複習・" : "") + w.sub;
+  $("wSub").textContent = (sjx ? sjx.name + "・" : w.id === "boss" ? "👑 跨科總複習・" : "") + (kidGrade() !== 6 && !w.eng ? kidGrade() + " 年級關卡準備中" : w.sub);
   $("wIcon").innerHTML = sjx ? '<img src="' + sjx.icon + '" alt="' + sjx.name + '">' : "";
   $("prev").disabled = wi === 0 || flipping; $("next").disabled = wi === WORLDS.length - 1 || flipping;
   $("dots").innerHTML = WORLDS.map(function(x, i){ return '<i class="' + (i === wi ? "on" : "") + '" data-i="' + i + '" title="' + x.name + '"></i>'; }).join("");
@@ -725,7 +737,7 @@ function ui(){
   var lv = L[cur], h;
   if (!lv.uid){
     h = '<div class="sub">' + w.emoji + " " + w.name + "</div><h2><span class=\"tagp\">" + lv.tag + "</span></h2>";
-    h += '<div class="teacher">' + (lv.engSlot ? "📖 這裡還是空的。在英文口說練習新增課文或單字卡，地圖上就會自動多一關（最多放最近的 " + ENG_SLOTS + " 個）。" : "🚧 這一關的題目還在準備中。家長決定好這個世界要考哪個科目、哪些單元，就會打開。") + "</div>";
+    h += '<div class="teacher">' + (lv.gradeLock ? "🚧 " + esc(kid.name) + " 是 " + lv.gradeLock + " 年級，這個世界的 " + lv.gradeLock + " 年級關卡還在準備中。現在可以先到 ☁️ 天空之城練英文。" : lv.engSlot ? "📖 這裡還是空的。在英文口說練習新增課文或單字卡，地圖上就會自動多一關（最多放最近的 " + ENG_SLOTS + " 個）。" : "🚧 這一關的題目還在準備中。家長決定好這個世界要考哪個科目、哪些單元，就會打開。") + "</div>";
     h += '<button class="go" disabled>✏️ 還不能挑戰</button>';
     $("panel").innerHTML = h; return;
   }
@@ -957,7 +969,7 @@ function showTip(i, e){
   var tip = $("tip");
   if (i < 0 || flipping){ tip.style.display = "none"; return; }
   var lv = world().levels[i], r = recU(lv.uid), b = bestU(lv.uid), h;
-  if (!lv.uid) h = "<h3>" + lv.tag + "</h3><div>" + (lv.engSlot ? "📖 在英文口說練習新增課文，這裡就會多一關" : "🚧 題目準備中") + "</div>";
+  if (!lv.uid) h = "<h3>" + lv.tag + "</h3><div>" + (lv.engSlot ? "📖 在英文口說練習新增課文，這裡就會多一關" : lv.gradeLock ? "🚧 " + lv.gradeLock + " 年級的關卡準備中" : "🚧 題目準備中") + "</div>";
   else {
     h = "<h3>" + lv.tag + " " + esc(lv.title.replace(/^[一二三四五六七八九十]+、/, "")) + "</h3>" + '<div class="st">' + starHTML(b) + "</div>";
     h += r ? teacherHTML(r) : "<div>" + (lv.eng ? "還沒開始練，點兩下去英文口說練習 🔤" : "還沒挑戰過，點兩下就去考試 ✏️") + "</div>";
