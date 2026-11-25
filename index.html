@@ -1419,7 +1419,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/26 第 52 版";
+  const APP_VER = "11/26 第 53 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -4975,7 +4975,14 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   const MAXN = 10; // 一課最多 10 句，多的拆到下一個單元
   // 跟讀只練句子：只有一個英文字的（單字）不放進課文，單字請到「單字小考」練
   const multiWord = it => (String(it.en || "").match(/[A-Za-z]+(?:['’][A-Za-z]+)?/g) || []).length >= 2;
+  // 對話課文：句子前面的說話者（Tom: ／Mr. Lee: ／Boy 1：／Student A:）不用唸，拿掉，改成上面的小標籤 who
+  function splitWho(en){
+    const m = String(en || "").match(/^\s*((?:[A-Z][A-Za-z.'’\-]*|[A-Z]?\d)(?:\s+(?:[A-Za-z.'’\-]+|\d)){0,3})\s*[:：]\s*(?!\d)(\S.*)$/);
+    return m && /[A-Za-z]/.test(m[2]) ? {who: m[1].trim(), en: m[2].trim()} : null;
+  }
+  function stripWho(it){ if (!it || it.tag) return false; const w = splitWho(it.en); if (!w) return false; it.who = it.who || w.who; it.en = w.en; return true; }
   function makeParts(title, items){
+    items.forEach(stripWho);
     const n = Math.ceil(items.length / MAXN), group = n > 1 ? "g" + Date.now() : "";
     return Array.from({length: n}, (_, k) => ({id: Date.now() + k, title: n > 1 ? title + "（" + (k + 1) + "/" + n + "）" : title, items: items.slice(k * MAXN, (k + 1) * MAXN), scores: {}, scale: 5, at: Date.now(), group, part: k + 1, parts: n}));
   }
@@ -5058,8 +5065,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     openEditor({title: "", items});
   };
   function splitText(t){
-    return t.replace(/\r/g,"").split(/\n+/).flatMap(line => line.match(/[^.!?。！？]+[.!?。！？]*["”’]?/g) || [])
-      .map(x => x.trim()).filter(x => /[A-Za-z]/.test(x));
+    return t.replace(/\r/g,"").replace(/\b(Mr|Mrs|Ms|Dr|St)\./g, "$1\u00a7").split(/\n+/).flatMap(line => line.match(/[^.!?。！？]+[.!?。！？]*["”’]?/g) || [])
+      .map(x => x.replace(/\u00a7/g, ".").trim()).filter(x => /[A-Za-z]/.test(x));
   }
   $("rScan").onclick = async () => {
     if (!rPhotos.length) return;
@@ -5107,7 +5114,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     let items = [...$("rEditList").children].map(li => {
       const v = li.querySelector(".ren").value.trim(); const m = v.match(/^([A-Z][a-zA-Z ]{0,15}):\s*(.+)$/);
       const old = li.querySelector(".rzhin").dataset.zh, tag = li.querySelector(".rzhin").dataset.tag || "";
-      return m && !tag ? {who: m[1], en: m[2], zh: old} : {who: "", en: v, zh: old, tag};
+      const w = !tag && splitWho(v);
+      return w ? {who: w.who, en: w.en, zh: old} : {who: "", en: v, zh: old, tag};
     }).filter(it => /[A-Za-z]/.test(it.en) && multiWord(it));
     if (!items.length){ alert("課文裡都是單字（只有一個字），跟讀只練句子。單字請到「🔤 單字小考」練習喔！"); return; }
     const title = $("rTitle").value.trim() || items[0].en.split(/\s+/).slice(0, 4).join(" ");
@@ -5141,6 +5149,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   const practiced = (x, rid) => !!(x.scores && x.scores[rid] && Object.keys(x.scores[rid].stars || x.scores[rid].say || {}).concat(Object.keys(x.scores[rid].spell || {})).length);
   const scorers = x => Object.keys(x.scores || {}).filter(rid => practiced(x, rid));
   lessons.forEach(l => { if (!l.owner) l.owner = scorers(l)[0] || readers[0].id; });
+  // 以前存的對話課文：句子前面的人名拿掉（星星紀錄不變）
+  try{ let ch = false; lessons.forEach(l => (l.items || []).forEach(it => { if (stripWho(it)) ch = true; })); if (ch) saveLessons(); }catch(_){}
   const isMine = (x, rid) => { rid = rid || curReader; return x.owner === rid || practiced(x, rid); };
   saveLessons();
   const avgOf = st => { const v = Object.values(st || {}); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0; };
