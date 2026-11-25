@@ -837,7 +837,8 @@ function glow(g, x, y, r, a, color){ var q = g.createRadialGradient(x, y, 0, x, 
 // 地圖上的寶箱：state = "lock"（還沒拿到）、"ready"（可以開，會跳動發光）、"open"（打開過）
 function drawChest(g, x, y, state, t, i, tier){
   var c = CHEST_TIERS[tierOk(tier)].c, ready_ = state === "ready", opened = state === "open"; if (state === "shut") state = "closed";
-  g.save(); g.translate(x, y + (ready_ ? -Math.abs(Math.sin(t * 3 + i)) * 5 : 0));
+  var ph = (t * 0.22 + i * 0.173) % 1, hop = !ready_ && !opened && ph < 0.09 ? Math.sin(ph / 0.09 * Math.PI) * 8 : 0;
+  g.save(); g.translate(x, y + (ready_ ? -Math.abs(Math.sin(t * 3 + i)) * 5 : -hop));
   if (state === "lock") g.globalAlpha = .62;
   if (ready_){ g.fillStyle = "rgba(255,240,120," + (.3 + .22 * Math.sin(t * 4)) + ")"; g.beginPath(); g.arc(0, -8, 30, 0, 7); g.fill(); }
   g.fillStyle = "#254a3c55"; g.beginPath(); g.ellipse(0, 12, 20, 5, 0, 0, 7); g.fill();
@@ -853,7 +854,7 @@ function drawChest(g, x, y, state, t, i, tier){
     g.fillStyle = c[5]; rr(g, -4, -7, 8, 9, 2); g.fill(); g.strokeStyle = c[6]; g.lineWidth = 1.2; g.stroke();
   }
   g.restore();
-  if (state === "lock"){ g.save(); g.font = "15px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("🔒", x + 13, y + 6); g.restore(); }
+  if (state === "lock"){ g.save(); g.font = "15px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("🔒", x + 13, y + 6 - hop); g.restore(); }
 }
 // ✦ 四角閃光星星
 function sparkle(g, x, y, r, a, color){
@@ -917,7 +918,8 @@ function renderWorld(g, w, t, opt){
     g.setLineDash([1, 16]); g.lineDashOffset = -t * 12; g.lineWidth = 8; g.strokeStyle = gold ? "#ffd84d" : "#fffbe6"; g.stroke();
   });
   g.restore();
-  // 關卡
+  // 關卡（名牌和星星先記下來，最後才畫，才不會被寶箱蓋住）
+  var labels = [];
   w.levels.forEach(function(lv, i){
     var x = lv.xy[0], y = lv.xy[1], yy = y - 15 - Math.sin(t * 3 + i) * 3, r = recU(lv.uid), b = bestU(lv.uid), ok = b >= PASS, sel = !opt.plain && (i === cur || i === hover);
     g.save(); g.translate(x, yy);
@@ -933,8 +935,15 @@ function renderWorld(g, w, t, opt){
     if (/-all$/.test(lv.uid || "")) pin = ok ? "✓" : "👑";
     if (/^e6a-/.test(lv.uid || "")) pin = ok ? "✓" : "🏫";
     g.font = "bold " + (pin.length > 1 ? 16 : 19) + "px system-ui"; g.fillText(pin, 0, -9);
-    if (lv.uid){
-      drawStars(g, b, -42);
+    if (lv.uid) labels.push({x: x, y: yy, lv: lv, b: b, sel: sel});
+    g.restore();
+    if (lv.uid) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));
+  });
+  function drawLabel(o){
+    var lv = o.lv, sel = o.sel;
+    g.save(); g.translate(o.x, o.y); g.textAlign = "center"; g.textBaseline = "middle";
+    {
+      drawStars(g, o.b, -42);
       g.font = "bold 18px system-ui"; var w1 = g.measureText(lv.tag).width;
       g.font = "bold 20px system-ui"; var nm = lv.name; if (g.measureText(nm).width > 150){ while (nm.length > 1 && g.measureText(nm + "…").width > 150) nm = nm.slice(0, -1); nm += "…"; } var w2 = g.measureText(nm).width;
       var tw = Math.max(w1, w2) + 20, th = 50, ly = lv.labelUp ? -70 - th : 24;
@@ -943,8 +952,7 @@ function renderWorld(g, w, t, opt){
       g.fillStyle = "#3b2a14"; g.font = "bold 20px system-ui"; g.fillText(nm, 0, ly + 35);
     }
     g.restore();
-    if (lv.uid) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));
-  });
+  }
   // 🎯 段考大寶箱
   exams().forEach(function(ex, k){
     var an = examAnchor(ex, w); if (!an) return;
@@ -965,6 +973,8 @@ function renderWorld(g, w, t, opt){
     g.fillStyle = st.ready && !st.opened ? "#3b2a14" : "#fff"; g.fillText(lab, an.x, an.y - 40);
     g.restore();
   });
+  // 名牌：最上層
+  labels.forEach(drawLabel);
   if (!opt.plain){
     confetti = confetti.filter(function(p){ return p.life > 0; });
     confetti.forEach(function(p){ p.x += p.vx; p.y += p.vy; p.vy += .35; p.life--; g.fillStyle = p.c; g.fillRect(p.x - 4, p.y - 3, 8, 6); });
