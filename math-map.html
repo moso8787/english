@@ -110,6 +110,11 @@ button.kid.on{border-color:#ffdb56;background:rgba(255,255,255,.28)}
 .under{position:absolute;inset:0;border-radius:18px;background:linear-gradient(90deg,rgba(0,0,0,.35),rgba(0,0,0,0) 45%);opacity:0;transition:opacity 1.15s;pointer-events:none;z-index:3}
 .under.on{opacity:1}
 /* 六維雷達圖 */
+.setup{background:#fffaf0;color:#3b2a14;border-radius:18px;padding:14px 16px;margin:0 0 12px;font-weight:500;font-size:16px;line-height:1.6}
+.setup h3{margin:0 0 4px;font-size:20px}
+.setup label{display:block;margin-top:8px;font-weight:700}
+.setup input{width:100%;font:inherit;font-size:17px;padding:10px;border:2px solid #eadfce;border-radius:10px;margin-top:4px}
+.setup button{margin-top:10px;width:100%}
 .radar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.1);border-radius:18px;padding:10px 14px;margin:0 0 12px;position:relative}
 .radar svg{width:min(100%,440px);height:auto;display:block;flex:0 0 auto;margin:auto}
 .radar .vx{cursor:pointer}
@@ -152,6 +157,7 @@ small{display:block;color:rgba(255,255,255,.8);font-weight:500;font-size:15px;ma
 <body>
 <main>
   <header><h1>🗺️ 學習大冒險</h1><div class="kids" id="kids"></div></header>
+  <div class="setup" id="setupCard" style="display:none"></div>
   <div class="radar" id="radar"><svg id="radarSvg" viewBox="0 0 460 400" aria-label="六科能力雷達圖"></svg><div class="rsum" id="rsum"></div><div class="rtip" id="rtip"></div></div>
   <div class="nav">
     <button class="arrow" id="prev" aria-label="上一個世界">◀</button>
@@ -1154,6 +1160,30 @@ function fxBoss(g, t, A){
   [[875,1080,115,36],[626,1180,100,23],[1145,807,65,22],[61,650,27,32],[708,965,30,35]].forEach(function(a){ var x = a[0], y = a[1], w = a[2], h = a[3]; g.save(); g.beginPath(); g.ellipse(x, y, w, h, 0, 0, 7); g.clip(); for (var j = 0; j < 7; j++){ var yy = y - h + j * h / 3 + Math.sin(t * 1.5 + j) * 5; g.beginPath(); for (var k = 0; k <= 30; k++){ var xx = x - w + k * w / 15, dy = Math.sin(k * .48 + t * 1.8 + j) * 4; if (k === 0) g.moveTo(xx, yy + dy); else g.lineTo(xx, yy + dy); } g.strokeStyle = "rgba(255,213,78,.32)"; g.lineWidth = 2.5; g.stroke(); } g.restore(); });
   [[75,100,105],[225,48,85],[455,65,75],[1170,64,100],[100,310,75]].forEach(function(cl, i){ g.save(); g.translate(cl[0] + Math.sin(t * .32 + i) * 22, cl[1] + Math.sin(t * .5 + i) * 4); g.scale(cl[2] / 100, cl[2] / 100); var q = g.createLinearGradient(0, -35, 0, 22); q.addColorStop(0, "#9994aa"); q.addColorStop(.45, "#676477"); q.addColorStop(1, "#353344"); g.fillStyle = q; g.beginPath(); g.moveTo(-42, 17); g.bezierCurveTo(-65, 15, -60, -13, -37, -14); g.bezierCurveTo(-35, -35, -8, -43, 4, -22); g.bezierCurveTo(22, -40, 43, -24, 43, -9); g.bezierCurveTo(65, -7, 66, 17, 43, 19); g.closePath(); g.fill(); g.fillStyle = "#242334"; [-7,8].forEach(function(ex){ g.beginPath(); g.ellipse(ex, 0, 3, 7, 0, 0, 7); g.fill(); }); g.restore(); });
 }
+
+// ── 這台還沒連上雲端：顯示設定卡（跟英文 App 用同一組機器人網址和密碼；這台已經有就不顯示）──
+function renderSetup(){
+  var box = $("setupCard"), has = store.get("ptCloudUrl", "") && store.get("ptCloudKey", "");
+  if (has){ box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.innerHTML = '<h3>☁️ 這台還沒連上雲端</h3><div>所以看不到小朋友名單、點數和別台的學習紀錄。兩種方法擇一：</div>' +
+    '<div>① 在 Mac 的英文口說練習家長區打開「新裝置設定」的 QR Code，用這台的相機掃。掃完如果打開的是英文 App，在同一個瀏覽器再打開這個地圖就好。</div>' +
+    '<div>② 直接在下面填（跟英文 App 家長區「點數雲端」那兩格一樣）：</div>' +
+    '<label>機器人網址<input id="suUrl" placeholder="https://script.google.com/macros/s/……/exec" autocomplete="off"></label>' +
+    '<label>連線密碼<input id="suKey" type="password" autocomplete="off"></label>' +
+    '<label>Gemini 金鑰（選填，AI 老師講評要用）<input id="suG" type="password" autocomplete="off"></label>' +
+    '<button id="suGo">連上雲端</button><div id="suNote" style="font-size:14px;margin-top:6px"></div>';
+  $("suGo").onclick = function(){
+    var u = $("suUrl").value.trim(), k = $("suKey").value.trim(), g = $("suG").value.trim();
+    if (!/^https:\/\/script\.google\.com\//.test(u) || !k){ $("suNote").textContent = "⚠️ 網址要是 https://script.google.com/ 開頭，密碼不能空白"; return; }
+    store.set("ptCloudUrl", u); store.set("ptCloudKey", k); if (g && !store.get("gkey", "")) store.set("gkey", g);
+    $("suNote").textContent = "🔄 連線中…";
+    acctCloud = null; acctFetch(true);
+    if (window.SubSync) SubSync.run();
+    setTimeout(function(){ loadKids(); refresh(); renderSetup(); }, 2500);
+  };
+}
+renderSetup();
 
 // ── 學科紀錄雲端同步（sub-sync.js）：收到別台的紀錄就重畫 ──
 addEventListener("subsync", function(){ loadKids(); refresh(); });

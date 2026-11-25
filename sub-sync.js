@@ -26,6 +26,18 @@
   var KINDS = ["subMap", "subChest", "subWrong", "subStats", "subSet"];
   var SET_KEYS = {starRules: "subStarRules", rules: "subRules", grades: "subGrades"};
   function hsh(s){ var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0) + ":" + s.length; }
+  // 📱 新裝置一鍵設定：跟英文 App 同一種設定碼（網址後面帶 #setup=…），學習大冒險和學科測驗也認得
+  (function(){
+    var m = location.hash.match(/^#setup=(.+)$/); if (!m) return;
+    try{
+      var o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(m[1])))));
+      if (o && o.app === "kousuo" && confirm("要用這組設定嗎？\n（Gemini 金鑰、機器人網址和連線密碼會存到這台）")){
+        ["gkey", "gkey2", "azKey", "azRegion", "ptCloudUrl", "ptCloudKey"].forEach(function(k){ if (o[k]) store.set(k, o[k]); });
+        if (o.ptPin) store.set("ptPin", o.ptPin);
+      }
+    }catch(e){ alert("設定碼讀不出來：" + e.message); }
+    try{ history.replaceState(null, "", location.pathname + location.search); }catch(_){ location.hash = ""; }
+  })();
   function cloud(){ return {url: store.get("ptCloudUrl", ""), key: store.get("ptCloudKey", "")}; }
   function on(){ var c = cloud(); return !!(c.url && c.key); }
 
