@@ -1200,6 +1200,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
           <div class="row"><label>完成一課，看平均星星</label><span>⭐3 以上</span><input type="number" id="ptR_ls3" min="0" step="0.1" style="max-width:70px"><span>⭐4 以上</span><input type="number" id="ptR_ls4" min="0" step="0.1" style="max-width:70px"><span>全部 ⭐5</span><input type="number" id="ptR_ls5" min="0" step="0.1" style="max-width:70px"><span>點（重唸拿到更高級，只補差額）</span></div>
           <div class="row"><label>單字小考：答對一個新字</label><input type="number" id="ptR_word" min="0" step="0.1" style="max-width:80px"><span>點（唸和寫分開算，每個字一次）</span></div>
           <div class="row"><label>單字小考：全部答對</label><input type="number" id="ptR_allword" min="0" step="0.1" style="max-width:80px"><span>點（每本、每種考法一次）</span></div>
+          <div class="row"><label>🔒 同一課／同一份單字卡，每天最多練</label><input type="number" id="ptR_dayMax" min="0" step="1" style="max-width:70px"><span>次（單字的唸和寫分開算；0＝不限制）</span></div>
           <div class="row"><label>作業小幫手：檢查一份作業</label><input type="number" id="ptR_hw" min="0" step="0.1" style="max-width:80px"><span>點（同一份作業一天一次）</span></div>
           <div class="row"><label>對話練習：每說一句</label><input type="number" id="ptR_chatLine" min="0" step="0.1" style="max-width:80px"><span>點（一場對話最多算 20 句）</span></div>
           <div class="row"><label>對話練習：完成一場（目標都達成）</label><input type="number" id="ptR_chatDone" min="0" step="0.1" style="max-width:80px"><span>點（總分 90 以上再加一半）</span></div>
@@ -1418,7 +1419,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/25 第 51 版";
+  const APP_VER = "11/26 第 52 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5076,7 +5077,9 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
         txt => { $("rScanNote").textContent = "AI 正在看課本… 已讀到 " + ((txt.match(/"en"/g) || []).length) + " 句"; });
       const items = (r.items || []).filter(it => it && it.en && /[A-Za-z]/.test(it.en)).map(it => ({en: String(it.en).trim(), zh: String(it.zh || "").trim(), who: String(it.who || "").trim()}));
       if (!items.length){ $("rScanNote").textContent = "這張照片裡沒找到英文句子，換一張清楚一點的再試試。"; return; }
-      $("rScanNote").textContent = "找到 " + items.length + " 句 👇";
+      const dd = dupLesson(items, curReader);
+      if (dd.block){ $("rScanNote").textContent = "🔁 這一頁之前已經拍過了"; dupPopLesson(dd, () => openEditor({title: r.title || "", items, __force: true})); return; }
+      $("rScanNote").textContent = "找到 " + items.length + " 句 👇" + (dd.dupN ? "（其中 " + dd.dupN + " 句以前拍過，存檔時會拿掉）" : "");
       openEditor({title: r.title || "", items});
     }catch(e){
       $("rScanNote").textContent = e.message === "nokey" ? "要先在下面「設定」貼上 Gemini 金鑰。" : "辨識失敗：" + e.message;
@@ -5101,7 +5104,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   }
   $("rAddLine").onclick = () => { const li = editRow({en:"", zh:""}); $("rEditList").appendChild(li); li.querySelector("input").focus(); };
   $("rSave").onclick = () => {
-    const items = [...$("rEditList").children].map(li => {
+    let items = [...$("rEditList").children].map(li => {
       const v = li.querySelector(".ren").value.trim(); const m = v.match(/^([A-Z][a-zA-Z ]{0,15}):\s*(.+)$/);
       const old = li.querySelector(".rzhin").dataset.zh, tag = li.querySelector(".rzhin").dataset.tag || "";
       return m && !tag ? {who: m[1], en: m[2], zh: old} : {who: "", en: v, zh: old, tag};
@@ -5116,6 +5119,11 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
       more.forEach(pt => pt.owner = editing.owner || curReader);
       lessons = [editing, ...more, ...lessons.filter(l => l !== editing)];
     } else {
+      if (!(editing && editing.__force)){
+        const dd = dupLesson(items, curReader);
+        if (dd.block){ dupPopLesson(dd, () => { editing.__force = true; $("rSave").click(); }); return; }
+        if (dd.dupN){ items = dd.fresh; ptToast("🔁 有 " + dd.dupN + " 句以前拍過了，這次只加新的 " + items.length + " 句"); }
+      }
       const parts = makeParts(title, items);
       parts.forEach(pt => pt.owner = curReader);
       editing = parts[0];
@@ -5147,6 +5155,65 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   function rLogAdd(e){ rLog.push(e); if (rLog.length > 5000) rLog = rLog.slice(-5000); store.set("readLog", rLog); }
   const WD = ["日","一","二","三","四","五","六"];
   const dayKey = t => { const d = new Date(t); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  // ════════ 🔒 防刷點 ════════
+  // ① 同一課／同一份單字卡，每個小朋友每天最多練 ptRules.dayMax 次（「一次」＝從頭到尾練完一遍；0＝不限）
+  const dayMax = () => { const n = Math.floor(+ptRules.dayMax); return n > 0 ? n : 0; };
+  function runsToday(o, key){ const r = o && o[key]; return r && r.d === dayKey(Date.now()) ? +r.n || 0 : 0; }
+  function runAdd(o, key){ const d = dayKey(Date.now()), r = o[key] && o[key].d === d ? o[key] : {d, n: 0}; r.n = (+r.n || 0) + 1; o[key] = r; return r.n; }
+  function guardPop(icon, title, msg, btns){
+    const m = el("div","kcmodal"), b = el("div","kcbox"); b.style.textAlign = "center";
+    b.append(el("div","big", icon), el("h3", null, title), el("p", null, msg));
+    const row = el("div","btns"); row.style.justifyContent = "center";
+    (btns || []).forEach(([t, fn, pri]) => { const x = el("button","b big" + (pri ? " primary" : ""), t); x.onclick = e => { e.stopPropagation(); m.remove(); fn(); }; row.appendChild(x); });
+    const ok = el("button","b big" + (btns && btns.length ? "" : " primary"), "知道了"); ok.onclick = () => m.remove(); row.appendChild(ok);
+    b.appendChild(row); m.appendChild(b); m.onclick = e => { if (e.target === m) m.remove(); };
+    document.body.appendChild(m); try{ buddyMood("pout", {rid: curReader}); }catch(_){}
+  }
+  function limitPop(what, n){ guardPop("⏰", what + "今天已經練 " + n + " 次了", "同一份每天最多練 " + dayMax() + " 次，明天再來挑戰更多星星吧！先去練別的 💪"); }
+  // ② 重複翻拍：拍過、練過的課文句子／單字，不會再變成新的題目（只比同一個小朋友自己的）
+  const dupNorm = t => String(t || "").toLowerCase().replace(/[’‘`]/g, "'").replace(/[^a-z0-9']+/g, " ").trim();
+  const dupMine = (x, rid) => x.owner === rid || !!(x.scores && x.scores[rid]);
+  function dupLesson(items, rid){
+    const seen = new Map();   // 句子 → 在哪一課
+    lessons.forEach(l => { if (dupMine(l, rid)) (l.items || []).forEach(it => { const k = dupNorm(it.en); if (k && !seen.has(k)) seen.set(k, l); }); });
+    rLog.forEach(e => { if (e.r === rid && e.en){ const k = dupNorm(e.en); if (k && !seen.has(k)) seen.set(k, lessons.find(l => l.id === e.l) || null); } });
+    const long = items.filter(it => dupNorm(it.en).split(" ").length >= 3);   // 很短的句子（Hello. Thank you.）各課都會有，不算
+    const dup = long.filter(it => seen.has(dupNorm(it.en)));
+    const hits = new Map(); dup.forEach(it => { const l = seen.get(dupNorm(it.en)); if (l) hits.set(l, (hits.get(l) || 0) + 1); });
+    const hit = [...hits.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0])[0] || null;
+    const dupSet = new Set(dup);
+    return {dupN: dup.length, block: long.length > 0 && long.length - dup.length < Math.max(1, Math.ceil(long.length * 0.2)), fresh: items.filter(it => !dupSet.has(it)), hit};
+  }
+  function dupVocab(words, rid){
+    const seen = new Map(), r = readers.find(x => x.id === rid);
+    voSets.forEach(v => { if (dupMine(v, rid)) (v.words || []).forEach(w => { const k = dupNorm(w.en); if (k && !seen.has(k)) seen.set(k, v); }); });
+    ((r && r.dupW) || []).forEach(k => { if (!seen.has(k)) seen.set(k, null); });
+    const dup = words.filter(w => seen.has(dupNorm(w.en)));
+    const hits = new Map(); dup.forEach(w => { const v = seen.get(dupNorm(w.en)); if (v) hits.set(v, (hits.get(v) || 0) + 1); });
+    const hit = [...hits.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0])[0] || null;
+    return {dupN: dup.length, block: words.length > 0 && words.length - dup.length < Math.max(1, Math.ceil(words.length * 0.2)), fresh: words.filter(w => !seen.has(dupNorm(w.en))), hit};
+  }
+  // 刪掉單字卡時，把練過的字記在小朋友身上，刪掉再拍也認得出來（課文句子靠跟讀紀錄 readLog 認）
+  function dupRemember(st){
+    Object.keys(st.scores || {}).forEach(rid => {
+      const s = st.scores[rid] || {}, r = readers.find(x => x.id === rid); if (!r) return;
+      const got = st.words.filter((w, i) => (s.say || {})[i] != null || (s.spell || {})[i] != null).map(w => dupNorm(w.en)).filter(Boolean);
+      if (got.length){ r.dupW = [...new Set((r.dupW || []).concat(got))].slice(-3000); }
+    });
+    try{ saveReaders(); }catch(_){}
+  }
+  function dupPopLesson(d, force){
+    const btns = [];
+    if (d.hit && lessons.includes(d.hit)) btns.push(["📖 打開原本那一課", () => { $("rEdit").hidden = true; rPhotos = []; renderThumbs(); $("rScanNote").textContent = ""; openLesson(d.hit); }, true]);
+    if (ptUnlocked && force) btns.push(["👨‍👩‍👧 家長：還是要新增", force]);
+    guardPop("🔁", "這一頁之前已經拍過了", (d.hit ? "跟「" + d.hit.title + "」" : "跟以前練過的課文") + "幾乎一樣（" + d.dupN + " 句重複）。練過的課文不會再變成新的題目喔！想拿更多星星，就打開原本那一課再練。" + (ptUnlocked ? "" : "（家長解鎖點數頁後可以強制新增）"), btns);
+  }
+  function dupPopVocab(d, force){
+    const btns = [];
+    if (d.hit && voSets.includes(d.hit)) btns.push(["🔤 打開原本那一份", () => { $("voEdit").hidden = true; voOpenStudy(d.hit); }, true]);
+    if (ptUnlocked && force) btns.push(["👨‍👩‍👧 家長：還是要新增", force]);
+    guardPop("🔁", "這些單字之前已經拍過了", (d.hit ? "跟「" + d.hit.title + "」" : "跟以前練過的單字") + "幾乎一樣（" + d.dupN + " 個重複）。練過的單字不會再變成新的題目喔！" + (ptUnlocked ? "" : "（家長解鎖點數頁後可以強制新增）"), btns);
+  }
   const hhmm = t => { const d = new Date(t); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); };
   let rHistShow = 14;
   function renderRHist(){
@@ -5334,7 +5401,10 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     }
   }
 
+  let rRunDone = false;
   function openLesson(l){
+    { const mx = dayMax(), n = runsToday((l.scores || {})[curReader], "runs"); if (mx && n >= mx){ limitPop("📖「" + l.title + "」", n); return; } }
+    rRunDone = false;
     lesson = l; l.at = Date.now(); saveLessons(); rQueue = null; rFinished = false; showFbPick();
     try{ Object.defineProperty(l, "__openAt", {value: Date.now(), writable: true, configurable: true}); }catch(_){}
     $("readSetup").hidden = true; $("rHistCard").hidden = true; $("readCard").hidden = false; $("readDock").hidden = false; $("rDone").hidden = true; $("rPractice").hidden = false;
@@ -6151,7 +6221,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (wordCard) wordCard.hidden = true;
     const full = lesson.items.every((_, i) => (sc(lesson).stars[i] || 0) >= GATE); // 每一句都唸過（不能跳過）才算完整
     rLogAdd(Object.assign({r: curReader, t: Date.now(), l: lesson.id, lt: lesson.title, done: 1, avg: Math.round(avgOf(sc(lesson).stars) * 10) / 10}, full ? {full: 1} : {}));
-    if (full) doneEvent("read");
+    if (full && !rRunDone){ rRunDone = true; runAdd(sc(lesson), "runs"); saveLessons(); doneEvent("read"); }
     const me = sc(lesson), n = lesson.items.length, avg = avgOf(me.stars), done = Object.keys(me.stars).length;
     const weak = lesson.items.map((it, i) => ({it, i, s: me.stars[i] || 0})).filter(x => x.s < PASS);
     const scoredN = lesson.items.filter((_, i) => (me.stars[i] || 0) >= GATE).length;
@@ -6183,7 +6253,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       const nx = el("button","b big primary","▶ 下一單元（" + nextPart.part + "/" + nextPart.parts + "）"); nx.onclick = () => openLesson(nextPart);
       row.appendChild(nx);
     }
-    const again = el("button","b big","從頭再唸一次"); again.onclick = () => { rQueue = null; rGo(0, true); };
+    const again = el("button","b big","從頭再唸一次"); again.onclick = () => { const mx = dayMax(), n = runsToday(sc(lesson), "runs"); if (mx && n >= mx){ limitPop("📖「" + lesson.title + "」", n); return; } rRunDone = false; rQueue = null; rGo(0, true); };
     const back = el("button","b big","📚 回到課文列表"); back.onclick = () => $("rExit").click();
     box.appendChild(el("p", null, "🎁 這次得到 " + gotPts + " 點，目前共 " + ptBal(curReader) + " 點"));
     const nm = readerName(curReader), lt = lesson.title;
@@ -6483,8 +6553,10 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
         const url = await cropPic(ph.url, pc.box);
         if (url){ const id = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); await cardPut(id, url); words[k].pid = id; }
       }
-      $("voNote").textContent = "找到 " + words.length + " 個 👇";
+      const dd = dupVocab(words, curReader);
       voPhotos = []; voThumbs();
+      if (dd.block){ $("voNote").textContent = "🔁 這些單字之前已經拍過了"; dupPopVocab(dd, () => voOpenEditor({title: asText(r.title), words, __force: true})); return; }
+      $("voNote").textContent = "找到 " + words.length + " 個 👇" + (dd.dupN ? "（其中 " + dd.dupN + " 個以前拍過，存檔時會拿掉）" : "");
       voOpenEditor({title: asText(r.title), words});
     }catch(e){ $("voNote").textContent = "辨識失敗：" + e.message; }
     finally{ btn.disabled = false; }
@@ -6506,11 +6578,17 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   }
   $("voAdd").onclick = () => { const li = voRow({en: "", zh: ""}); $("voEditList").appendChild(li); li.querySelector("input").focus(); };
   $("voSave").onclick = () => {
-    const words = [...$("voEditList").children].map(li => { const o = li.__w || {}; const en = li.querySelector(".voen").value.trim(), zh = li.querySelector(".vozh").value.trim(); return en === o.en ? Object.assign({}, o, {zh}) : {en, zh}; }).filter(w => /[A-Za-z]/.test(w.en));
+    let words = [...$("voEditList").children].map(li => { const o = li.__w || {}; const en = li.querySelector(".voen").value.trim(), zh = li.querySelector(".vozh").value.trim(); return en === o.en ? Object.assign({}, o, {zh}) : {en, zh}; }).filter(w => /[A-Za-z]/.test(w.en));
     if (!words.length) return;
     const title = $("voTitle").value.trim() || words.slice(0, 3).map(w => w.en).join(", ");
     if (voEditing && voEditing.id){ Object.assign(voEditing, {title, words}); voSets = [voEditing, ...voSets.filter(x => x !== voEditing)]; }
-    else { const n = Math.ceil(words.length / 15); for (let k = n - 1; k >= 0; k--) voSets.unshift({id: Date.now() + k, title: n > 1 ? title + "（" + (k + 1) + "/" + n + "）" : title, words: words.slice(k * 15, (k + 1) * 15), scores: {}, at: Date.now(), owner: curReader}); voEditing = voSets[0]; }
+    else {
+      if (!(voEditing && voEditing.__force)){
+        const dd = dupVocab(words, curReader);
+        if (dd.block){ dupPopVocab(dd, () => { voEditing = voEditing || {}; voEditing.__force = true; $("voSave").click(); }); return; }
+        if (dd.dupN){ words = dd.fresh; ptToast("🔁 有 " + dd.dupN + " 個單字以前拍過了，這次只加新的 " + words.length + " 個"); }
+      }
+      const n = Math.ceil(words.length / 15); for (let k = n - 1; k >= 0; k--) voSets.unshift({id: Date.now() + k, title: n > 1 ? title + "（" + (k + 1) + "/" + n + "）" : title, words: words.slice(k * 15, (k + 1) * 15), scores: {}, at: Date.now(), owner: curReader}); voEditing = voSets[0]; }
     voSave(); $("voEdit").hidden = true; voRenderSets(); voOpenStudy(voEditing);
     // 沒有中文或音標的字，背景請 AI 補上
     voFillMissing(voEditing);
@@ -6665,7 +6743,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       const b2 = el("button","b primary","🗣 考唸"); b2.onclick = () => voStart(st, "say");
       const b3 = el("button","b primary","✏️ 考寫"); b3.onclick = () => voStart(st, "spell");
       const b4 = el("button","b","✏️ 改"); b4.onclick = () => voOpenEditor(st);
-      const b5 = el("button","b","🗑"); b5.onclick = () => { if (!confirm("刪掉「" + st.title + "」？")) return; try{ syncTomb("vocab", st.id); }catch(_){} voSets = voSets.filter(x => x !== st); st.words.forEach(w => { if (w.pid) cardDel(w.pid); }); voSave(); voRenderSets(); try{ voDexRender(); }catch(_){} };
+      const b5 = el("button","b","🗑"); b5.onclick = () => { if (!confirm("刪掉「" + st.title + "」？")) return; try{ syncTomb("vocab", st.id); }catch(_){} try{ dupRemember(st); }catch(_){} voSets = voSets.filter(x => x !== st); st.words.forEach(w => { if (w.pid) cardDel(w.pid); }); voSave(); voRenderSets(); try{ voDexRender(); }catch(_){} };
       row.append(t, b1, b2, b3, b4, b5); box.appendChild(row);
     });
   }
@@ -6698,10 +6776,11 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
 
   // ── 考試 ──
   function voStart(st, kind, only){
+    if (!only){ const mx = dayMax(), n = runsToday((st.scores || {})[curReader], "runs_" + kind); if (mx && n >= mx){ limitPop((kind === "say" ? "🗣 考唸" : "✏️ 考寫") + "「" + st.title + "」", n); return; } }
     voSet = st; voStartAt = Date.now();
     const idx = (only || st.words.map((_, i) => i)).slice();
     for (let i = idx.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
-    voQ = {kind, order: idx, k: 0, right: 0, wrong: [], tries: 0, hint: 0, done: false};
+    voQ = {kind, order: idx, k: 0, right: 0, wrong: [], tries: 0, hint: 0, done: false, whole: !only};
     $("voQTitle").textContent = (kind === "say" ? "🗣 考唸：" : "✏️ 考寫：") + st.title;
     $("voDone").hidden = true; $("voQBody").hidden = false;
     voShow("quiz"); voAsk();
@@ -6857,7 +6936,8 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     voQ.done = true; $("voQBody").hidden = true; $("voDock").hidden = true; $("voBarIn").style.width = "100%";
     voLog.push({r: curReader, t: Date.now(), set: voSet.id, title: voSet.title, kind: voQ.kind, right: r, total: n, wrong: voQ.wrong.map(i => voSet.words[i].en), full: full ? 1 : 0});
     if (voLog.length > 2000) voLog = voLog.slice(-2000); store.set("vocabLog", voLog);
-    if (full) try{ doneEvent("vocab"); }catch(_){}
+    if (voQ.whole){ runAdd(voSc(voSet), "runs_" + voQ.kind); voSave(); }
+    if (full && voQ.whole) try{ doneEvent("vocab"); }catch(_){}
     const box = $("voDone"); box.innerHTML = ""; box.hidden = false;
     const top = el("div"); top.style.cssText = "display:flex;justify-content:center;align-items:center;gap:12px";
     top.append(avatarEl(curReader, 64), el("div","big", r === n ? "🏆" : r >= n * 0.7 ? "🎉" : "💪")); box.appendChild(top);
@@ -6892,7 +6972,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
 
   // ════════════════ 🎁 點數 ════════════════
   var ptLog = store.get("points", []), ptUnlocked = false;
-  const PT_DEF = {star: 1, lesson: 10, word: 2, allword: 10, hw: 5, chatLine: 0.2, chatDone: 2};
+  const PT_DEF = {star: 1, lesson: 10, word: 2, allword: 10, hw: 5, chatLine: 0.2, chatDone: 2, dayMax: 2};
   const r1 = n => Math.round((+n || 0) * 10) / 10; // 點數最小單位 0.1
   var ptRules = Object.assign({}, PT_DEF, store.get("ptRules", {}));
   if (ptRules.ls3 == null){ ptRules.ls3 = ptRules.lesson == null ? 1 : +ptRules.lesson; ptRules.ls4 = ptRules.ls3 * 2; ptRules.ls5 = ptRules.ls3 * 3; } const LV_RULE_DEF = {lvA: 2, lvB: 20, lvC: -40, lvK: 0.01, lvD: 2}; Object.keys(LV_RULE_DEF).forEach(k => { if (ptRules[k] == null || !isFinite(+ptRules[k])) ptRules[k] = LV_RULE_DEF[k]; });
@@ -7668,7 +7748,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (await ptHash(p) === saved) return true;
     alert("密碼不對"); return false;
   }
-  function ptShowParent(){ try{ lockRefresh(); }catch(_){} $("ptParent").hidden = !ptUnlocked; $("ptLockBtn").hidden = ptUnlocked; ["star","ls3","ls4","ls5","word","allword","hw","chatLine","chatDone"].forEach(k => $("ptR_" + k).value = +ptRules[k] || 0); $("ptR_ck").value = ptRules.ck || CK_DEF; $("ptR_chestDay").value = chestDay(); tierSelects(); chestInfo(); taskCfgRender(); $("choreCfg").value = choreDefs().map(d => d.ic + " " + d.name + ", " + d.pts + ", " + (d.per === "wk" ? "每週" : "每天") + ", " + d.max).join("\n"); choreAdminRender(); $("ptR_ckHint").textContent = "點，用逗號分開。現在一輪 " + ckList().length + " 天" + (chestDay() ? "（跟寶箱天數一樣，最後一格開寶箱）" : "") + "，數字不夠會從頭重複"; ["lvA","lvB","lvC","lvK","lvD"].forEach(k => $("ptR_" + k).value = ptRules[k]); $("ptR_notify").value = ptRules.notify || "each"; $("ptR_nhour").value = String(ptRules.notifyHour || 20); $("ptR_nhour").hidden = $("ptR_notify").value !== "daily"; lvTableRender(); lvChestCfgRender(); }
+  function ptShowParent(){ try{ lockRefresh(); }catch(_){} $("ptParent").hidden = !ptUnlocked; $("ptLockBtn").hidden = ptUnlocked; ["star","ls3","ls4","ls5","word","allword","hw","chatLine","chatDone","dayMax"].forEach(k => $("ptR_" + k).value = +ptRules[k] || 0); $("ptR_ck").value = ptRules.ck || CK_DEF; $("ptR_chestDay").value = chestDay(); tierSelects(); chestInfo(); taskCfgRender(); $("choreCfg").value = choreDefs().map(d => d.ic + " " + d.name + ", " + d.pts + ", " + (d.per === "wk" ? "每週" : "每天") + ", " + d.max).join("\n"); choreAdminRender(); $("ptR_ckHint").textContent = "點，用逗號分開。現在一輪 " + ckList().length + " 天" + (chestDay() ? "（跟寶箱天數一樣，最後一格開寶箱）" : "") + "，數字不夠會從頭重複"; ["lvA","lvB","lvC","lvK","lvD"].forEach(k => $("ptR_" + k).value = ptRules[k]); $("ptR_notify").value = ptRules.notify || "each"; $("ptR_nhour").value = String(ptRules.notifyHour || 20); $("ptR_nhour").hidden = $("ptR_notify").value !== "daily"; lvTableRender(); lvChestCfgRender(); }
   (function(){ const h = $("ptR_nhour"); for (let i = 12; i <= 23; i++){ const o = el("option", null, "每天 " + i + ":00 傳"); o.value = String(i); h.appendChild(o); } })();
   $("ptR_notify").onchange = () => { ptRules.notify = $("ptR_notify").value; if (!ptRules.notifyHour) ptRules.notifyHour = 20; $("ptR_nhour").hidden = ptRules.notify !== "daily"; ptRulesSave(); $("ptNote").textContent = ptRules.notify === "daily" ? "✅ 改成每天 " + ptRules.notifyHour + ":00 傳一則總結（Apps Script 要先執行一次 setupDaily）" : ptRules.notify === "off" ? "✅ 不主動通知了，在 LINE 打「點數」或「總結」查詢" : "✅ 每次練完都通知"; };
   $("ptR_nhour").onchange = () => { ptRules.notifyHour = +$("ptR_nhour").value; ptRulesSave(); $("ptNote").textContent = "✅ 每天 " + ptRules.notifyHour + ":00 傳總結"; };
@@ -7701,7 +7781,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     });
   }
   $("ptPinChange").onclick = async () => { store.set("ptPin", ""); if (!(await ptAskPin())) alert("密碼沒有變更成功，請再設定一次"); };
-  ["star","ls3","ls4","ls5","word","allword","hw","chatLine","chatDone"].forEach(k => $("ptR_" + k).onchange = () => { ptRules[k] = Math.max(0, r1($("ptR_" + k).value)); $("ptR_" + k).value = ptRules[k]; ptRulesSave(); });
+  ["star","ls3","ls4","ls5","word","allword","hw","chatLine","chatDone","dayMax"].forEach(k => $("ptR_" + k).onchange = () => { ptRules[k] = Math.max(0, k === "dayMax" ? Math.floor(+$("ptR_" + k).value || 0) : r1($("ptR_" + k).value)); $("ptR_" + k).value = ptRules[k]; ptRulesSave(); });
   $("ptR_chestDay").onchange = () => { ptRules.chestDay = Math.max(0, Math.round(+$("ptR_chestDay").value || 0)); $("ptR_chestDay").value = ptRules.chestDay; ptRulesSave(); $("ptNote").textContent = ptRules.chestDay ? "✅ 連續簽到每 " + ptRules.chestDay + " 天開一次寶箱（簽到格子變成 " + ptRules.chestDay + " 格）" : "✅ 寶箱關掉了"; ptShowParent(); ptRender(true); };
   $("taskEdit").onclick = async () => {
     if (!ptUnlocked){ if (!(await ptAskPin())) return; ptUnlocked = true; ptShowParent(); }
