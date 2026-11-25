@@ -194,6 +194,13 @@
       <div id="apList"></div>
     </div>
     <div class="card">
+      <h2>📝 每題點數</h2>
+      <div class="muted">每個單元每天只有「第一次」考完會給點：答對幾題就給幾題的點數（數學計算題對一半算 0.5 題）。同一天再考同一個單元不會再給。</div>
+      <div id="qPtSet"></div>
+      <button class="btn" id="qPtSave">儲存每題點數</button>
+      <div class="note" id="qPtNote"></div>
+    </div>
+    <div class="card">
       <h2>⭐ 學習大冒險星星獎勵</h2>
       <div class="muted">每一關、每個星等「第一次」拿到時給點數；之後升星只補還沒給過的星等。4 顆星以上算過關。</div>
       <div id="starSet"></div>
@@ -331,8 +338,11 @@
   var cloud = {url: store.get("ptCloudUrl", ""), key: store.get("ptCloudKey", "")};
   var cloudOn = function(){ return !!(cloud.url && cloud.key); };
 
-  // ── 給點規則：一個單元、一天最多「及格 passPt + 滿分 fullPt」。pass 是「10 題要對幾題」的比例 ──
-  var rules = Object.assign({pass:8, passPt:1, fullPt:1}, store.get("subRules", {}));
+  // ── 給點規則：每題點數 qPt（依科目），每個單元每天只有第一次考完給點；pass 是「10 題要對幾題」的及格比例 ──
+  var rules = Object.assign({pass:8, qPt:{math:0.2, chi:0.1, sci:0.1, soc:0.1, eng:0.1}}, store.get("subRules", {}));
+  var SUBJ_ZH = {math:"數學", chi:"國語", sci:"自然", soc:"社會", eng:"英語"};
+  function qRate(subj){ var v = +((rules.qPt || {})[subj]); return isFinite(v) && v >= 0 ? v : (subj === "math" ? 0.2 : 0.1); }
+  var r1 = function(n){ return Math.round(n * 100) / 100; };
   var SUBJ_EMOJI = {sci:"🔬", math:"📐"};
 
   // ── 題庫 ──
@@ -944,8 +954,7 @@
     $("wrongNote").textContent = w ? "📌 之前錯的 " + w + " 題，這次會優先再出現" : "";
     $("startBtn").textContent = "✏️ 開始 " + qCount() + " 題";
     var got = earnedToday(), need = needScore(qCount());
-    $("ruleNote").textContent = (u.subject === "math" ? "得分 " + need + " 分以上（滿分 " + qCount() + "）" : "答對 " + need + " 題以上") +
-      " +" + rules.passPt + " 點，滿分再 +" + rules.fullPt + " 點（每個單元每天最多 " + (rules.passPt + rules.fullPt) + " 點）" + (got ? "。今天已經拿到 " + got + " 點 👍" : "") +
+    $("ruleNote").textContent = "每" + (u.subject === "math" ? "得 1 分" : "答對 1 題") + " +" + qRate(u.subject) + " 點（每個單元每天只有第一次考完會給點）" + (got ? "。今天這個單元已經拿到 " + got + " 點 👍，再練習不會加點，但會更熟喔" : "") +
       (fm ? (cur.scope === "all" ? "\n🗺️ 考完 AI 老師會講評、給 0～5 顆星，4 顆星以上過關。" : "\n🏝️ 及格就有星星（及格 1 顆、90% 以上 2 顆、滿分 3 顆）。小關全部通過會得到綠色寶箱。") : "") +
       (u.subject === "math" ? "\n計算題：答案對、過程也對才算 1 分；答案對但過程有問題，或方法對但算錯，算 0.5 分。" : "");
     $("ruleNote").style.whiteSpace = "pre-line";
@@ -1339,13 +1348,13 @@
     });
   }
   function drop(id){ store.set("subAppeals", store.get("subAppeals", []).filter(function(x){ return x.id !== id; })); renderParent(); }
-  $("parentBtn").onclick = function(){ if (askPin()){ renderParent(); renderStarSet(); show("parent"); } };
+  $("parentBtn").onclick = function(){ if (askPin()){ renderParent(); renderQPt(); renderStarSet(); show("parent"); } };
   $("parentBack").onclick = function(){ renderHome(); show("home"); };
 
   // ── 結果與點數 ──
   var earned = store.get("subEarned", {});
   function refBase(){ return "sub:" + cur.unit.subject + ":" + cur.unit.id + ":" + today() + ":" + kidName(); }
-  function earnedToday(){ var b = refBase(); return (earned[b + ":pass"] || 0) + (earned[b + ":full"] || 0); }
+  function earnedToday(){ var b = refBase(); return earned[b + ":q"] || 0; }
 
   function finish(){
     var pend = cur.res.filter(function(e){ return e && !e.done; });
@@ -1380,16 +1389,24 @@
     $("rScore").textContent = isMath ? "得分 " + s + " / " + n : "答對 " + s + " / " + n + " 題";
     var gain = [], base = refBase(), emo = SUBJ_EMOJI[cur.unit.subject] || "📚",
         why = cur.unit.subjName + "「" + cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "") + "」" + (isMath ? "得分 " : "答對 ") + s + "/" + n;
-    if (s >= need && !earned[base + ":pass"]) gain.push({ref: base + ":pass", amt: rules.passPt, why: why + " " + emo});
-    if (s >= n && !earned[base + ":full"]) gain.push({ref: base + ":full", amt: rules.fullPt, why: why + " 全對加碼 🏆"});
-    gain.forEach(function(g){ earned[g.ref] = g.amt; cur.gain += g.amt; send({action:"earn", name: kidName(), amt: g.amt, why: g.why, ref: g.ref}); });
-    if (gain.length) store.set("subEarned", earned);
+    // 每題給點：每個單元每天只有「第一次考完」給點（點數 = 得分 × 每題點數）；申訴成功分數變高時補差額
+    var key = base + ":q", amt = r1(s * qRate(cur.unit.subject)), mine = cur.qTok === cur.token;
+    if (!earned[key] && amt > 0 && !mine){
+      earned[key] = amt; cur.qTok = cur.token; cur.qPaid = amt; cur.gain += amt;
+      send({action:"earn", name: kidName(), amt: amt, why: why + " " + emo + "（每題 " + qRate(cur.unit.subject) + " 點）", ref: key});
+      store.set("subEarned", earned);
+    } else if (mine && amt > cur.qPaid){
+      var add = r1(amt - cur.qPaid); cur.fixN = (cur.fixN || 0) + 1;
+      earned[key] = amt; cur.qPaid = amt; cur.gain = r1(cur.gain + add);
+      send({action:"earn", name: kidName(), amt: add, why: why + " 申訴成功補點", ref: key + ":fix" + cur.fixN});
+      store.set("subEarned", earned);
+    }
     if (cur.gain > 0){
-      $("rPoints").innerHTML = '<span class="pill pop">+' + cur.gain + ' 點</span>' + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>');
-    } else if (s >= need){
-      $("rPoints").innerHTML = '<div class="muted">今天這個單元的點數已經拿過了，繼續練習會更熟喔！</div>';
+      $("rPoints").innerHTML = '<span class="pill pop">+' + r1(cur.gain) + ' 點</span>' + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>');
+    } else if (earned[key]){
+      $("rPoints").innerHTML = '<div class="muted">今天這個單元已經拿過 ' + earned[key] + ' 點了，明天再考第一次又有點數。繼續練習會更熟喔！</div>';
     } else {
-      $("rPoints").innerHTML = '<div class="muted">' + (isMath ? "得分 " + need + " 分以上" : "答對 " + need + " 題以上") + '就有點數，看看下面的錯題再試一次！</div>';
+      $("rPoints").innerHTML = '<div class="muted">每' + (isMath ? "得 1 分" : "答對 1 題") + "有 " + qRate(cur.unit.subject) + ' 點，看看下面的錯題再試一次！</div>';
     }
   }
   // ── 數學島：AI 老師講評、0～5 顆星、星等獎勵 ──
@@ -1512,6 +1529,17 @@
     h += '<div class="note">每一關地圖上都有一個寶箱。寶箱的獎品和機率跟英文口說練習一樣（綠 &lt; 藍 &lt; 紫 &lt; 金），要改獎品請到英文 App 的家長區。</div>';
     $("starSet").innerHTML = h; $("starNote").textContent = "";
   }
+  function renderQPt(){
+    $("qPtSet").innerHTML = Object.keys(SUBJ_ZH).map(function(k){ return '<div class="starRow"><span style="width:110px;color:var(--ink);font-size:19px">' + (SUBJ_EMOJI[k] || "") + " " + SUBJ_ZH[k] + '</span><input type="number" min="0" step="0.05" id="qp_' + k + '" value="' + qRate(k) + '"> 點／題</div>'; }).join("");
+    $("qPtNote").textContent = "";
+  }
+  $("qPtSave").onclick = function(){
+    var q = {};
+    Object.keys(SUBJ_ZH).forEach(function(k){ var v = Math.max(0, Math.round((+$("qp_" + k).value || 0) * 100) / 100); q[k] = v; });
+    rules = Object.assign({}, rules, {qPt: q}); delete rules.passPt; delete rules.fullPt;
+    store.set("subRules", rules); syncSoon(500);
+    $("qPtNote").textContent = "✅ 已儲存：" + Object.keys(q).map(function(k){ return SUBJ_ZH[k] + " " + q[k]; }).join("、");
+  };
   $("starSave").onclick = function(){
     var pts = [0];
     for (var k = 1; k <= 5; k++){ var v = Math.max(0, Math.round((+$("sp" + k).value || 0) * 10) / 10); pts.push(v); }
@@ -1953,7 +1981,7 @@
   addEventListener("subsync", function(){   // 收到別台的紀錄：記憶體裡的也換成新的
     wrongBook = store.get("subWrong", {}); stats = store.get("mathStats", {});
     starRules = Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {}));
-    rules = Object.assign({pass:8, passPt:1, fullPt:1}, store.get("subRules", {}));
+    rules = Object.assign({pass:8, qPt:{math:0.2, chi:0.1, sci:0.1, soc:0.1, eng:0.1}}, store.get("subRules", {}));
     if (!$("home").classList.contains("hide")) renderHome();
   });
   addEventListener("subsync-status", function(e){
