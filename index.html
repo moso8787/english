@@ -1419,7 +1419,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/26 第 53 版";
+  const APP_VER = "11/26 第 54 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -4912,6 +4912,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
   let curReader = store.get("reader", "");
   if (!readers.length){ readers = [{id: "r" + Date.now(), name: "小朋友"}]; }
   if (!readers.some(x => x.id === curReader)) curReader = readers[0].id;
+  // 網址帶 ?kid=<id>（從學習大冒險、學科測驗連過來）→ 直接用這個小朋友，並寫回 "reader"
+  try{ const qk = String(new URLSearchParams(location.search).get("kid") || "").toLowerCase(), r = qk && readers.find(x => String(x.id).toLowerCase() === qk || String(x.name).toLowerCase() === qk); if (r) curReader = r.id; }catch(_){}
   const saveReaders = () => { store.set("readers", readers); store.set("reader", curReader); };
   saveReaders();
   const readerName = id => (readers.find(x => x.id === id) || {}).name || "？";
@@ -5306,6 +5308,18 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     try{ if (typeof ptRender === "function" && mode === "pt") ptRender(true); }catch(_){}
     try{ showStrict(); }catch(_){} try{ showVStrict(); }catch(_){} try{ ckRender(); }catch(_){}
   }
+  // 🔗 三個 App 同一個小朋友：學習大冒險、學科測驗換人時會寫 localStorage "reader"，回到這頁就跟著換
+  function readerFollow(){
+    let rd; try{ rd = JSON.parse(localStorage.getItem("reader")); }catch(_){ return; }
+    if (!rd || rd === curReader) return;
+    const r = readers.find(x => x.id === rd); if (!r) return;
+    curReader = rd; onReaderChange();
+    if (lesson){ rQueue = null; try{ if (rFinished) rFinish(); else rGo(rIdx, false); }catch(_){} }
+    try{ ptToast("👋 現在是 " + r.name); }catch(_){}
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") readerFollow(); });
+  addEventListener("pageshow", readerFollow); addEventListener("focus", readerFollow);
+  addEventListener("storage", e => { if (e.key === "reader") readerFollow(); });
   function renderReaders(){
     try{ themeApply(); }catch(_){}
     const box = $("rReaders"); box.innerHTML = "";
@@ -7899,6 +7913,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (a.skip || b.skip) o.skip = Object.assign({}, b.skip || {}, a.skip || {});
     o.tries = Math.max(a.tries || 0, b.tries || 0);
     if ((b.at || 0) > (a.at || 0)){ o.at = b.at; o.pos = b.pos; }
+    if (a.runs || b.runs) o.runs = mergeRuns(a.runs, b.runs);
     return o;
   }
   function mergeVocabScore(a, b){
@@ -7906,8 +7921,11 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     const o = {say: Object.assign({}, a.say), spell: Object.assign({}, a.spell), at: Math.max(a.at || 0, b.at || 0)};
     ["say", "spell"].forEach(k => Object.entries((b[k] || {})).forEach(([i, v]) => { if (!(o[k][i] >= v)) o[k][i] = v; }));
     if (a.ft || b.ft){ o.ft = {}; ["say", "spell"].forEach(k => { o.ft[k] = Object.assign({}, (b.ft || {})[k] || {}, (a.ft || {})[k] || {}); }); }
+    ["runs_say", "runs_spell"].forEach(k => { if (a[k] || b[k]) o[k] = mergeRuns(a[k], b[k]); });
     return o;
   }
+  // 每天練習次數：日期新的那份為準；同一天取次數多的
+  function mergeRuns(a, b){ if (!a) return b; if (!b) return a; return a.d !== b.d ? (a.d > b.d ? a : b) : {d: a.d, n: Math.max(+a.n || 0, +b.n || 0)}; }
   function mergeScores(local, remote, fn){
     const out = Object.assign({}, local || {});
     Object.entries(remote || {}).forEach(([rid, s]) => { out[rid] = fn(out[rid], s); });
