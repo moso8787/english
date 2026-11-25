@@ -1,0 +1,1976 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>📐 數學測驗</title>
+<style>
+  :root{
+    --bg:#fff8ef; --card:#ffffff; --ink:#2d2a26; --muted:#7a7066; --line:#eadfce;
+    --pri:#ff8a3d; --pri-d:#e56f22; --ok:#2f9e63; --ok-bg:#e6f6ec; --bad:#d6453d; --bad-bg:#fde9e7;
+    --sci:#3d8bff; --sci-bg:#e8f1ff; --mid:#b7791f; --mid-bg:#fff4d6;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif; font-size:20px; line-height:1.55}
+  .wrap{max-width:820px; margin:0 auto; padding:16px 16px 60px}
+  h1{font-size:28px; margin:6px 0 14px}
+  h2{font-size:22px; margin:0 0 10px}
+  .muted{color:var(--muted); font-size:16px}
+  .card{background:var(--card); border:2px solid var(--line); border-radius:18px; padding:18px; margin:0 0 14px}
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  button{font:inherit; border:none; border-radius:14px; padding:14px 18px; cursor:pointer; min-height:54px; color:var(--ink)}
+  .btn{background:var(--pri); color:#fff; font-weight:700}
+  .btn:active{background:var(--pri-d)}
+  .btn2{background:#f1e8db; color:var(--ink)}
+  .btn[disabled],.btn2[disabled]{opacity:.45}
+  .kid{background:#fff; border:3px solid var(--line); color:var(--ink); font-weight:700; padding:10px 16px}
+  .kid.on{border-color:var(--pri); background:#fff1e5}
+  .unit{display:block; width:100%; text-align:left; background:var(--sci-bg); border:2px solid #cfe0ff; color:var(--ink); margin:0 0 10px}
+  .unit.math{background:#f3ecff; border-color:#ddd0fb}
+  .tag{display:inline-block; font-size:14px; padding:2px 10px; border-radius:99px; background:#fff; border:1px solid #cfe0ff; color:var(--sci); margin-right:6px}
+  .scope{background:#fff; border:3px solid var(--line); color:var(--ink); flex:1 1 180px}
+  .scope.on{border-color:var(--sci); background:var(--sci-bg)}
+  .bar{height:12px; background:#f1e8db; border-radius:99px; overflow:hidden; margin:6px 0 14px}
+  .bar i{display:block; height:100%; background:var(--pri); width:0; transition:width .3s}
+  .q{font-size:24px; font-weight:700; margin:4px 0 16px}
+  .opt{display:block; width:100%; text-align:left; background:#fff; border:3px solid var(--line); color:var(--ink); margin:0 0 10px; font-size:21px}
+  .opt.right{border-color:var(--ok); background:var(--ok-bg)}
+  .opt.wrong{border-color:var(--bad); background:var(--bad-bg)}
+  .tf{display:flex; gap:12px}
+  .tf .opt{text-align:center; font-size:30px; font-weight:800}
+  .exp{border-radius:14px; padding:12px 14px; margin:6px 0 12px; font-size:19px}
+  .exp.ok{background:var(--ok-bg)} .exp.no{background:var(--bad-bg)} .exp.mid{background:var(--mid-bg)} .exp.wait{background:#f1e8db}
+  .exp p{margin:6px 0}
+  .big{font-size:56px; text-align:center; margin:4px 0}
+  .center{text-align:center}
+  .rev{border-top:1px dashed var(--line); padding:10px 0}
+  .pill{display:inline-block; padding:4px 12px; border-radius:99px; background:#fff1e5; color:var(--pri-d); font-weight:700; font-size:17px}
+  .note{font-size:15px; color:var(--muted); margin-top:8px}
+  .hide{display:none !important}
+  .pop{animation:pop .5s ease-out}
+  @keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+  /* 分數直式顯示 */
+  .fr{display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center; font-size:.82em; line-height:1.15; margin:0 2px}
+  .fr>span:first-child{border-bottom:2px solid currentColor; padding:0 3px}
+  .fig{text-align:center; margin:0 0 12px}
+  /* 數學作答區 */
+  .modes{margin:0 0 10px}
+  .mode{flex:1 1 200px; background:#fff; border:3px solid var(--line); font-weight:700}
+  .mode.on{border-color:#8b5cf6; background:#f3ecff}
+  .tools{gap:8px; margin:0 0 8px}
+  .tools button{min-height:48px; padding:8px 14px; font-size:17px; background:#f1e8db}
+  .tools button.on{background:#f3ecff; box-shadow:inset 0 0 0 2px #8b5cf6}
+  .padwrap{position:relative; border:2px solid var(--line); border-radius:14px; overflow:hidden; background-color:#fff;
+    background-image:linear-gradient(#e9eef6 1px, transparent 1px), linear-gradient(90deg, #e9eef6 1px, transparent 1px); background-size:32px 32px}
+  .padwrap canvas{display:block; width:100%; touch-action:none; -webkit-user-select:none; user-select:none}
+  .photoPrev{display:block; max-width:100%; max-height:420px; margin:10px auto 0; border-radius:12px; border:2px solid var(--line)}
+  .ansrow{display:flex; align-items:center; gap:10px; margin:14px 0 8px; font-weight:700}
+  .ansbox{flex:1; min-height:64px; border:3px solid #8b5cf6; border-radius:14px; background:#fff; padding:6px 14px; font-size:30px; font-weight:800; display:flex; align-items:center}
+  .ansbox:empty::before{content:"按下面的鍵輸入答案"; color:#b9b0a5; font-size:18px; font-weight:400}
+  .keys{display:grid; grid-template-columns:repeat(6,1fr); gap:8px}
+  .keys button{min-height:58px; font-size:26px; font-weight:700; background:#f1e8db; padding:6px}
+  .keys button.fn{background:#ece4f8; font-size:20px}
+  .keys button.wide{grid-column:span 3}
+  .appeal{background:#fff; border:2px dashed var(--muted); font-size:17px; min-height:46px; padding:8px 14px; margin-top:4px}
+  .dots{font-size:19px; letter-spacing:3px; margin:-6px 0 10px; min-height:24px}
+  .big2{flex:1 1 200px; min-height:72px; font-size:22px}
+  .purple{background:#8b5cf6} .purple:active{background:#6d4bd8}
+  .apBox{background:#faf6ff; border:2px solid #ddd0fb; border-radius:14px; padding:12px; margin-top:8px}
+  .chip{background:#fff; border:2px solid var(--line); font-size:17px; min-height:44px; padding:6px 12px; margin:6px 0}
+  .chip.on{border-color:#8b5cf6; background:#f3ecff}
+  .apText{width:100%; min-height:80px; font:inherit; font-size:18px; border:2px solid var(--line); border-radius:12px; padding:8px; margin:6px 0 10px}
+  .sel{width:100%; font:inherit; font-size:19px; padding:10px; border:2px solid var(--line); border-radius:12px; background:#fff; margin-top:6px}
+  .thumbs{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+  .thumbs div{position:relative} .thumbs img{height:130px; border-radius:10px; border:2px solid var(--line)}
+  .thumbs button{position:absolute; top:-8px; right:-8px; min-height:34px; width:34px; padding:0; border-radius:99px; background:var(--bad); color:#fff; font-size:16px}
+  .hwItem{border-top:1px dashed var(--line); padding:12px 0}
+  .hwItem .st{font-weight:800}
+  .reveal{background:#fff; border:2px solid var(--line); font-size:16px; min-height:40px; padding:4px 12px; margin-top:6px}
+  /* 圖表 */
+  .stSum{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+  .stSum div{flex:1 1 140px; background:#faf6ff; border-radius:14px; padding:10px 14px}
+  .stSum b{display:block; font-size:30px}
+  .legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:15px; color:var(--muted); margin:8px 0 12px}
+  .lv{display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:4px; vertical-align:-1px}
+  .lv-g{background:#2f9e63} .lv-y{background:#e3a008} .lv-r{background:#d6453d} .lv-n{background:#ddd5c9}
+  .hb{display:block; width:100%; text-align:left; background:none; padding:6px 0; min-height:0; border-radius:0}
+  .hb .lab{display:flex; justify-content:space-between; font-size:17px; gap:8px}
+  .hb .lab span:last-child{color:var(--muted); white-space:nowrap}
+  .hb .track{height:14px; background:#f1ebe2; border-radius:4px; margin-top:4px; overflow:hidden}
+  .hb .fill{height:100%; border-radius:0 4px 4px 0}
+  .sub{padding-left:16px; border-left:3px solid #ece4f8; margin:4px 0 10px}
+  .sub .hb .lab{font-size:15px}
+  .cols{display:flex; align-items:flex-end; gap:4px; height:140px; border-bottom:1px solid var(--line); padding-top:18px}
+  .cols div{flex:1; position:relative; background:#8b5cf6; border-radius:4px 4px 0 0; min-height:0}
+  .cols div span{position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:12px; color:var(--muted)}
+  .colLab{display:flex; gap:4px; font-size:11px; color:var(--muted)} .colLab span{flex:1; text-align:center}
+  .tstars{font-size:46px; text-align:center; color:#f0b400; letter-spacing:4px; margin:2px 0 4px}
+  .tstars .off{color:#ddd5c9}
+  .starRow{display:flex; align-items:center; gap:10px; margin:8px 0}
+  .starRow span{width:110px; color:#f0b400; font-size:22px}
+  .starRow input,.starRow select{font:inherit; font-size:19px; padding:8px; border:2px solid var(--line); border-radius:10px; width:110px}
+  .apImg{max-width:100%; border:2px solid var(--line); border-radius:10px; margin:6px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📐 數學測驗</h1>
+
+  <!-- 首頁 -->
+  <div id="home">
+    <div class="card">
+      <h2>誰要練習？</h2>
+      <div class="row" id="kids"></div>
+      <div class="note" id="cloudNote"></div>
+    </div>
+    <div class="row" style="margin:0 0 14px">
+      <button class="btn big2" id="hwBtn">📸 作業檢查</button>
+      <button class="btn big2 purple" id="statsBtn">📊 學習狀況</button>
+    </div>
+    <button class="btn big2 hide" id="mapBtn" style="width:100%; margin:0 0 14px; background:#1f8fd0">🗺️ 學習大冒險地圖</button>
+    <div class="card" id="unitsCard">
+      <h2 id="unitsTitle">選單元</h2>
+      <div id="units"></div>
+    </div>
+    <button class="btn2" id="parentBtn">👨‍👩‍👧 家長區</button>
+  </div>
+
+  <!-- 作業檢查 -->
+  <div id="hw" class="hide">
+    <div class="card">
+      <h2>📸 作業檢查</h2>
+      <div class="muted">寫完習作或考卷，拍照給 AI 老師檢查。AI 會指出哪幾題要再看一次、給提示，不會直接給答案。</div>
+      <div style="margin-top:12px; font-weight:700">是哪個單元？</div>
+      <select id="hwUnit" class="sel"></select>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="hwAdd" style="flex:1">📷 拍一頁（最多 3 頁）</button>
+      </div>
+      <input type="file" id="hwIn" accept="image/*" class="hide">
+      <div class="thumbs" id="hwThumbs"></div>
+      <div class="note">拍正、拍亮、整頁拍進去。每一題的題號要看得到。</div>
+      <button class="btn" id="hwGo" style="width:100%; margin-top:12px" disabled>🔍 開始檢查</button>
+      <div class="note" id="hwNote"></div>
+    </div>
+    <div id="hwResult"></div>
+    <button class="btn2" id="hwBack">← 回首頁</button>
+  </div>
+
+  <!-- 學習狀況 -->
+  <div id="stats" class="hide">
+    <div class="card">
+      <h2 id="stTitle">📊 學習狀況</h2>
+      <div class="row" id="stKids"></div>
+      <div id="stSummary" class="stSum"></div>
+    </div>
+    <div class="card">
+      <h2>各單元掌握度</h2>
+      <div class="muted">算最近每個主題練習的平均分數。點單元可以看裡面的小主題。</div>
+      <div class="legend"><span><i class="lv lv-g"></i>⭐ 熟練 80% 以上</span><span><i class="lv lv-y"></i>🟡 還可以 60～79%</span><span><i class="lv lv-r"></i>🔴 要加強 60% 以下</span><span><i class="lv lv-n"></i>還沒練</span></div>
+      <div id="stUnits"></div>
+    </div>
+    <div class="card">
+      <h2>🎯 最需要加強</h2>
+      <div id="stWeak"></div>
+    </div>
+    <div class="card">
+      <h2>常犯的錯</h2>
+      <div class="muted">AI 批改算式和檢查作業時記下的錯誤類型（次數）。</div>
+      <div id="stErr"></div>
+    </div>
+    <div class="card">
+      <h2>最近 14 天練習題數</h2>
+      <div id="stDays"></div>
+    </div>
+    <button class="btn2" id="stBack">← 回首頁</button>
+  </div>
+
+  <!-- 家長區 -->
+  <div id="parent" class="hide">
+    <div class="card">
+      <h2>🙋 小朋友的申訴</h2>
+      <div class="muted">小朋友覺得 AI 看錯算式時會送到這裡。看原圖決定要不要補分。</div>
+      <div id="apList"></div>
+    </div>
+    <div class="card">
+      <h2>⭐ 學習大冒險星星獎勵</h2>
+      <div class="muted">每一關、每個星等「第一次」拿到時給點數；之後升星只補還沒給過的星等。4 顆星以上算過關。</div>
+      <div id="starSet"></div>
+      <button class="btn" id="starSave">儲存獎勵設定</button>
+      <div class="note" id="starNote"></div>
+    </div>
+    <button class="btn2" id="parentBack">← 回首頁</button>
+  </div>
+
+  <!-- 單元頁 -->
+  <div id="unitPage" class="hide">
+    <div class="card">
+      <div><span class="tag" id="uTag"></span></div>
+      <h2 id="uTitle" style="margin-top:8px"></h2>
+      <div class="muted" id="uDesc"></div>
+    </div>
+    <div class="card">
+      <h2>這次要考哪個範圍？</h2>
+      <div class="row" id="scopes"></div>
+      <div class="note" id="wrongNote"></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <button class="btn" id="startBtn" style="flex:1 1 220px">✏️ 開始 10 題</button>
+        <button class="btn2" id="aiBtn" style="flex:1 1 220px">✨ 請 AI 出新題目</button>
+      </div>
+      <div class="note" id="ruleNote"></div>
+      <div class="note" id="aiNote"></div>
+    </div>
+    <button class="btn2" id="backHome">← 回到單元列表</button>
+  </div>
+
+  <!-- 作答 -->
+  <div id="quiz" class="hide">
+    <div class="row" style="justify-content:space-between">
+      <span class="pill" id="qCount"></span>
+      <span class="muted" id="qTopic"></span>
+    </div>
+    <div class="bar"><i id="qBar"></i></div>
+    <div class="dots" id="qDots"></div>
+    <div class="card">
+      <div class="q" id="qText"></div>
+      <div class="fig" id="qFig"></div>
+      <div id="qOpts"></div>
+
+      <!-- 數學：寫算式 -->
+      <div id="workArea" class="hide">
+        <div class="row modes">
+          <button class="mode" id="mPad">✏️ 寫在 iPad 上</button>
+          <button class="mode" id="mPhoto">📷 寫在紙上拍照</button>
+        </div>
+        <div id="padBox">
+          <div class="row tools">
+            <button id="tPen" class="on">✏️ 筆</button>
+            <button id="tEraser">🧽 橡皮擦</button>
+            <button id="tUndo">↩️ 復原</button>
+            <button id="tClear">🗑️ 全部擦掉</button>
+            <button id="tMore">⬇️ 加長</button>
+            <button id="tFinger"></button>
+          </div>
+          <div class="padwrap" id="padWrap"><canvas id="pad"></canvas></div>
+          <div class="note">直式、橫式都可以，算式寫清楚，AI 老師會一步一步看。</div>
+        </div>
+        <div id="photoBox" class="hide">
+          <button class="btn" id="photoBtn" style="width:100%">📷 拍照 / 選照片</button>
+          <input type="file" id="photoIn" accept="image/*" class="hide">
+          <img id="photoPrev" class="photoPrev hide" alt="">
+          <div class="note">把這一題的算式寫在紙上，整題都要拍進去。光線亮一點、拍正一點，AI 比較看得清楚。</div>
+        </div>
+        <div class="ansrow"><span>答案</span><div class="ansbox" id="ansBox"></div><span id="ansUnit"></span></div>
+        <div class="keys" id="keys"></div>
+        <div class="note">分數打 3/4（四分之三）；帶分數按「又」，例如 1又3/4；比用「:」，例如 3:4。</div>
+        <button class="btn" id="submitW" style="width:100%; margin-top:12px">✅ 交出這題</button>
+        <div class="note" id="wNote"></div>
+      </div>
+
+      <div id="qExp"></div>
+      <button class="btn hide" id="nextBtn" style="width:100%">下一題 →</button>
+    </div>
+    <button class="btn2" id="quitBtn">放棄這次</button>
+  </div>
+
+  <!-- 結果 -->
+  <div id="result" class="hide">
+    <div class="card center">
+      <div class="big pop" id="rEmoji"></div>
+      <h2 id="rScore"></h2>
+      <div id="rPoints"></div>
+    </div>
+    <div class="card hide" id="rTeacher"></div>
+    <div class="card" id="rReview"></div>
+    <div class="row">
+      <button class="btn" id="againBtn" style="flex:1">再練一次</button>
+      <button class="btn2" id="toUnit" style="flex:1">回單元</button>
+      <button class="btn hide" id="toMap" style="flex:1 1 100%; background:#1f8fd0">🗺️ 回地圖</button>
+    </div>
+  </div>
+</div>
+
+<script src="sub-sync.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var store = {
+    get: function(k, d){ try{ var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+    set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+  };
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function shuffle(a){ a = a.slice(); for (var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function today(){ var d = new Date(); return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  var nameKey = function(n){ return String(n || "").toLowerCase(); };
+  // ── 數學島地圖：地圖用 ?unit=m6a-3&scope=d1&kid=yuna&back=math-map.html 開進來（scope 是小關，沒給就是整個單元）──
+  var MAP_PAGE = "math-map.html";   // 數學島地圖的檔名（跟這個檔案放在同一個資料夾）
+  var MAP = (function(){
+    var p = {};
+    location.search.replace(/^\?/, "").split("&").forEach(function(kv){
+      if (!kv) return; var i = kv.indexOf("=");
+      try{ p[decodeURIComponent(i < 0 ? kv : kv.slice(0, i))] = i < 0 ? "" : decodeURIComponent(kv.slice(i + 1).replace(/\+/g, " ")); }catch(e){}
+    });
+    var back = /^[\w.\-]+\.html$/.test(p.back || "") ? p.back : "";
+    return {unit: p.unit || "", scope: p.scope || "all", kid: p.kid || "", back: back};
+  })();
+  // 題目裡的 3/4、1又3/4 顯示成上下排的分數
+  function frac(n, d){ return '<span class="fr"><span>' + n + '</span><span>' + d + '</span></span>'; }
+  function fmt(s){
+    return esc(s).replace(/(\d+)又(\d+)\/(\d+)/g, function(_, w, n, d){ return w + frac(n, d); })
+                 .replace(/(\d+)\/(\d+)/g, function(_, n, d){ return frac(n, d); });
+  }
+
+  // ── 共用資料（只讀）：小朋友名單、雲端、Gemini 金鑰 ──
+  var readers = window.SubSync ? SubSync.readers() : store.get("readers", []);   // 這台沒開過英文 App 就用雲端同步下來的名單
+  if (!readers.length) readers = [{id:"yuna", name:"Yuna"}, {id:"howard", name:"Howard"}];
+  var grades = store.get("subGrades", {yuna:6, howard:4});
+  var cloud = {url: store.get("ptCloudUrl", ""), key: store.get("ptCloudKey", "")};
+  var cloudOn = function(){ return !!(cloud.url && cloud.key); };
+
+  // ── 給點規則：一個單元、一天最多「及格 passPt + 滿分 fullPt」。pass 是「10 題要對幾題」的比例 ──
+  var rules = Object.assign({pass:8, passPt:1, fullPt:1}, store.get("subRules", {}));
+  var SUBJ_EMOJI = {sci:"🔬", math:"📐"};
+
+  // ── 題庫 ──
+  // type: "tf" 是非、"mc" 選擇、"w" 寫算式（ans 是字串：12、2.5、3/4、1又3/4、3:4）
+  var UNITS = [{
+    id: "sci4a-3", grade: 4, subject: "sci", subjName: "自然", book: "南一 4上",
+    title: "三、光和能源",
+    desc: "光源、看見物體、光的直線前進、影子、光的反射、能源和節能減碳",
+    scopes: [
+      {id:"all", name:"整個單元", topics:["src","line","shadow","reflect","energy"]},
+      {id:"light", name:"只有「光」的部分", topics:["src","line","shadow","reflect"]},
+      {id:"energy", name:"只有「能源」的部分", topics:["energy"]}
+    ],
+    topicName: {src:"光源和看見物體", line:"光的直線前進", shadow:"影子", reflect:"光的反射", energy:"能源和節能減碳"},
+    bank: [
+      {t:"src", type:"tf", q:"本身會發光的物體，叫做「光源」。", ans:true, exp:"像太陽、點亮的燈、燃燒的蠟燭，自己會發光，都是光源。"},
+      {t:"src", type:"tf", q:"月亮晚上看起來很亮，所以月亮是光源。", ans:false, exp:"月亮自己不會發光，我們看到的月光是月球表面「反射」的太陽光。"},
+      {t:"src", type:"tf", q:"在完全沒有光的房間裡，眼睛還是可以看清楚桌上的書。", ans:false, exp:"要有光照到物體、再進到眼睛，我們才看得見。完全沒有光就看不見。"},
+      {t:"src", type:"mc", q:"下列哪一個是光源？", o:["鏡子","月亮","點亮的手電筒","白色的紙"], ans:2, exp:"點亮的手電筒自己會發光。鏡子、月亮、白紙都只是反射別的光。"},
+      {t:"src", type:"mc", q:"我們能看見課本上的字，是因為：", o:["課本自己會發光","光照到課本，再進到我們的眼睛","眼睛會發出光","課本是透明的"], ans:1, exp:"光照到物體後進入眼睛，我們才看得到東西。"},
+      {t:"src", type:"tf", q:"螢火蟲身上會發光的部位，也算是一種光源。", ans:true, exp:"螢火蟲自己會發光，所以是光源。"},
+      {t:"src", type:"mc", q:"晚上停電時，下列哪一個方法「不能」幫助照明？", o:["打開手電筒","點蠟燭","打開收音機","打開緊急照明燈"], ans:2, exp:"收音機會發出聲音，不會發出照明用的光。"},
+      {t:"src", type:"mc", q:"下列哪一個「不是」光源？", o:["太陽","燃燒的火把","日光燈","雪地"], ans:3, exp:"雪地很亮是因為反射陽光，雪自己不會發光。"},
+
+      {t:"line", type:"tf", q:"光是直線前進的。", ans:true, exp:"光在空氣中會一直沿著直線前進。"},
+      {t:"line", type:"mc", q:"下列哪一個情形，最能看出光是直線前進的？", o:["陽光從樹葉縫隙照下來，一條一條的光束","在鏡子裡看到自己","水面上的倒影","下雨後的彩虹"], ans:0, exp:"樹林裡一條條直直的光束，就是光直線前進的證明。鏡子和倒影是反射。"},
+      {t:"line", type:"mc", q:"把雷射筆的光射進充滿煙的透明盒子，光的路線會是：", o:["彎彎曲曲","一直線","鋸齒形","繞圈圈"], ans:1, exp:"煙讓我們看得見光走的路，可以看到光是一直線前進。"},
+      {t:"line", type:"tf", q:"用兩本書中間留一條細縫，陽光穿過細縫後會變得彎彎曲曲。", ans:false, exp:"光穿過細縫後，還是直直地前進。"},
+      {t:"line", type:"mc", q:"為什麼玩雷射筆時，絕對不能照別人的眼睛？", o:["會讓雷射筆壞掉","光太強會傷害眼睛","會讓光變彎","會產生影子"], ans:1, exp:"雷射光很集中、很強，照到眼睛會受傷。"},
+      {t:"line", type:"tf", q:"門縫裡透出來的燈光，看起來也是一直線。", ans:true, exp:"光直線前進，從窄窄的門縫出來就像一條直線。"},
+      {t:"line", type:"mc", q:"汽車大燈在起霧的晚上照出來的光束，是什麼形狀？", o:["直直的","圓圈","波浪","螺旋"], ans:0, exp:"霧裡的小水滴讓光的路線看得見，光束是直的。"},
+
+      {t:"shadow", type:"mc", q:"影子是怎麼形成的？", o:["光被不透明的物體擋住","光被鏡子反射","物體自己發出黑色的光","光遇到物體會轉彎"], ans:0, exp:"光直線前進，被不透明的物體擋住，後面照不到光的地方就是影子。"},
+      {t:"shadow", type:"tf", q:"光遇到不透明的物體會繞過去，所以不會產生影子。", ans:false, exp:"光不會繞過物體，被擋住的地方就形成影子。"},
+      {t:"shadow", type:"mc", q:"早上太陽在東方，操場上旗桿的影子會在旗桿的哪一邊？", o:["東邊","西邊","南邊","北邊"], ans:1, exp:"影子會在物體跟光源「相反」的那一邊。太陽在東，影子在西。"},
+      {t:"shadow", type:"mc", q:"傍晚太陽在西方，你站在操場上，影子會在你的哪一邊？", o:["東邊","西邊","頭頂上","沒有影子"], ans:0, exp:"太陽在西，影子在相反的東邊。"},
+      {t:"shadow", type:"tf", q:"影子會出現在物體和光源的同一邊。", ans:false, exp:"影子在物體的另一邊，也就是背對光源的那一邊。"},
+      {t:"shadow", type:"mc", q:"手電筒從玩偶的右邊照過去，玩偶的影子會在哪裡？", o:["玩偶的右邊","玩偶的左邊","玩偶的上面","不會有影子"], ans:1, exp:"光從右邊來，被玩偶擋住，影子就落在左邊。"},
+
+      {t:"reflect", type:"tf", q:"光照到鏡子會改變前進的方向，這叫做光的反射。", ans:true, exp:"光碰到鏡子這類光滑的表面會被彈回來、改變方向，這就是反射。"},
+      {t:"reflect", type:"mc", q:"在平靜的湖面上可以看到樹的倒影，是因為：", o:["光的反射","光的直線前進穿透水","光會繞彎","水會自己發光"], ans:0, exp:"平靜的水面像鏡子一樣，會反射光，所以有倒影。"},
+      {t:"reflect", type:"mc", q:"下列哪一種東西最「不」容易清楚反射光？", o:["鏡子","不鏽鋼湯匙","黑色絨布","平靜的水面"], ans:2, exp:"光滑、亮亮的表面容易反射光；黑色、粗粗的絨布幾乎不反射。"},
+      {t:"reflect", type:"tf", q:"光被鏡子反射以後，就不再直線前進了。", ans:false, exp:"反射只是改變方向，反射後的光還是直線前進。"},
+      {t:"reflect", type:"mc", q:"道路轉彎處的反光鏡，可以讓我們看到轉角的車子，是利用：", o:["光的反射","光的直線前進","影子","能源"], ans:0, exp:"反光鏡把轉角另一邊的光反射到我們眼睛裡。"},
+      {t:"reflect", type:"mc", q:"晚上騎腳踏車穿反光背心比較安全，是利用光的什麼特性？", o:["反射","形成影子","光源","直線穿透"], ans:0, exp:"車燈照到反光背心，光被反射回去，駕駛就看得到你。"},
+      {t:"reflect", type:"tf", q:"揉皺的鋁箔紙也會反光，但是看不到清楚的影像。", ans:true, exp:"皺皺的表面會把光往四面八方反射，所以只看到亮亮的，看不到清楚的影像。"},
+      {t:"reflect", type:"mc", q:"想用鏡子把陽光反射到牆上的某一個點，應該怎麼做？", o:["把鏡子遮起來","調整鏡子的角度和位置","換成黑色的紙","把鏡子放進水裡"], ans:1, exp:"反射的方向跟鏡子的角度有關，轉一轉鏡子就能改變光照到的位置。"},
+      {t:"reflect", type:"tf", q:"玩鏡子反射陽光的遊戲時，可以把光照到同學的眼睛。", ans:false, exp:"反射的陽光很強，照到眼睛會受傷，一定不可以。"},
+      {t:"reflect", type:"mc", q:"開車時從後照鏡看到後面的車，是因為：", o:["光的反射","光的直線前進而已","鏡子會發光","影子"], ans:0, exp:"後照鏡把後方的光反射到駕駛的眼睛裡。"},
+
+      {t:"energy", type:"tf", q:"太陽可以提供光和熱，是一種能源。", ans:true, exp:"太陽光可以照明、可以加熱，也能用來發電，是很重要的能源。"},
+      {t:"energy", type:"mc", q:"下列哪一種是「可再生能源」（用了還會再有）？", o:["太陽能","石油","煤","天然氣"], ans:0, exp:"太陽每天都會照，太陽能用不完。石油、煤、天然氣用完就沒有了。"},
+      {t:"energy", type:"tf", q:"石油和煤用完以後，很快就會再生出來。", ans:false, exp:"石油和煤要非常非常久才會形成，是「不可再生能源」。"},
+      {t:"energy", type:"mc", q:"太陽能板可以把陽光變成什麼？", o:["電","水","石油","聲音"], ans:0, exp:"太陽能板能把光變成電，叫做太陽能發電。"},
+      {t:"energy", type:"mc", q:"下列哪一種做法可以節約能源？", o:["離開房間隨手關燈","冷氣開到最冷","冰箱門一直開著","電視沒人看還開著"], ans:0, exp:"不用的電器關掉，就能少用電、節約能源。"},
+      {t:"energy", type:"tf", q:"風力發電是利用風來轉動風車發電。", ans:true, exp:"風吹動大風車，就能產生電。"},
+      {t:"energy", type:"mc", q:"「節能減碳」裡的「減碳」，是指減少排放什麼？", o:["氧氣","二氧化碳","水蒸氣","灰塵"], ans:1, exp:"減碳是減少二氧化碳的排放，讓地球不要變得太熱。"},
+      {t:"energy", type:"tf", q:"能源是用不完的，所以不需要節省。", ans:false, exp:"很多能源是有限的，用完就沒有了，所以要節約。"},
+      {t:"energy", type:"mc", q:"下列哪一個「不是」可再生能源？", o:["風力","水力","太陽能","煤"], ans:3, exp:"煤是不可再生能源；風、水、太陽都會一直有。"},
+      {t:"energy", type:"mc", q:"學校離家很近，用哪一種方式上學最節能減碳？", o:["走路","請家人開車","坐計程車","騎機車"], ans:0, exp:"走路不用燒油、不排放二氧化碳，最環保。"},
+      {t:"energy", type:"tf", q:"燃燒煤和石油會產生二氧化碳。", ans:true, exp:"燃燒煤、石油、天然氣都會排放二氧化碳。"},
+      {t:"energy", type:"tf", q:"使用太陽能熱水器，可以減少用電或用瓦斯。", ans:true, exp:"太陽能熱水器用陽光把水加熱，就能少用電和瓦斯。"}
+    ]
+  }];
+
+  // ── 數學 6 上（翰林）：題目都是依單元重點自己出的練習題，不是課本原題 ──
+  function W(t, q, ans, u, sol, fig){ return {t:t, type:"w", q:q, ans:ans, u:u || "", sol:sol, fig:fig}; }
+  function M(t, q, o, ans, exp){ return {t:t, type:"mc", q:q, o:o, ans:ans, exp:exp}; }
+  function T(t, q, ans, exp){ return {t:t, type:"tf", q:q, ans:ans, exp:exp}; }
+  var MATH6A = [
+    {no:1, title:"一、最大公因數與最小公倍數", desc:"質數與合數、質因數分解、最大公因數、最小公倍數、應用題",
+     topicName:{prime:"質數與合數", pf:"質因數分解", gcd:"最大公因數", lcm:"最小公倍數", app:"應用與解題"},
+     bank:[
+      M("prime", "下列哪一個是質數？", ["21","27","29","33"], 2, "29 只有 1 和 29 兩個因數，是質數。21=3×7、27=3×9、33=3×11 都是合數。"),
+      M("prime", "1 是質數還是合數？", ["質數","合數","都不是","都是"], 2, "質數要剛好有 2 個因數，1 只有 1 個因數，所以 1 不是質數也不是合數。"),
+      T("prime", "2 是唯一的偶數質數。", true, "其他偶數都有因數 2，所以都是合數，只有 2 是質數。"),
+      W("pf", "用短除法把 180 做質因數分解（寫在作答區）。答案格請填：180 的質因數裡，最大的是多少？", "5", "", "180 = 2×2×3×3×5，最大的質因數是 5。"),
+      W("gcd", "用短除法求 48 和 72 的最大公因數。", "24", "", "48 = 2×2×2×2×3，72 = 2×2×2×3×3，共同的是 2×2×2×3 = 24。"),
+      W("lcm", "求 12 和 18 的最小公倍數。", "36", "", "短除法：12、18 同除以 2、再除以 3，剩 2 和 3。最小公倍數 = 2×3×2×3 = 36。"),
+      W("lcm", "求 8、12、20 的最小公倍數。", "120", "", "8 = 2×2×2，12 = 2×2×3，20 = 2×2×5，最小公倍數 = 2×2×2×3×5 = 120。"),
+      M("gcd", "兩個數的最大公因數是 1，這兩個數叫做：", ["互質","質數","合數","倍數"], 0, "最大公因數是 1 的兩個數叫做「互質」，例如 8 和 9。"),
+      W("app", "有 36 顆蘋果和 54 顆橘子，要平分給一些小朋友，每人拿到的蘋果一樣多、橘子也一樣多，而且都沒有剩。最多可以分給幾位小朋友？", "18", "位", "人數要同時是 36 和 54 的因數，最多就是最大公因數。36 和 54 的最大公因數是 18，所以最多 18 位。"),
+      W("app", "A 公車每 12 分鐘發一班，B 公車每 15 分鐘發一班。早上 7:00 兩班車同時發車，至少再過幾分鐘兩班車會再同時發車？", "60", "分鐘", "要同時是 12 和 15 的倍數，最小的就是最小公倍數 60，所以 60 分鐘後（8:00）。"),
+      W("app", "一張長 24 公分、寬 18 公分的長方形紙，要剪成大小一樣、而且最大的正方形，紙不能有剩。正方形的邊長是幾公分？", "6", "公分", "邊長要同時整除 24 和 18，最大的是最大公因數 6 公分。")
+     ]},
+    {no:2, title:"二、分數除法", desc:"最簡分數、同分母和異分母分數的除法、被除數／除數／商的關係",
+     topicName:{simp:"最簡分數", same:"同分母分數的除法", diff:"異分母分數的除法", rel:"被除數、除數與商"},
+     bank:[
+      W("simp", "把 36/48 約成最簡分數。", "3/4", "", "36 和 48 的最大公因數是 12，分子分母同除以 12，得 3/4。"),
+      W("simp", "把 45/60 約成最簡分數。", "3/4", "", "45 和 60 的最大公因數是 15，同除以 15，得 3/4。"),
+      W("same", "8/11 ÷ 4/11 = ？", "2", "", "同分母相除，看分子就好：8 ÷ 4 = 2。"),
+      W("same", "7/9 ÷ 2/9 = ？（答案用帶分數或最簡分數）", "3又1/2", "", "同分母相除：7 ÷ 2 = 7/2 = 3又1/2。"),
+      W("diff", "3/4 ÷ 2/5 = ？", "1又7/8", "", "除以 2/5 就是乘以 5/2：3/4 × 5/2 = 15/8 = 1又7/8。"),
+      W("diff", "2又1/3 ÷ 7/9 = ？", "3", "", "先化成假分數 7/3，再乘以 9/7：7/3 × 9/7 = 3。"),
+      W("diff", "5 ÷ 2/3 = ？", "7又1/2", "", "5 × 3/2 = 15/2 = 7又1/2。"),
+      W("diff", "一條緞帶長 4又1/2 公尺，每 3/4 公尺剪成一段，可以剪成幾段？", "6", "段", "4又1/2 = 9/2，9/2 ÷ 3/4 = 9/2 × 4/3 = 6，可以剪 6 段。"),
+      W("diff", "小華 2/3 小時走了 2又2/5 公里，照這樣的速度，1 小時可以走幾公里？", "3又3/5", "公里", "2又2/5 = 12/5，12/5 ÷ 2/3 = 12/5 × 3/2 = 18/5 = 3又3/5 公里。"),
+      M("rel", "被除數不是 0，除數比 1 小（但不是 0）時，商會比被除數：", ["大","小","一樣","不一定"], 0, "除以比 1 小的數，商會變大。例如 6 ÷ 1/2 = 12。"),
+      M("rel", "下列哪一個算式的商比 5 小？", ["5 ÷ 3/4","5 ÷ 1又1/2","5 ÷ 2/7","5 ÷ 9/10"], 1, "除數比 1 大，商才會比被除數小。只有 1又1/2 比 1 大。")
+     ]},
+    {no:3, title:"三、小數除法", desc:"除以一位小數、除以二位小數、除法與概數",
+     topicName:{d1:"除以一位小數", d2:"除以二位小數", approx:"除法與概數"},
+     bank:[
+      W("d1", "7.2 ÷ 0.6 = ？", "12", "", "被除數和除數同時乘以 10：72 ÷ 6 = 12。"),
+      W("d1", "9.36 ÷ 1.2 = ？", "7.8", "", "同時乘以 10：93.6 ÷ 12 = 7.8。"),
+      W("d2", "3.15 ÷ 0.45 = ？", "7", "", "同時乘以 100：315 ÷ 45 = 7。"),
+      W("d2", "2.4 ÷ 0.16 = ？", "15", "", "同時乘以 100：240 ÷ 16 = 15。"),
+      M("d1", "12 ÷ 0.8 的商，和下面哪一個算式的商一樣？", ["120 ÷ 8","12 ÷ 8","1.2 ÷ 8","120 ÷ 0.8"], 0, "被除數和除數同時乘以 10，商不變：12 ÷ 0.8 = 120 ÷ 8。"),
+      W("approx", "10 ÷ 0.3 的商，用四捨五入法取到小數第一位。", "33.3", "", "10 ÷ 0.3 = 100 ÷ 3 = 33.33…，算到小數第二位再四捨五入，得 33.3。"),
+      M("approx", "25.6 ÷ 0.7 的商，用四捨五入法取到整數是多少？", ["36","37","3.7","366"], 1, "256 ÷ 7 = 36.57…，小數第一位是 5，進位得 37。"),
+      W("d1", "一條 6.3 公尺的繩子，每 0.7 公尺剪一段，可以剪成幾段？", "9", "段", "6.3 ÷ 0.7 = 63 ÷ 7 = 9 段。"),
+      W("approx", "一瓶 1.8 公升的牛奶，每杯倒 0.25 公升，最多可以倒滿幾杯？", "7", "杯", "1.8 ÷ 0.25 = 180 ÷ 25 = 7 餘 5，只能倒滿 7 杯（剩 0.05 公升）。")
+     ]},
+    {no:4, title:"四、比與比值", desc:"比和相等的比、最簡整數比、比值",
+     topicName:{ratio:"比和相等的比", simp:"最簡整數比", value:"比值"},
+     bank:[
+      M("ratio", "下列哪一個和 3:5 是相等的比？", ["6:15","9:15","5:3","3:10"], 1, "3 和 5 同時乘以 3，得 9:15。"),
+      W("ratio", "4:7 = 12:□，□ 是多少？", "21", "", "4 變成 12 是乘以 3，所以 7 也要乘以 3，□ = 21。"),
+      W("simp", "把 18:24 化成最簡整數比。", "3:4", "", "18 和 24 的最大公因數是 6，同除以 6，得 3:4。"),
+      W("simp", "把 0.6:1.5 化成最簡整數比。", "2:5", "", "先同乘以 10 得 6:15，再同除以 3，得 2:5。"),
+      W("simp", "把 2/3 : 3/4 化成最簡整數比。", "8:9", "", "同乘以分母的最小公倍數 12：8:9。"),
+      W("value", "求 5:8 的比值。", "5/8", "", "比值 = 前項 ÷ 後項 = 5 ÷ 8 = 5/8。"),
+      W("value", "求 1.2:0.4 的比值。", "3", "", "1.2 ÷ 0.4 = 12 ÷ 4 = 3。"),
+      W("simp", "班上男生 15 人、女生 12 人。男生人數和全班人數的比是多少？（用最簡整數比）", "5:9", "", "全班 15 + 12 = 27 人，15:27，同除以 3 得 5:9。"),
+      M("value", "比值是 1 的比，前項和後項：", ["一樣大","前項比較大","後項比較大","都一定是 1"], 0, "前項 ÷ 後項 = 1，表示兩項一樣大，例如 7:7。")
+     ]},
+    {no:5, title:"五、兩量關係", desc:"基準量與比較量、兩量和問題、兩量差問題",
+     topicName:{base:"基準量與比較量", sum:"兩量和問題", diff:"兩量差問題"},
+     bank:[
+      M("base", "「哥哥的錢是弟弟的 3 倍」，這句話的基準量是：", ["哥哥的錢","弟弟的錢","3","兩人的錢合起來"], 1, "「是誰的幾倍」，那個「誰」就是基準量，這裡是弟弟的錢。"),
+      W("base", "小美有 240 元，小明的錢是小美的 3/4。小明有幾元？", "180", "元", "比較量 = 基準量 × 倍數：240 × 3/4 = 180 元。"),
+      W("base", "一本故事書賣 360 元，是一本字典價錢的 1.2 倍。字典多少元？", "300", "元", "基準量 = 比較量 ÷ 倍數：360 ÷ 1.2 = 300 元。"),
+      W("sum", "姊姊和妹妹共有 84 張貼紙，姊姊的張數是妹妹的 3 倍。妹妹有幾張？", "21", "張", "把妹妹當 1 份，姊姊 3 份，共 4 份。84 ÷ 4 = 21 張。"),
+      W("sum", "甲、乙兩數的和是 150，甲:乙 = 2:3。乙是多少？", "90", "", "共 2 + 3 = 5 份，1 份 = 150 ÷ 5 = 30，乙 = 30 × 3 = 90。"),
+      W("sum", "一條繩子剪成長、短兩段，長段是短段的 1.5 倍，全長 40 公尺。短段長幾公尺？", "16", "公尺", "短段 1 份、長段 1.5 份，共 2.5 份。40 ÷ 2.5 = 16 公尺。"),
+      W("diff", "爸爸的年齡是小明的 4 倍，爸爸比小明大 30 歲。小明幾歲？", "10", "歲", "差了 4 − 1 = 3 份，1 份 = 30 ÷ 3 = 10，小明 10 歲。"),
+      W("diff", "紅繩比藍繩長 18 公分，紅繩:藍繩 = 5:2。紅繩長幾公分？", "30", "公分", "差 5 − 2 = 3 份，1 份 = 18 ÷ 3 = 6，紅繩 = 6 × 5 = 30 公分。")
+     ]},
+    {no:6, title:"六、圓周長與扇形周長", desc:"圓周率、圓周長、扇形弧長與周長、應用（圓周率用 3.14）",
+     topicName:{pi:"圓周率", circ:"圓周長", arc:"扇形弧長與周長", app:"圓周長與弧長的應用"},
+     bank:[
+      M("pi", "圓周率是怎麼算出來的？", ["圓周長 ÷ 直徑","圓周長 ÷ 半徑","直徑 ÷ 圓周長","半徑 × 2"], 0, "任何圓的圓周長 ÷ 直徑都差不多是 3.14，這個數叫圓周率。"),
+      W("circ", "直徑 10 公分的圓，圓周長是多少公分？（圓周率用 3.14）", "31.4", "公分", "圓周長 = 直徑 × 圓周率 = 10 × 3.14 = 31.4 公分。", {circle:"直徑 10 公分", d:true}),
+      W("circ", "半徑 6 公分的圓，圓周長是多少公分？（圓周率用 3.14）", "37.68", "公分", "直徑 = 12，12 × 3.14 = 37.68 公分。", {circle:"半徑 6 公分"}),
+      W("circ", "一個圓的圓周長是 47.1 公分，直徑是幾公分？（圓周率用 3.14）", "15", "公分", "直徑 = 圓周長 ÷ 圓周率 = 47.1 ÷ 3.14 = 15 公分。"),
+      W("arc", "半徑 10 公分、圓心角 90 度的扇形，弧長是多少公分？（圓周率用 3.14）", "15.7", "公分", "90 度是整圓的 1/4。10 × 2 × 3.14 × 1/4 = 15.7 公分。", {sector:["10 公分", 90]}),
+      W("arc", "半徑 10 公分、圓心角 90 度的扇形，周長是多少公分？（圓周率用 3.14）", "35.7", "公分", "周長 = 弧長 + 2 條半徑 = 15.7 + 10 + 10 = 35.7 公分。", {sector:["10 公分", 90]}),
+      W("arc", "半徑 4 公分的半圓形，周長是多少公分？（圓周率用 3.14）", "20.56", "公分", "弧長 = 4 × 2 × 3.14 ÷ 2 = 12.56，再加直徑 8，周長 = 20.56 公分。", {sector:["4 公分", 180]}),
+      W("arc", "半徑 9 公分、圓心角 120 度的扇形，周長是多少公分？（圓周率用 3.14）", "36.84", "公分", "120 度是整圓的 1/3。弧長 = 9 × 2 × 3.14 × 1/3 = 18.84，周長 = 18.84 + 9 + 9 = 36.84 公分。", {sector:["9 公分", 120]}),
+      W("app", "腳踏車輪子的直徑是 60 公分，輪子轉 50 圈，腳踏車前進多少公尺？（圓周率用 3.14）", "94.2", "公尺", "轉 1 圈前進 60 × 3.14 = 188.4 公分，50 圈 = 9420 公分 = 94.2 公尺。")
+     ]},
+    {no:7, title:"七、放大、縮小與比例尺", desc:"認識和繪製放大圖、縮小圖，認識比例尺",
+     topicName:{enl:"認識放大圖和縮小圖", draw:"繪製放大圖和縮小圖", scale:"認識比例尺"},
+     bank:[
+      M("enl", "把一個圖形放大，放大圖和原圖比較，哪一個「不會」改變？", ["對應角的角度","邊長","周長","面積"], 0, "放大、縮小時，對應邊按同樣的倍數變，但對應角的角度不變。"),
+      W("enl", "一個長方形長 4 公分、寬 3 公分，放大成 3 倍後，周長是多少公分？", "42", "公分", "放大後長 12、寬 9，周長 = (12 + 9) × 2 = 42 公分。"),
+      W("enl", "一個三角形縮小成 1/2 倍，原來有一邊長 10 公分，縮小後這一邊長幾公分？", "5", "公分", "10 × 1/2 = 5 公分。"),
+      M("draw", "要畫一個正方形的 2 倍放大圖，原來邊長 3 公分，放大圖的邊長要畫幾公分？", ["5 公分","6 公分","9 公分","1.5 公分"], 1, "放大 2 倍，每一邊都乘以 2：3 × 2 = 6 公分。"),
+      M("scale", "比例尺 1:1000 是什麼意思？", ["圖上 1 公分代表實際 1000 公分","圖上 1 公分代表實際 1000 公尺","實際 1 公分畫成圖上 1000 公分","圖比實際大 1000 倍"], 0, "比例尺 1:1000 表示圖上 1 公分代表實際 1000 公分，也就是 10 公尺。"),
+      W("scale", "比例尺 1:50000 的地圖上，兩地相距 4 公分。兩地實際距離是幾公里？", "2", "公里", "4 × 50000 = 200000 公分 = 2000 公尺 = 2 公里。"),
+      W("scale", "兩地實際距離 3 公里，畫在比例尺 1:100000 的地圖上，圖上距離是幾公分？", "3", "公分", "3 公里 = 300000 公分，300000 ÷ 100000 = 3 公分。"),
+      W("scale", "地圖上 1 公分代表實際 5 公里。地圖上 6.5 公分是實際幾公里？", "32.5", "公里", "6.5 × 5 = 32.5 公里。"),
+      W("scale", "比例尺 1:200 的房屋平面圖上，客廳長 3 公分。客廳實際長幾公尺？", "6", "公尺", "3 × 200 = 600 公分 = 6 公尺。")
+     ]},
+    {no:8, title:"八、怎樣解題", desc:"間隔問題、數形規則、選擇與組合、和差問題",
+     topicName:{gap:"間隔問題", pattern:"數形規則", comb:"選擇與組合", sumdiff:"和差問題"},
+     bank:[
+      W("gap", "一條 100 公尺長的步道，在一邊每隔 5 公尺種一棵樹，頭和尾都要種。一共要種幾棵？", "21", "棵", "間隔數 = 100 ÷ 5 = 20，兩端都種，棵數 = 20 + 1 = 21 棵。"),
+      W("gap", "圓形水池一圈長 60 公尺，沿著水池每隔 4 公尺放一盆花。一共要放幾盆？", "15", "盆", "圍成一圈時，盆數 = 間隔數 = 60 ÷ 4 = 15 盆。"),
+      W("gap", "把一根木頭鋸成 6 段，每鋸一次要 3 分鐘，一共要幾分鐘？", "15", "分鐘", "鋸成 6 段只要鋸 5 次，5 × 3 = 15 分鐘。"),
+      W("pattern", "用火柴棒排正方形：排成一列 1 個要 4 根、2 個要 7 根、3 個要 10 根……排成一列 10 個正方形要幾根？", "31", "根", "第 1 個 4 根，之後每多 1 個多 3 根：4 + 3 × 9 = 31 根。"),
+      W("pattern", "3、7、11、15、……照這個規則，第 20 個數是多少？", "79", "", "每次加 4。第 20 個 = 3 + 4 × 19 = 79。"),
+      W("comb", "有 3 件上衣、2 件褲子，一件上衣配一件褲子，共有幾種不同的穿法？", "6", "種", "每件上衣都有 2 種褲子可以配：3 × 2 = 6 種。"),
+      W("comb", "4 個人，每兩個人都要握一次手，一共要握幾次手？", "6", "次", "列出來：AB、AC、AD、BC、BD、CD，共 6 次（3 + 2 + 1）。"),
+      W("comb", "用 1、3、5、7 四張數字卡，選 2 張排成二位數（同一張不能重複用），可以排出幾個不同的二位數？", "12", "個", "十位有 4 種選法，個位剩 3 種：4 × 3 = 12 個。"),
+      W("sumdiff", "兩個數的和是 50，差是 14。大的數是多少？", "32", "", "大數 = (和 + 差) ÷ 2 = (50 + 14) ÷ 2 = 32。"),
+      W("sumdiff", "哥哥和弟弟共有 120 元，哥哥比弟弟多 30 元。弟弟有幾元？", "45", "元", "弟弟 = (和 − 差) ÷ 2 = (120 − 30) ÷ 2 = 45 元。")
+     ]}
+  ];
+  function autoScopes(topicName){
+    var ks = Object.keys(topicName);
+    return [{id:"all", name:"整個單元", topics:ks}].concat(ks.map(function(k){ return {id:k, name:topicName[k], topics:[k]}; }));
+  }
+  // 每題記住原本的單元和主題（綜合複習也找得回來），統計強弱用
+  var TOPICS = {};
+  MATH6A.forEach(function(c){
+    c.bank.forEach(function(q){ q.uid = "m6a-" + c.no; q.ot = q.t; });
+    Object.keys(c.topicName).forEach(function(t){ TOPICS["m6a-" + c.no + ":" + t] = {no:c.no, unit:c.title, name:c.topicName[t]}; });
+  });
+  MATH6A.forEach(function(c){
+    UNITS.push({id:"m6a-" + c.no, grade:6, subject:"math", subjName:"數學", book:"翰林 6上", n:6,
+      title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
+  });
+  // 綜合複習：把幾個單元的題目合在一起
+  function review(id, title, desc, nos){
+    var tn = {}, bank = [];
+    MATH6A.filter(function(c){ return nos.indexOf(c.no) >= 0; }).forEach(function(c){
+      var k = "u" + c.no; tn[k] = c.title;
+      c.bank.forEach(function(q){ bank.push(Object.assign({}, q, {t:k})); });
+    });
+    UNITS.push({id:id, grade:6, subject:"math", subjName:"數學", book:"翰林 6上", n:8, title:title, desc:desc,
+      topicName:tn, scopes:autoScopes(tn), bank:bank});
+  }
+  review("m6a-r1", "綜合複習：第 1～4 單元", "習作「綜合練習（一）」的範圍，可以挑單元", [1,2,3,4]);
+  review("m6a-r2", "綜合複習：第 5～8 單元", "習作「綜合練習（二）」的範圍，可以挑單元", [5,6,7,8]);
+  review("m6a-all", "學力來挑戰：全冊總複習", "第 1～8 單元全部混在一起，像期末考", [1,2,3,4,5,6,7,8]);
+  UNITS[UNITS.length - 1].n = 10;
+
+  // ── 學校英語段考複習（翰林 Here We Go 7）：依 115 學年度課程計畫的單元、句型和拼讀出題 ──
+  var ENG6A = [
+    {id:"e6a-1", title:"學校英語 期中複習：Starter～Unit 2", desc:"Would you like...? / Whose...?、Unit 1 Where Are You From?、Unit 2 How Do You Go to School?、拼讀 ir / ur / ar / or / -er / -or",
+     topicName:{starter:"Starter：Would you like / Whose", from:"Unit 1 國家 Where are you from?", go:"Unit 2 交通 How do you go to school?", ph1:"拼讀 ir / ur / ar / or / -er / -or"},
+     bank:[
+      M("starter", "Would you like some beef sandwiches? 想要的話，要怎麼回答？", ["Yes, please.","No, I don't.","Yes, I am.","It's my sandwich."], 0, "Would you like...?（你想要……嗎？）想要就說 Yes, please.，不要就說 No, thanks.。"),
+      M("starter", "Whose soda is that on the chair? 的意思是：", ["椅子上那瓶汽水是誰的？","椅子上有汽水嗎？","你想喝汽水嗎？","汽水在哪張椅子上？"], 0, "Whose 是「誰的」。"),
+      M("starter", "Whose soda is that? — It's ___ soda.（我的）", ["my","me","I","mine"], 0, "後面有名詞 soda，要用 my。"),
+      T("starter", "Would you like some milk? 和 Do you like milk? 意思一樣。", false, "Would you like 是問「想不想要」；Do you like 是問「喜不喜歡」。"),
+      M("from", "Where are you from? — I'm ___ Taiwan.", ["from","in","at","to"], 0, "回答來自哪裡：I'm from + 國家。"),
+      M("from", "「她來自印度。」英文怎麼說？", ["She's from India.","She from India.","She's India from.","Her is from India."], 0, "She's = She is，She's from India."),
+      M("from", "Is he from Japan? — No, he isn't. He's from ___.（西班牙）", ["Spain","Japan","the UK","India"], 0, "西班牙是 Spain。"),
+      M("from", "the UK 是哪一個國家？", ["英國","美國","澳洲","新加坡"], 0, "the UK 英國、the USA 美國、Australia 澳洲。"),
+      M("from", "哪一個國家前面要加 the？", ["USA","Japan","Taiwan","India"], 0, "要說 the USA、the UK；Japan、Taiwan、India 前面不加 the。"),
+      T("from", "Australia 是澳洲。", true, "Australia 澳洲，有袋鼠和無尾熊。"),
+      M("go", "How do you go to school? — I go to school ___ bike.", ["by","on","in","with"], 0, "搭交通工具用 by：by bike、by bus、by car。"),
+      M("go", "「我走路上學」英文怎麼說？", ["I go to school on foot.","I go to school by foot.","I go to school by walk.","I foot to school."], 0, "走路要說 on foot。"),
+      M("go", "Does she go to school by bus? — No. She ___ to school by MRT.", ["goes","go","going","is go"], 0, "She 後面的動詞 go 要變 goes。"),
+      M("go", "by scooter 是搭什麼？", ["機車","計程車","火車","捷運"], 0, "scooter 機車、taxi 計程車、train 火車、MRT 捷運。"),
+      T("go", "How does he go to school? 是在問「他怎麼去上學」。", true, "he / she 要用 does 來問。"),
+      M("ph1", "哪一個字的發音和 bird 的 ir 一樣？", ["nurse","nose","nice","name"], 0, "ir 和 ur 發音一樣：bird、nurse。"),
+      M("ph1", "shirt、circle、dirty 都有哪個字母組合？", ["ir","ur","ar","or"], 0, "三個字都有 ir。"),
+      M("ph1", "下列哪個字有 ur？", ["purple","people","pupil","puppy"], 0, "purple（紫色）有 ur；Thursday、curry 也有。"),
+      M("ph1", "dark、farm、shark 都有哪個字母組合？", ["ar","or","er","ir"], 0, "三個字都有 ar。"),
+      M("ph1", "corn、fork、horse 都有哪個字母組合？", ["or","ar","ur","ir"], 0, "三個字都有 or。"),
+      T("ph1", "teacher 的 -er 和 doctor 的 -or 在字尾時發音一樣。", true, "字尾的 -er、-or 都唸成輕輕的 /ɚ/。")
+     ]},
+    {id:"e6a-2", title:"學校英語 期末複習：Unit 3～4、Culture", desc:"Unit 3 What Do You Do in Your Free Time?、Unit 4 What Time Do You Get Up?、拼讀 oi / oy / ou / ow、世界各地的新年",
+     topicName:{week:"Unit 3 空閒活動 What do you do in your free time?", time:"Unit 4 作息 What time do you get up?", ph2:"拼讀 oi / oy / ou / ow", ny:"Culture 世界各地的新年"},
+     bank:[
+      M("week", "What do you do on weekends? — I ___ jogging on weekends.", ["go","play","ride","watch"], 0, "go jogging 去慢跑。"),
+      M("week", "「上網」英文怎麼說？", ["surf the Internet","ride the Internet","watch the Internet","play the Internet"], 0, "surf the Internet 上網。"),
+      M("week", "What does he do in his free time? — He ___ TV.", ["watches","watch","watching","is watch"], 0, "He 後面動詞加 es：watch → watches。"),
+      M("week", "play basketball 是什麼意思？", ["打籃球","打棒球","騎腳踏車","聽音樂"], 0, "basketball 籃球、baseball 棒球。"),
+      M("week", "She likes music. She ___ to music in her free time.", ["listens","listen","hears","sings"], 0, "listen to music 聽音樂；She 後面用 listens。"),
+      T("week", "ride a bike 是騎腳踏車。", true, "ride a bike 騎腳踏車。"),
+      M("week", "What does she do ___ her free time?", ["in","on","at","by"], 0, "in one's free time 在某人空閒的時候。"),
+      M("time", "What time do you get up? — I get up ___ six thirty.", ["at","in","on","by"], 0, "幾點幾分前面用 at。"),
+      M("time", "six thirty 是幾點？", ["6:30","6:13","3:06","6:03"], 0, "six thirty = 6:30。"),
+      M("time", "What time does he do his homework? — He ___ his homework at five.", ["does","do","doing","is do"], 0, "He 後面 do 變 does：He does his homework."),
+      M("time", "「洗澡」英文怎麼說？", ["take a shower","take a bed","go to shower","have a shower bed"], 0, "take a shower 沖澡。"),
+      M("time", "go to bed 是什麼意思？", ["上床睡覺","起床","去上學","回家"], 0, "go to bed 睡覺；get up 起床。"),
+      M("time", "下列哪一個通常最早做？", ["get up","have lunch","go home","go to bed"], 0, "一天的順序：get up → go to school → have lunch → go home → go to bed。"),
+      M("ph2", "coin、oil、point、soil 都有哪個字母組合？", ["oi","oy","ou","ow"], 0, "四個字都有 oi。"),
+      M("ph2", "boy、toy、joy 都有哪個字母組合？", ["oy","oi","ow","ou"], 0, "oi 和 oy 發音一樣，oy 常在字尾。"),
+      M("ph2", "house、cloud、shout 都有哪個字母組合？", ["ou","ow","oi","oy"], 0, "三個字都有 ou。"),
+      M("ph2", "下列哪個字的 ow 和 clown 的 ow 發音一樣？", ["owl","snow","yellow","window"], 0, "clown、owl、crowd 的 ow 一樣；snow、yellow 唸法不同。"),
+      T("ph2", "bounce 的 ou 和 shower 的 ow 發音一樣。", true, "ou 和 ow 常發一樣的音。"),
+      M("ny", "Happy New Year! 是什麼時候說的話？", ["過新年","生日","聖誕節","畢業"], 0, "Happy New Year! 新年快樂。"),
+      M("ny", "西班牙人跨年夜午夜鐘響時，習慣吃什麼？", ["12 顆葡萄","年糕","月餅","粽子"], 0, "跟著 12 下鐘聲吃 12 顆葡萄，祝福新的一年。"),
+      M("ny", "fireworks 是什麼？", ["煙火","火車","消防員","營火"], 0, "跨年常會放 fireworks（煙火）。")
+     ]}
+  ];
+  ENG6A.forEach(function(c){
+    c.bank.forEach(function(q){ q.uid = c.id; q.ot = q.t; });
+    UNITS.push({id:c.id, grade:6, subject:"eng", subjName:"英語", book:"翰林 Here We Go 7", n:10,
+      title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
+  });
+  SUBJ_EMOJI.eng = "🔤";
+
+  // ════════════════════════════════════════════════════════════════
+  //  國語（南一 6上）、自然（康軒 6上）、社會（翰林 6上）：115 學年度課程計畫的單元
+  //  題目是依各課學習目標自己出的練習題，不是課本原題；拿到課本後可以再對準
+  // ════════════════════════════════════════════════════════════════
+  var SUBJ6A = [
+   {pre:"c6a", subject:"chi", subjName:"國語", book:"南一 6上", units:[
+    {no:1, title:"壹、美好時刻", desc:"在天晴了的時候（新詩）、珍珠鳥、客至（律詩）、語文天地一",
+     topicName:{poem:"新詩：在天晴了的時候", bird:"珍珠鳥", lv:"客至與律詩", word:"字詞與修辭"},
+     bank:[
+      M("poem", "〈在天晴了的時候〉是哪一種文體？", ["新詩（現代詩）","律詩","絕句","議論文"], 0, "這一課是新詩，句子長短、字數比較自由。"),
+      M("poem", "〈在天晴了的時候〉的作者是誰？", ["戴望舒","杜甫","馮驥才","李白"], 0, "作者是現代詩人戴望舒。"),
+      T("poem", "新詩一定要每句字數一樣，而且一定要押韻。", false, "新詩的句子長短、分行和押韻都比較自由。"),
+      M("poem", "〈在天晴了的時候〉主要寫什麼樣的景象？", ["雨後天晴、大自然清新美好的樣子","颱風來襲的可怕","冬天下雪的寒冷","城市塞車的吵鬧"], 0, "這首詩寫雨停天晴後，景物清新、令人想走出去的美好時刻。"),
+      M("bird", "〈珍珠鳥〉的作者是誰？", ["馮驥才","杜甫","戴望舒","柯南·道爾"], 0, "〈珍珠鳥〉是馮驥才的散文。"),
+      M("bird", "〈珍珠鳥〉裡的小珍珠鳥，後來和作者變得怎麼樣？", ["越來越親近，最後在作者肩上睡著","一直躲在籠子裡不出來","飛走再也沒回來","常常啄傷作者"], 0, "作者不去驚擾牠，小鳥慢慢靠近，最後放心地在作者肩上睡著了。"),
+      M("bird", "〈珍珠鳥〉想告訴讀者的道理最接近哪一句？", ["信賴，往往創造出美好的境界","有付出就一定有收穫","失敗為成功之母","讀書可以增長見聞"], 0, "人和鳥彼此信賴，才有這麼溫馨的畫面。"),
+      T("bird", "作者能和珍珠鳥這麼親近，是因為他耐心、不去驚嚇牠。", true, "作者靜靜地讓小鳥自己靠近，慢慢建立信任。"),
+      M("lv", "〈客至〉的作者是誰？", ["杜甫","李白","王維","孟浩然"], 0, "〈客至〉是唐朝杜甫的詩。"),
+      M("lv", "〈客至〉每句七個字、一共八句，屬於哪一種詩？", ["七言律詩","七言絕句","五言律詩","新詩"], 0, "八句的是律詩、四句的是絕句；每句七字就是七言。"),
+      M("lv", "一首七言律詩一共有幾個字？", ["56 個","28 個","40 個","20 個"], 0, "7 字 × 8 句 = 56 字。七言絕句是 7 × 4 = 28 字。"),
+      M("lv", "「花徑不曾緣客掃，蓬門今始為君開。」表現出作者什麼心情？", ["很少有客人來，今天特別高興地迎接朋友","討厭客人來打擾","忙到沒空掃地","家裡太窮不想開門"], 0, "花徑從沒為客人打掃過，柴門今天第一次為你打開，表示對來客的歡迎。"),
+      M("lv", "「盤飧市遠無兼味」的意思是：", ["離市場太遠，桌上的菜色不多","市場的菜很貴","盤子太小裝不下","客人吃不完"], 0, "住得離市集遠，買不到很多菜，只有簡單的菜。"),
+      M("lv", "「隔籬呼取盡餘杯」裡，作者想隔著籬笆叫誰？", ["鄰居老翁","家裡的僕人","賣酒的小販","遠方的朋友"], 0, "前一句「肯與鄰翁相對飲」，就是要叫隔壁的老先生一起來喝。"),
+      T("lv", "律詩中間的兩聯（第三到六句）通常要對仗。", true, "律詩的頷聯、頸聯要對仗，字數、詞性要對得整齊。"),
+      M("word", "「盤飧」的「飧」怎麼唸？", ["ㄙㄨㄣ","ㄘㄢ","ㄒㄧㄢ","ㄙㄨㄥ"], 0, "飧唸ㄙㄨㄣ，指簡單的飯菜。"),
+      M("word", "「雲朵像棉花糖一樣柔軟。」用的是哪一種修辭？", ["譬喻","擬人","誇飾","設問"], 0, "用「像」把雲朵比成棉花糖，是譬喻。"),
+      M("word", "「陽光笑瞇瞇地探出頭來。」用的是哪一種修辭？", ["擬人","譬喻","排比","設問"], 0, "把陽光寫得像人會笑、會探頭，是擬人（轉化）。")
+     ]},
+    {no:2, title:"貳、工作圖像", desc:"贏得喝采的輸家、哇！原來如此、登月先鋒、語文天地二、讀寫練功房：來自遠方的信",
+     topicName:{loser:"贏得喝采的輸家", wow:"哇！原來如此", moon:"登月先鋒", letter:"書信與字詞"},
+     bank:[
+      M("loser", "〈贏得喝采的輸家〉裡，穆太為什麼在終點前停下腳步？", ["把氣球拱門誤當成終點","腳受傷跑不動","想讓安納亞先過","聽到教練叫他停"], 0, "穆太在終點前十公尺，誤把氣球拱門當成終點而停下來。"),
+      M("loser", "安納亞發現穆太停下來後，他怎麼做？", ["拍拍穆太、指出真正的終點，讓穆太先跑到終點","趁機衝過終點拿冠軍","停下來陪穆太休息","跑去告訴裁判"], 0, "他放棄反敗為勝的機會，提醒穆太正確的終點。"),
+      M("loser", "比賽結束後，安納亞的教練和觀眾有什麼反應？", ["教練稱讚他，觀眾給他熱烈的喝采","教練責罵他太傻","觀眾噓他","大家都沒注意到"], 0, "教練讚美他是優秀的人，觀眾也給他最熱烈的掌聲。"),
+      T("loser", "這一課想告訴我們：名次不是唯一，公平競爭的運動家精神更可貴。", true, "這就是課文主旨。"),
+      M("loser", "課文寫安納亞內心不停反問自己「該怎麼做」，這是在表現他的：", ["內心掙扎","身體疲累","得意驕傲","害怕觀眾"], 0, "他想贏，但知道自己不是真的勝過穆太，所以內心很掙扎。"),
+      M("wow", "〈哇！原來如此〉是哪一種文體？", ["說明文","小說","新詩","書信"], 0, "這一課說明各種工作背後的道理，是說明文（事理類）。"),
+      M("wow", "歌手表演時戴「入耳式監聽耳機」，主要是為了：", ["聽清楚伴奏和自己的歌聲，避免走音","聽廣播","擋住太陽","讓造型好看"], 0, "監聽耳機能阻絕現場噪音，讓歌手掌握自己唱得準不準。"),
+      M("wow", "消防衣為什麼能讓消防員比較安全地進入火場？", ["有多層設計，可以反射熱、隔絕高溫","因為是紅色的","因為很輕","因為可以防水"], 0, "消防衣有三層，能反射熱輻射、防止有毒液體腐蝕、隔絕高溫。"),
+      M("wow", "拍電影開拍前要「打板」，主要是為了：", ["方便後製時讓畫面和聲音對齊","叫演員安靜","趕走鳥","測試燈光"], 0, "場記板記錄資訊、標出起點，後製時才能讓影音同步。"),
+      T("wow", "這一課想告訴我們：平凡的工作裡，其實藏著不平凡的學問。", true, "這是課文的主旨。"),
+      M("moon", "〈登月先鋒〉寫的是哪一位太空人的故事？", ["阿姆斯壯","愛迪生","萊特兄弟","伽利略"], 0, "阿姆斯壯是第一位踏上月球的人。"),
+      M("moon", "阿姆斯壯小時候的志願是什麼？", ["當飛行員","當醫生","當老師","當廚師"], 0, "他從小立志當飛行員，十六歲就拿到學生飛行員執照。"),
+      M("moon", "阿姆斯壯在月球上做了哪些事？", ["採集樣本、拍照、安置設備","種樹、蓋房子","游泳、釣魚","賽跑、跳高"], 0, "登月後他採集月球表面的樣本、拍照、安置研究設備。"),
+      M("moon", "〈登月先鋒〉是哪一種記敘文？", ["傳記","寓言","童話","日記"], 0, "記錄真實人物一生事蹟的記敘文，叫做傳記。"),
+      T("moon", "作者在第一段和最後一段都引用阿姆斯壯的話，讓頭尾互相呼應。", true, "首尾呼應能讓文章結構完整。"),
+      M("letter", "寫信給爸爸媽媽，「提稱語」常用哪一個？", ["膝下","大鑒","青覽","台鑒"], 0, "給父母用「膝下」；給長輩可用「尊鑒」；給晚輩可用「青覽」。"),
+      M("letter", "寫給老師的信，信末的「結尾敬語」最適合用：", ["敬請　教安","順頌　時綏","祝　學業進步","即問　近好"], 0, "給老師用「敬請　教安」。"),
+      M("letter", "「喝采」的「喝」怎麼唸？", ["ㄏㄜˋ","ㄏㄜ","ㄏㄜˊ","ㄏㄜˇ"], 0, "喝采的喝唸ㄏㄜˋ，是大聲叫好；喝水的喝才唸ㄏㄜ。")
+     ]},
+    {no:3, title:"參、問題解決", desc:"明智的抉擇（議論文）、飢渴好「火」伴、火燒連環船、語文天地三、讀寫練功房：名偵探福爾摩斯",
+     topicName:{argue:"明智的抉擇", fire:"飢渴好「火」伴", three:"火燒連環船", word:"推理、字詞與成語"},
+     bank:[
+      M("argue", "〈明智的抉擇〉是哪一種文體？", ["議論文","記敘文","新詩","說明書"], 0, "提出看法並說明理由，是議論文。"),
+      M("argue", "爺爺用「水多柴少，水燒不開」比喻什麼？", ["時間和能力有限時，目標太多就難以完成","燒開水很危險","柴火太貴","要多喝水"], 0, "水是目標、柴是時間和心力，目標太多就燒不開。"),
+      M("argue", "想讓花開得又大又美，課文說要怎麼做？", ["摘除不理想的花苞","多澆水","每天換盆子","把花移到陰暗處"], 0, "養分有限，摘掉多餘的花苞，剩下的花才能開得大。"),
+      M("argue", "課文的結論是：無法兼顧「質」和「量」時，要先犧牲什麼？", ["量","質","時間","興趣"], 0, "先犧牲量，再依輕重緩急投入心力。"),
+      M("argue", "議論文中，作者想說服讀者的主要看法叫做：", ["論點","論據","主角","場景"], 0, "論點是主張；燒開水、種花這些例子是論據。"),
+      M("fire", "〈飢渴好「火」伴〉的主角布萊恩，最後是用什麼東西生火成功？", ["手斧敲出火花，點燃樺樹的毛鬚","打火機","火柴","放大鏡"], 0, "他用手斧敲岩石擦出火花，引燃樺樹毛鬚，再輕輕吹氣。"),
+      M("fire", "布萊恩一開始用力吹氣，火卻熄了。後來怎麼改？", ["改成輕柔地吹氣","改成潑水","改成不吹氣","換一把斧頭"], 0, "燃燒需要氧氣，但吹太用力會把火吹熄，輕柔吹氣才成功。"),
+      M("fire", "布萊恩為什麼把火當成「好朋友」？", ["火讓他在孤獨黑暗中有了溫暖和陪伴","火會說話","火可以幫他找到爸媽","火能讓他飛"], 0, "長期在黑暗中又孤獨，生起火後他覺得像有了朋友。"),
+      M("fire", "生火的要素，下列哪一個「不需要」？", ["冰塊","火花","容易點燃的引火物","氧氣"], 0, "生火要有火源（火花）、可燃物和氧氣。"),
+      M("fire", "〈飢渴好「火」伴〉是哪一種文體？", ["小說","說明文","議論文","新詩"], 0, "這一課是記敘文本裡的小說。"),
+      M("three", "〈火燒連環船〉的故事出自哪一本古典小說？", ["三國演義","西遊記","水滸傳","紅樓夢"], 0, "這是《三國演義》赤壁之戰的故事。"),
+      M("three", "曹操為什麼把戰船用鐵環連在一起？", ["北方士兵不習慣坐船，連起來比較穩","想讓船跑得更快","方便運送糧食","為了好看"], 0, "連起來比較平穩，卻也讓火一燒就全部著火。"),
+      M("three", "在赤壁之戰中，假裝投降、帶著著火的船衝向曹軍的是誰？", ["黃蓋","關羽","張飛","趙雲"], 0, "黃蓋詐降，帶著裝滿柴草的船靠近曹營放火。"),
+      M("three", "「萬事俱備，只欠東風」比喻什麼？", ["一切都準備好了，只差最後一個重要條件","風很大不能出門","東西都買齊了","大家都準備放假"], 0, "出自赤壁之戰，比喻只差最關鍵的一個條件。"),
+      M("word", "《福爾摩斯探案》的作者是誰？", ["柯南·道爾","馮驥才","安徒生","格林兄弟"], 0, "福爾摩斯是英國作家柯南·道爾筆下的偵探。"),
+      M("word", "「抉擇」的「抉」怎麼唸？", ["ㄐㄩㄝˊ","ㄎㄨㄞˋ","ㄐㄩㄝ","ㄑㄩㄝˋ"], 0, "抉擇唸ㄐㄩㄝˊ ㄗㄜˊ，是挑選、決定的意思。"),
+      M("word", "下列哪一個成語是「大家一起想辦法」的意思？", ["集思廣益","袖手旁觀","坐以待斃","半途而廢"], 0, "集思廣益是集合大家的想法，找出好辦法。")
+     ]},
+    {no:4, title:"肆、文學之窗", desc:"戲術（文言文）、紀念照、少年筆耕、語文天地四、閱讀充電站：黃蓉智退霍都",
+     topicName:{magic:"戲術", photo:"紀念照", pen:"少年筆耕", lit:"文學常識與標點"},
+     bank:[
+      M("magic", "〈戲術〉是哪一種文體？", ["文言文小說","新詩","議論文","說明文"], 0, "〈戲術〉是用文言文寫的小故事。"),
+      M("magic", "〈戲術〉裡的魔術師用什麼東西變魔術？", ["一個沒有底的空桶","一頂帽子","一副撲克牌","一隻鴿子"], 0, "他拿一個無底的空桶，從裡面變出米來。"),
+      M("magic", "魔術師從空桶倒出的米，最後怎麼了？", ["又全部放回桶中，桶子還是空的","被觀眾吃掉","撒滿整條街","變成金子"], 0, "米堆滿兩張蓆子後又全收回桶中，舉起來還是空桶。"),
+      T("magic", "〈戲術〉想讓讀者感受魔術的趣味和神奇。", true, "這是課文主旨。"),
+      M("magic", "《聊齋誌異》的作者是誰？", ["蒲松齡","吳承恩","羅貫中","曹雪芹"], 0, "《聊齋誌異》是清朝蒲松齡寫的短篇故事集。"),
+      M("photo", "〈紀念照〉裡，作者小時候拍照時最煩惱什麼？", ["鼻頭上長了青春痘","衣服太舊","不會笑","怕攝影師"], 0, "她擔心鼻頭上的青春痘，母親答應請師傅修照片。"),
+      M("photo", "拍照時，爸爸要弟弟怎麼樣？", ["不可以亂笑","笑得大聲一點","閉上眼睛","站到前面"], 0, "爸爸一臉嚴肅，要弟弟不可以亂笑。"),
+      M("photo", "照相師傅拍照時頭上蓋著什麼？", ["外紅裡黑的布","帽子","毛巾","報紙"], 0, "師傅蓋著外紅裡黑的布鑽進鑽出，作者覺得很滑稽。"),
+      M("photo", "〈紀念照〉的主旨是：", ["透過一張老照片，追憶童年、家人和故鄉","介紹照相機的原理","教大家怎麼拍照","說明青春痘怎麼治療"], 0, "作者藉由紀念照懷念家人和家鄉。"),
+      M("pen", "〈少年筆耕〉的主角敘里奧，晚上偷偷做什麼？", ["模仿爸爸的筆跡幫忙抄寫訂單","偷玩遊戲","偷吃點心","偷看電視"], 0, "他想減輕爸爸的負擔，偷偷幫忙抄寫。"),
+      M("pen", "敘里奧為什麼複習功課時常常打瞌睡？", ["晚上偷偷抄寫，睡眠不足","生病了","功課太簡單","在學校跑步太累"], 0, "因為熬夜抄寫，白天精神不好，還被爸爸誤會責備。"),
+      M("pen", "爸爸最後發現真相時，心情是：", ["懊悔又心疼","非常生氣","覺得好笑","完全不在意"], 0, "爸爸感到懊悔和慈愛，陪著敘里奧度過一夜。"),
+      M("pen", "「筆耕」是比喻什麼？", ["用筆抄寫賺錢，像農夫耕田一樣辛苦","用筆種田","把筆削尖","畫畫"], 0, "以筆代耕，指用抄寫工作來賺錢。"),
+      M("lit", "小說的三個要素是：", ["人物、情節、環境（背景）","開頭、中間、結尾","押韻、對仗、平仄","論點、論據、結論"], 0, "小說由人物、情節和環境構成。"),
+      M("lit", "〈黃蓉智退霍都〉的黃蓉，出自哪一位作家的武俠小說？", ["金庸","古龍","瓊瑤","林良"], 0, "黃蓉是金庸武俠小說裡的人物。"),
+      M("lit", "書名或篇名要用哪一種符號？", ["〈〉《》","「」","（）","——"], 0, "書名用《》，篇名用〈〉。"),
+      M("lit", "表示話還沒說完、或省略的標點符號是：", ["刪節號……","破折號——","冒號：","頓號、"], 0, "刪節號表示省略或話沒說完。")
+     ]}
+   ]},
+   {pre:"n6a", subject:"sci", subjName:"自然", book:"康軒 6上", units:[
+    {no:1, title:"一、探索天氣的變化", desc:"雲霧露霜雪雨、水循環、衛星雲圖與天氣圖、鋒面與颱風、氣候變遷與碳足跡",
+     topicName:{water:"天氣變化的主角：水", map:"預測天氣：雲圖與天氣圖", climate:"氣候正在改變"},
+     bank:[
+      M("water", "雲和霧是怎麼形成的？", ["空氣中的水蒸氣遇冷凝結成小水滴","太陽把空氣曬成白色","灰塵聚在一起","海水直接飛到天上"], 0, "水蒸氣遇冷凝結成很小的水滴，飄在高空是雲，貼近地面是霧。"),
+      M("water", "清晨草葉上的小水珠叫做：", ["露","霜","雪","冰雹"], 0, "水蒸氣遇到冷的葉面凝結成小水珠，就是露。"),
+      M("water", "天氣很冷時，水蒸氣在地面物體上直接變成白色的冰晶，叫做：", ["霜","露","霧","雨"], 0, "溫度低於 0℃ 時，水蒸氣直接凝華成冰晶，就是霜。"),
+      T("water", "天氣現象像雲、雨、雪，都和水的三態變化有關。", true, "水在固態、液態、氣態之間變化，造成各種天氣。"),
+      M("water", "下列哪一個「不是」水循環的過程？", ["燃燒","蒸發","凝結","降水"], 0, "水循環有蒸發、凝結成雲、降水、流回海洋等過程。"),
+      T("water", "海洋會影響大氣的溫度和濕度，是調節天氣與氣候的重要角色。", true, "海水吸熱、放熱和蒸發，都會影響天氣。"),
+      M("map", "衛星雲圖上白色的部分代表：", ["雲","陸地","海洋","高山"], 0, "雲反射陽光看起來是白色，白色越多越厚，可能下雨。"),
+      M("map", "地面天氣圖上，連接氣壓相同地點的線叫做：", ["等壓線","等高線","鋒面","經線"], 0, "等壓線越密，代表風越強。"),
+      M("map", "天氣圖上標示「低」的地方（低氣壓中心），天氣通常：", ["比較多雲、容易下雨","一定晴朗","一定下雪","沒有風"], 0, "低氣壓空氣上升，容易成雲致雨；高氣壓通常比較晴朗。"),
+      M("map", "冷鋒通過臺灣後，天氣通常會：", ["氣溫下降","氣溫上升","變成颱風","完全不變"], 0, "冷鋒過後冷氣團南下，氣溫明顯下降。"),
+      M("map", "五、六月的梅雨，主要和哪一種鋒面有關？", ["滯留鋒","冷鋒","暖鋒","沒有鋒面"], 0, "冷暖氣團勢力差不多，鋒面停留不動，帶來連續降雨。"),
+      M("map", "颱風在衛星雲圖上看起來像：", ["一個大大的白色漩渦，中間有颱風眼","一條直直的白線","一片綠色","很多小黑點"], 0, "颱風是旋轉的雲團，強颱風中心常看得到颱風眼。"),
+      T("map", "颱風來之前，要固定門窗、準備手電筒和飲用水。", true, "做好防颱準備，可以減少災害。"),
+      M("climate", "「天氣」和「氣候」哪裡不一樣？", ["天氣是短時間的變化，氣候是長時間的平均狀況","兩個完全一樣","氣候是一天的變化","天氣是幾十年的平均"], 0, "今天下雨是天氣；某地長期多雨溫暖是氣候。"),
+      M("climate", "造成全球暖化的主要原因之一是：", ["溫室氣體（例如二氧化碳）增加","月亮變大","海水變鹹","種太多樹"], 0, "燃燒煤、石油會排放二氧化碳，讓地球變暖。"),
+      M("climate", "「碳足跡」是指什麼？", ["一個產品或活動從頭到尾排放的溫室氣體量","踩在煤炭上的腳印","樹木的年齡","碳的重量"], 0, "碳足跡越小，對環境越友善。"),
+      M("climate", "下列哪一個做法可以減少碳足跡？", ["多走路、搭大眾運輸","每天坐私家車短程移動","冷氣開最冷","買很多用不到的東西"], 0, "少用汽油、少浪費，就能少排放二氧化碳。"),
+      T("climate", "氣候變遷可能讓極端天氣（像豪雨、乾旱）變多。", true, "暖化讓天氣變化更劇烈。")
+     ]},
+    {no:2, title:"二、水溶液", desc:"溶解與總重量、蒸發分離、水溶液導電、石蕊試紙測酸鹼、酸鹼混合",
+     topicName:{dissolve:"溶解", conduct:"水溶液導電", acid:"酸鹼性"},
+     bank:[
+      M("dissolve", "把 10 公克的糖放進 100 公克的水裡完全溶解，糖水重多少？", ["110 公克","100 公克","90 公克","10 公克"], 0, "溶解後東西還在水裡，總重量不變：100 + 10 = 110 公克。"),
+      T("dissolve", "糖溶在水裡看不見了，就表示糖消失了。", false, "糖只是變成很小的粒子散在水中，嚐起來還是甜的。"),
+      M("dissolve", "要把食鹽水裡的食鹽取回來，最好的方法是：", ["加熱讓水蒸發","用濾紙過濾","放進冰箱","用磁鐵吸"], 0, "水蒸發後，食鹽會留下來。溶解的食鹽過濾不出來。"),
+      M("dissolve", "曬鹽場把海水曬乾得到鹽，是利用：", ["蒸發","凝固","溶解","燃燒"], 0, "陽光讓海水裡的水蒸發，留下鹽。"),
+      T("dissolve", "水溶液是混合物，裡面有水和溶在水中的物質。", true, "像糖水裡有水和糖。"),
+      M("conduct", "下列哪一種液體最「容易」導電，讓 LED 燈亮？", ["食鹽水","糖水","純水（蒸餾水）","酒精"], 0, "食鹽水可以導電；糖水、蒸餾水幾乎不導電。"),
+      T("conduct", "所有的水溶液都可以導電。", false, "有些可以（食鹽水、醋），有些不行（糖水）。"),
+      M("conduct", "用電池、導線和 LED 燈測試水溶液，燈亮了表示：", ["這個水溶液可以導電","這個水溶液是酸性","這個水溶液有毒","電池沒電了"], 0, "電流能通過水溶液，燈才會亮。"),
+      T("conduct", "手濕濕的時候碰插座很危險，因為水裡溶有物質容易導電。", true, "一般的水含有雜質，會導電，濕手不要碰電器。"),
+      M("acid", "酸性水溶液會讓藍色石蕊試紙變成：", ["紅色","藍色","綠色","不變"], 0, "酸性：藍色石蕊試紙變紅。"),
+      M("acid", "鹼性水溶液會讓紅色石蕊試紙變成：", ["藍色","紅色","黃色","不變"], 0, "鹼性：紅色石蕊試紙變藍。"),
+      M("acid", "中性水溶液（例如糖水）碰到紅色和藍色石蕊試紙，會：", ["兩種都不變色","兩種都變紅","兩種都變藍","變白色"], 0, "中性水溶液不會讓石蕊試紙變色。"),
+      M("acid", "下列哪一個是酸性的？", ["醋","肥皂水","小蘇打水","石灰水"], 0, "醋、檸檬汁是酸性；肥皂水、小蘇打水、石灰水是鹼性。"),
+      M("acid", "把適量的酸性水溶液和鹼性水溶液混合，會怎麼樣？", ["酸鹼性會減弱，接近中性","酸性變更強","鹼性變更強","一定會爆炸"], 0, "酸鹼混合會互相抵消（中和），慢慢接近中性。"),
+      T("acid", "胃酸太多時吃的胃藥，常常是弱鹼性的，可以中和胃酸。", true, "這是酸鹼中和在生活中的應用。"),
+      T("acid", "不知道是什麼的液體，可以直接用嘴巴嚐嚐看是不是酸的。", false, "實驗室的液體不可以亂嚐，要用石蕊試紙等方法檢驗。")
+     ]},
+    {no:3, title:"三、動物大解密", desc:"肌肉骨骼關節與動物運動、呼吸與氣體交換、石灰水、動物與生活、仿生",
+     topicName:{move:"動物如何運動", breathe:"動物如何呼吸", life:"動物與我們的生活"},
+     bank:[
+      M("move", "人體可以彎曲手肘，主要是靠哪三者合作？", ["肌肉、骨骼、關節","心臟、肺、胃","眼睛、耳朵、鼻子","頭髮、指甲、皮膚"], 0, "肌肉收縮拉動骨骼，在關節處彎曲。"),
+      M("move", "骨頭和骨頭之間可以活動的地方叫做：", ["關節","肌肉","血管","神經"], 0, "像手肘、膝蓋都是關節。"),
+      T("move", "骨骼除了幫助運動，還能支撐身體、保護內臟。", true, "例如頭骨保護腦，肋骨保護心和肺。"),
+      M("move", "魚在水中主要靠什麼前進？", ["擺動身體和鰭","用腳走路","拍動翅膀","跳躍"], 0, "魚擺動身體和尾鰭推水前進。"),
+      M("move", "蛇沒有腳，怎麼移動？", ["靠肌肉和鱗片，身體彎曲前進","靠翅膀飛","用尾巴跳","不會移動"], 0, "蛇利用肌肉讓身體彎曲，鱗片抓住地面前進。"),
+      M("breathe", "人吸氣時，空氣進入身體的順序是：", ["鼻→氣管→肺","嘴→胃→肺","鼻→心臟→肺","耳→喉嚨→肺"], 0, "空氣從鼻子進入，經過氣管、支氣管，到達肺。"),
+      M("breathe", "在肺裡，身體吸收什麼、排出什麼？", ["吸收氧氣，排出二氧化碳","吸收二氧化碳，排出氧氣","吸收水，排出鹽","吸收食物，排出廢物"], 0, "肺的氣體交換：氧氣進入血液，二氧化碳排出。"),
+      M("breathe", "用吸管對著石灰水吹氣，石灰水會：", ["變混濁","變紅色","變藍色","完全沒變化"], 0, "呼出的氣體含較多二氧化碳，會讓石灰水變混濁。"),
+      T("breathe", "我們呼出的氣體裡，二氧化碳比吸入的空氣多。", true, "身體用掉氧氣、產生二氧化碳，再由呼氣排出。"),
+      M("breathe", "魚用什麼器官呼吸？", ["鰓","肺","皮膚上的毛","鰭"], 0, "魚用鰓吸收溶在水中的氧氣。"),
+      M("breathe", "生物體構造和功能的最小單位是：", ["細胞","器官","骨頭","血液"], 0, "細胞組成組織，再組成器官和器官系統。"),
+      M("life", "依「有沒有脊椎骨」把動物分兩類，這種分類方法叫做：", ["二分法","四則運算","倒敘法","抽籤"], 0, "每次依一個特徵分成「有」和「沒有」兩群，就是二分法。"),
+      M("life", "模仿蝙蝠用聲音找東西的本領，發明了什麼？", ["聲納（超音波探測）","電燈","鉛筆","雨傘"], 0, "蝙蝠會發出超音波、聽回音判斷位置，人類據此發展聲納。"),
+      M("life", "模仿動物特徵來設計發明，叫做：", ["仿生","化學","天文","考古"], 0, "例如觀察鳥類飛行發展飛機，就是仿生。"),
+      T("life", "羊毛、蠶絲都是人類利用動物資源的例子。", true, "動物提供衣物、食物等資源，我們也要愛護動物。"),
+      T("life", "動物對人類沒有任何幫助，所以不需要保育。", false, "動物和人類生活息息相關，維持生態平衡很重要。")
+     ]},
+    {no:4, title:"四、電磁作用", desc:"指北針與地磁、同極相斥異極相吸、電流的磁效應、電磁鐵的磁極與強弱、生活應用",
+     topicName:{compass:"指北針與磁極", em:"電磁鐵", use:"電磁作用與生活"},
+     bank:[
+      M("compass", "磁鐵的同極靠近（N 和 N），會：", ["互相排斥","互相吸引","沒有反應","黏在一起不放"], 0, "同極相斥、異極相吸。"),
+      M("compass", "自由轉動的磁鐵靜止時，N 極會指向：", ["北方","南方","東方","西方"], 0, "因為地球本身有磁性，磁鐵 N 極指北。"),
+      T("compass", "指北針的指針是一根磁化的針，所以會指南北。", true, "被磁化的針有 N、S 極，受地磁影響指向南北。"),
+      M("compass", "地球像一塊大磁鐵，地理北極附近其實是地磁的哪一極？", ["S 極","N 極","沒有磁極","東極"], 0, "磁鐵 N 極會被吸往北方，表示北方附近是地磁的 S 極（異極相吸）。"),
+      M("compass", "下列哪一個東西靠近指北針，最可能讓指針偏轉？", ["磁鐵","木頭筷子","塑膠尺","橡皮擦"], 0, "磁鐵或鐵製品會干擾指北針。"),
+      M("em", "通電的導線放在指北針上方，指針會：", ["偏轉","完全不動","變熱融化","發光"], 0, "電流會產生磁場，讓指北針偏轉，這叫電流的磁效應。"),
+      M("em", "把電流方向反過來，指北針偏轉的方向會：", ["跟著相反","不變","停止","轉更多圈"], 0, "電流方向改變，磁場方向也改變。"),
+      M("em", "做電磁鐵時，漆包線要繞在什麼上面效果比較好？", ["鐵釘","木棒","塑膠吸管","玻璃棒"], 0, "鐵芯可以讓磁力變強。"),
+      M("em", "下列哪一個方法可以讓電磁鐵的磁力「變強」？", ["增加線圈圈數","減少電池","把線圈拆掉","換成木頭鐵芯"], 0, "線圈圈數越多、串聯電池越多，磁力越強。"),
+      M("em", "想讓電磁鐵的 N、S 極對調，可以怎麼做？", ["把電池正負極反過來接","多繞幾圈","換一根鐵釘","把電磁鐵放進水裡"], 0, "電流方向反了，磁極也會對調。"),
+      T("em", "電磁鐵通電時有磁性，斷電後磁性就消失。", true, "這是電磁鐵最大的特點，可以控制有沒有磁性。"),
+      T("em", "串聯更多顆電池，電磁鐵的磁力會變弱。", false, "串聯電池越多，電流越大，磁力越強。"),
+      M("use", "電磁鐵比一般磁鐵方便的地方是：", ["可以控制磁性有無、強弱和磁極","永遠不需要電","比較便宜","可以吸塑膠"], 0, "通電、斷電、改電流方向和大小，就能控制它。"),
+      M("use", "資源回收場用來吊起廢鐵的大吊車，用的是：", ["電磁鐵","橡皮筋","強力膠","吸盤"], 0, "通電吸起廢鐵，移到位置斷電就放下。"),
+      M("use", "下列哪一個用品裡面「沒有」用到電磁作用？", ["鉛筆","電鈴","電動馬達","喇叭"], 0, "電鈴、馬達、喇叭都用到電磁作用。"),
+      M("use", "發現「磁可以生電」，讓人類能用發電機發電的科學家是：", ["法拉第","牛頓","愛因斯坦","達爾文"], 0, "法拉第發現磁鐵在線圈中移動會產生電流。"),
+      T("use", "使用手機等會發出電磁波的產品，也要注意適度使用。", true, "養成良好的 3C 使用習慣。")
+     ]}
+   ]},
+   {pre:"s6a", subject:"soc", subjName:"社會", book:"翰林 6上", units:[
+    {no:1, title:"一、消費選擇與理財規劃", desc:"貨幣與支付、影響消費的因素、消費權益、綠色消費、儲蓄與理財、投資風險",
+     topicName:{money:"貨幣與支付", buy:"聰明消費與權益", plan:"理財與風險"},
+     bank:[
+      M("money", "在還沒有貨幣的時候，人們用什麼方式取得需要的東西？", ["以物易物","刷信用卡","手機支付","網路購物"], 0, "早期人們拿自己的東西直接交換。"),
+      M("money", "下列哪一個「不是」電子支付？", ["用紙鈔付錢","刷悠遊卡","手機掃碼付款","行動支付 App"], 0, "紙鈔是現金；其他都是電子支付。"),
+      T("money", "使用電子支付很方便，但也要注意帳號安全，避免被盜用。", true, "要保護密碼，不隨便點不明連結。"),
+      M("buy", "買東西時，下列哪一個「不是」主要考慮的因素？", ["商品包裝的顏色是不是幸運色","價格","品質","自己的需要"], 0, "聰明消費要看價格、品質和需求。"),
+      M("buy", "商店推出「買一送一」「集點換贈品」，是生產者的什麼？", ["競爭（行銷）策略","法律規定","政府補助","消費者權益"], 0, "商家用促銷吸引顧客，消費者要想清楚是不是真的需要。"),
+      M("buy", "買到有問題的商品，可以打哪一支消費者服務專線？", ["1950","110","119","165"], 0, "1950 是全國消費者服務專線；165 是反詐騙專線。"),
+      T("buy", "網路購物通常有 7 天的猶豫期（鑑賞期），不滿意可以依規定退貨。", true, "依《消費者保護法》，網購有 7 天猶豫期。"),
+      M("buy", "下列哪一個是「綠色消費」的做法？", ["自備購物袋、買當地當季的產品","買很多一次性用品","每天換新手機","買過度包裝的禮盒"], 0, "減少浪費、少污染，對環境友善。"),
+      M("buy", "購買食品前，最應該先看包裝上的什麼？", ["有效日期和成分標示","廣告明星","包裝大小","贈品"], 0, "看清楚標示，才能買得安心。"),
+      M("plan", "為了應付突然生病、失業等意外，家庭先存起來的錢叫做：", ["緊急預備金","零用錢","紅包","獎學金"], 0, "通常建議準備幾個月的生活費當緊急預備金。"),
+      M("plan", "把錢存在銀行的優點是：", ["比較安全，還有利息","一定能賺大錢","完全沒有規定","可以隨便借別人"], 0, "存款風險低，但利息通常不高。"),
+      T("plan", "投資可能賺錢，也可能賠錢，報酬越高通常風險也越高。", true, "投資前要評估風險。"),
+      M("plan", "零用錢的好習慣是：", ["先存一部分，再花剩下的","一拿到就全部花完","向同學借錢買玩具","都不記帳"], 0, "先儲蓄、再消費，並且記帳。"),
+      M("plan", "下列哪一種理財方式風險通常最低？", ["銀行定期存款","買股票","把錢借給陌生人","參加來路不明的高報酬投資"], 0, "定存比較穩定；太好賺的投資要小心是詐騙。")
+     ]},
+    {no:2, title:"二、戰後經濟轉型與生活轉變", desc:"土地改革、美援與民生工業、加工出口區、十大建設、科學園區與科技島",
+     topicName:{postwar:"戰後的改革與援助", build:"公共建設改變生活", tech:"科技島"},
+     bank:[
+      M("postwar", "戰後政府推動的土地改革，順序是：", ["三七五減租→公地放領→耕者有其田","耕者有其田→三七五減租→公地放領","公地放領→耕者有其田→三七五減租","只有三七五減租"], 0, "先減租，再放領公地，最後耕者有其田。"),
+      M("postwar", "「三七五減租」是規定佃農交給地主的租金，最多是收成的：", ["37.5%","3.75%","75%","50%"], 0, "地租不能超過主要作物收成的 37.5%。"),
+      M("postwar", "「耕者有其田」的目的是：", ["讓種田的農民擁有自己的土地","讓地主擁有更多土地","把農田變成工廠","禁止種田"], 0, "政府向地主徵收土地，轉給佃農。"),
+      M("postwar", "1950～1960 年代，幫助臺灣重建經濟的外國援助主要是：", ["美援","日援","英援","聯合國維和部隊"], 0, "美國提供物資和資金，稱為美援。"),
+      M("postwar", "臺灣第一個加工出口區設在哪裡？", ["高雄","臺北","花蓮","澎湖"], 0, "1966 年高雄加工出口區成立，吸引外資、增加出口和工作機會。"),
+      T("postwar", "加工出口區讓很多人到工廠工作，臺灣慢慢從農業社會走向工業社會。", true, "工作機會增加，人口也往都市集中。"),
+      M("build", "1970 年代政府推動的重大建設，一般稱為：", ["十大建設","五大建設","前瞻計畫","新南向"], 0, "十大建設包括高速公路、機場、港口、鋼鐵、造船等。"),
+      M("build", "下列哪一項「屬於」十大建設？", ["中山高速公路","臺北 101","高鐵","雪山隧道"], 0, "中山高速公路是十大建設之一。"),
+      M("build", "交通建設（像高速公路）對生活最大的影響是：", ["縮短交通時間，帶動產業發展","讓大家都不出門","讓農產品賣不出去","讓城鄉距離變遠"], 0, "交通方便，人和貨物移動更快。"),
+      T("build", "重大建設也可能帶來環境破壞等問題，需要好好規劃。", true, "開發和保育要兼顧。"),
+      M("tech", "臺灣第一個科學園區是：", ["新竹科學園區","南部科學園區","中部科學園區","花蓮科學園區"], 0, "1980 年成立新竹科學工業園區。"),
+      M("tech", "臺灣被稱為「科技島」，最主要是因為哪一種產業很發達？", ["半導體（晶片）","漁業","畜牧業","礦業"], 0, "臺灣的半導體產業在世界上很重要。"),
+      T("tech", "高科技產業發展需要大量的水和電，也可能帶來環境問題。", true, "產業發展要考量資源和環境。")
+     ]},
+    {no:3, title:"三、迎向科技發展新挑戰", desc:"資訊科技與資訊安全、人工智慧、能源使用與再生能源、生物科技與規範",
+     topicName:{info:"資訊科技", energy:"能源科技", bio:"生物科技"},
+     bank:[
+      M("info", "下列哪一個是保護個人資料的好習慣？", ["不在網路上公開住址、電話和密碼","把密碼告訴好朋友","點開陌生人傳來的連結","用生日當所有密碼"], 0, "個資外洩可能被詐騙或盜用。"),
+      M("info", "看到網路上很驚人的消息，最好的做法是：", ["先查證來源再決定要不要轉傳","馬上轉傳給所有人","直接相信","留言罵人"], 0, "假訊息很多，要先查證。"),
+      M("info", "接到可疑電話說你中獎要先匯款，應該打哪一支專線查詢？", ["165 反詐騙專線","1950","119","113"], 0, "165 是反詐騙諮詢專線。"),
+      T("info", "人工智慧（AI）很厲害，所以它說的話一定都正確。", false, "AI 也會出錯，要自己判斷和查證。"),
+      M("info", "下列哪一個是人工智慧的應用？", ["語音助理、自動翻譯","算盤","紙本字典","手寫信"], 0, "AI 能辨識語音、翻譯、推薦內容等。"),
+      M("energy", "目前臺灣的發電方式中，占比最高的是：", ["火力發電","風力發電","太陽能發電","地熱發電"], 0, "臺灣主要靠燃煤、燃氣等火力發電。"),
+      M("energy", "下列哪一個「不是」再生能源？", ["煤","太陽能","風力","水力"], 0, "煤用完就沒有了，是不可再生能源。"),
+      M("energy", "太陽能發電的限制是：", ["晚上和陰雨天發電量少","會排放大量二氧化碳","需要燒很多煤","只能在北極使用"], 0, "太陽能受天氣和日照影響。"),
+      T("energy", "隨手關燈、使用節能標章的電器，都可以節約能源。", true, "節能減碳從生活做起。"),
+      M("bio", "改變生物的基因，讓作物更耐蟲害，這是哪一種科技？", ["基因改造","氣象預報","人工智慧","交通科技"], 0, "基因改造是生物科技的一種。"),
+      M("bio", "疫苗的主要功用是：", ["讓身體產生抵抗力，預防疾病","讓人長高","當作食物","治好所有疾病"], 0, "疫苗幫助身體提前認識病菌，產生免疫力。"),
+      M("bio", "世界上第一隻用成體細胞複製成功的哺乳動物是：", ["桃莉羊","貓熊","黑面琵鷺","臺灣黑熊"], 0, "1996 年英國的桃莉羊。"),
+      T("bio", "生物科技的發展要遵守法律和倫理規範。", true, "例如複製人涉及倫理問題，需要規範。"),
+      M("bio", "食品包裝上標示「基因改造」，是為了：", ["保障消費者知道並自己選擇","讓食品看起來比較好吃","增加重量","沒有任何意義"], 0, "清楚標示，消費者才能自己決定要不要買。")
+     ]},
+    {no:4, title:"四、生活中的規範與運作", desc:"風俗、道德與法律、憲法與平等權、兒少保障、自由權與參政權、基本義務、中央與地方政府",
+     topicName:{rule:"規範與權益", right:"權利與義務", gov:"政府與民主運作"},
+     bank:[
+      M("rule", "國家的「根本大法」是：", ["憲法","校規","民法","交通規則"], 0, "憲法是國家最高的法律，其他法律不能違反憲法。"),
+      M("rule", "「排隊不插隊」比較屬於哪一種規範？", ["道德（社會規範）","憲法","刑法","國際條約"], 0, "排隊是大家遵守的道德和禮貌。"),
+      T("rule", "違反道德不一定違法，但違反法律會受到處罰。", true, "法律有強制力；道德靠自己和社會輿論。"),
+      M("rule", "憲法規定人民在法律上一律平等，不分男女、宗教、種族、階級、黨派，這是：", ["平等權","參政權","受益權","財產權"], 0, "這是憲法第 7 條的平等權。"),
+      M("rule", "保障兒童和少年權益的專門法律是：", ["兒童及少年福利與權益保障法","消費者保護法","道路交通管理處罰條例","著作權法"], 0, "簡稱「兒少法」，保護兒少的身心安全。"),
+      M("right", "選舉、罷免、創制、複決，屬於人民的哪一種權利？", ["參政權","自由權","平等權","受益權"], 0, "參與政治的權利叫參政權。"),
+      M("right", "言論自由、宗教信仰自由，屬於：", ["自由權","參政權","平等權","義務"], 0, "憲法保障人民各種自由。"),
+      M("right", "憲法規定人民的基本義務有：", ["納稅、服兵役、受國民教育","打掃家裡、寫作業、運動","繳班費、參加社團、考試","投票、罷免、創制"], 0, "這三項是憲法規定的人民義務。"),
+      T("right", "受國民教育既是權利，也是義務。", true, "國民教育是人民的權利，也是義務。"),
+      M("gov", "我國中央政府有五院，負責制定法律的是：", ["立法院","行政院","司法院","考試院"], 0, "立法院制定法律、審查預算。"),
+      M("gov", "中央政府五院中，負責審判、解釋憲法的是：", ["司法院","監察院","立法院","行政院"], 0, "司法院掌理審判和憲法解釋。"),
+      M("gov", "負責舉辦公務人員考試的是：", ["考試院","監察院","行政院","司法院"], 0, "考試院負責國家考試和公務人員任用制度。"),
+      M("gov", "高雄市屬於哪一種地方政府？", ["直轄市","縣","鄉鎮","省"], 0, "臺灣有 6 個直轄市，高雄市是其中之一。"),
+      M("gov", "人民可以用哪一種方式表達對公共事務的意見？", ["投書、陳情、參加公聽會","在網路上罵人","破壞公物","威脅別人"], 0, "要用理性、合法的方式參與公共事務。")
+     ]}
+   ]}
+  ];
+  SUBJ6A.forEach(function(S){
+    S.units.forEach(function(c){
+      var id = S.pre + "-" + c.no;
+      c.bank.forEach(function(q){ q.uid = id; q.ot = q.t; });
+      UNITS.push({id:id, grade:6, subject:S.subject, subjName:S.subjName, book:S.book, n:10,
+        title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
+    });
+    function rev(id, title, desc, nos, n){
+      var tn = {}, bank = [];
+      S.units.filter(function(c){ return nos.indexOf(c.no) >= 0; }).forEach(function(c){
+        var k = "u" + c.no; tn[k] = c.title;
+        c.bank.forEach(function(q){ bank.push(Object.assign({}, q, {t:k})); });
+      });
+      UNITS.push({id:S.pre + "-" + id, grade:6, subject:S.subject, subjName:S.subjName, book:S.book, n:n, title:title, desc:desc,
+        topicName:tn, scopes:autoScopes(tn), bank:bank});
+    }
+    rev("r1", "期中複習：第 1～2 單元", "前半學期的範圍，可以挑單元", [1,2], 12);
+    rev("r2", "期末複習：第 3～4 單元", "後半學期的範圍，可以挑單元", [3,4], 12);
+    rev("all", "學力挑戰：全冊總複習", "第 1～4 單元全部混在一起，像期末考", [1,2,3,4], 15);
+  });
+  SUBJ_EMOJI.chi = "📖"; SUBJ_EMOJI.soc = "🌏";
+
+  // ── 狀態 ──
+  var cur = {kid: null, unit: null, scope: "all", qs: [], i: 0, score: 0, wrong: [], ai: false};
+  function kidName(){ var r = readers.filter(function(x){ return x.id === cur.kid; })[0]; return r ? r.name : ""; }
+  function gradeOf(r){ var g = grades[nameKey(r.name)]; return g == null ? grades[r.id] : g; }
+  var wrongBook = store.get("subWrong", {});
+  function wbKey(){ return nameKey(kidName()) + "|" + cur.unit.id; }
+
+  function show(id){ ["home","parent","unitPage","quiz","result","hw","stats"].forEach(function(x){ $(x).classList.toggle("hide", x !== id); }); window.scrollTo(0, 0); }
+
+  // ── 首頁 ──
+  function renderHome(){
+    var box = $("kids"); box.innerHTML = "";
+    var shared = store.get("reader", null);
+    var kids = readers.filter(function(r){ return gradeOf(r); });
+    if (!cur.kid){
+      var pick = kids.filter(function(r){ return r.id === shared; })[0] || kids[0];
+      cur.kid = pick ? pick.id : null;
+    }
+    kids.forEach(function(r){
+      var b = document.createElement("button");
+      b.className = "kid" + (r.id === cur.kid ? " on" : "");
+      b.textContent = (r.avatar || "🙂") + " " + r.name + "（" + gradeOf(r) + " 年級）";
+      b.onclick = function(){ cur.kid = r.id; renderHome(); };
+      box.appendChild(b);
+    });
+    $("cloudNote").textContent = cloudOn() ? "☁️ 點數會自動記到 LINE 點數帳本" : "⚠️ 這台還沒設定點數雲端（先在英文 App 設定），這次的點數不會記錄";
+    var r = readers.filter(function(x){ return x.id === cur.kid; })[0];
+    var g = r ? gradeOf(r) : 0;
+    $("unitsTitle").textContent = g + " 年級的單元";
+    $("mapBtn").classList.toggle("hide", g !== 6);
+    var ub = $("units"); ub.innerHTML = "";
+    var list = UNITS.filter(function(u){ return u.grade === g; });
+    if (!list.length){ ub.innerHTML = '<div class="muted">' + g + ' 年級的題目還在準備中 🛠️</div>'; }
+    list.forEach(function(u){
+      var b = document.createElement("button");
+      b.className = "unit" + (u.subject === "math" ? " math" : "");
+      b.innerHTML = '<span class="tag">' + esc(u.subjName) + '</span><span class="tag">' + esc(u.book) + '</span><div style="font-weight:800;font-size:22px;margin-top:6px">' + esc(u.title) + '</div><div class="muted">' + esc(u.desc) + '</div>';
+      b.onclick = function(){ cur.unit = u; cur.scope = "all"; renderUnit(); };
+      ub.appendChild(b);
+    });
+    var ap = store.get("subAppeals", []).length;
+    $("parentBtn").textContent = "👨‍👩‍👧 家長區" + (ap ? "（" + ap + " 個申訴）" : "");
+  }
+
+  // ── 單元頁 ──
+  function qCount(){ return cur.unit.n || 10; }
+  function renderUnit(){
+    cur.token = 0; cur.waiting = null; // 離開作答：背景還沒改完的題目不再計分
+    var u = cur.unit, fm = fromMap();
+    if (fm) cur.scope = u.scopes.some(function(x){ return x.id === MAP.scope; }) ? MAP.scope : "all";
+    $("scopes").classList.toggle("hide", fm);
+    $("scopes").previousElementSibling.textContent = fm ? worldName() + " " + mapCode() : "這次要考哪個範圍？";
+    $("backHome").textContent = fm ? worldName().slice(0, 3) + "回" + worldName().slice(3) : "← 回到單元列表";
+    $("toMap").classList.toggle("hide", !fm);
+    $("uTag").textContent = u.subjName + "・" + u.book;
+    $("uTitle").textContent = u.title;
+    $("uDesc").textContent = u.desc;
+    var sb = $("scopes"); sb.innerHTML = "";
+    u.scopes.forEach(function(s){
+      var b = document.createElement("button");
+      b.className = "scope" + (s.id === cur.scope ? " on" : "");
+      b.textContent = s.name;
+      b.onclick = function(){ cur.scope = s.id; renderUnit(); };
+      sb.appendChild(b);
+    });
+    var w = (wrongBook[wbKey()] || []).length;
+    $("wrongNote").textContent = w ? "📌 之前錯的 " + w + " 題，這次會優先再出現" : "";
+    $("startBtn").textContent = "✏️ 開始 " + qCount() + " 題";
+    var got = earnedToday(), need = needScore(qCount());
+    $("ruleNote").textContent = (u.subject === "math" ? "得分 " + need + " 分以上（滿分 " + qCount() + "）" : "答對 " + need + " 題以上") +
+      " +" + rules.passPt + " 點，滿分再 +" + rules.fullPt + " 點（每個單元每天最多 " + (rules.passPt + rules.fullPt) + " 點）" + (got ? "。今天已經拿到 " + got + " 點 👍" : "") +
+      (fm ? (cur.scope === "all" ? "\n🗺️ 考完 AI 老師會講評、給 0～5 顆星，4 顆星以上過關。" : "\n🏝️ 及格就有星星（及格 1 顆、90% 以上 2 顆、滿分 3 顆）。小關全部通過會得到綠色寶箱。") : "") +
+      (u.subject === "math" ? "\n計算題：答案對、過程也對才算 1 分；答案對但過程有問題，或方法對但算錯，算 0.5 分。" : "");
+    $("ruleNote").style.whiteSpace = "pre-line";
+    $("aiNote").textContent = "";
+    show("unitPage");
+  }
+  function needScore(n){ return Math.ceil(n * rules.pass / 10 - 1e-9); }
+
+  function scopeTopics(){ var u = cur.unit; return (u.scopes.filter(function(s){ return s.id === cur.scope; })[0] || u.scopes[0]).topics; }
+
+  // 出題：先放之前錯的，再從各個主題平均抽
+  function buildQuiz(){
+    var u = cur.unit, topics = scopeTopics(), N = qCount();
+    var pool = u.bank.filter(function(q){ return topics.indexOf(q.t) >= 0; });
+    var wrongTexts = wrongBook[wbKey()] || [];
+    var picked = shuffle(pool.filter(function(q){ return wrongTexts.indexOf(q.q) >= 0; })).slice(0, Math.ceil(N * 0.4));
+    var rest = shuffle(pool.filter(function(q){ return picked.indexOf(q) < 0; }));
+    var byT = {}; rest.forEach(function(q){ (byT[q.t] = byT[q.t] || []).push(q); });
+    var ts = shuffle(Object.keys(byT)), k = 0, guard = 0;
+    while (picked.length < N && ts.length && guard++ < 300){
+      var arr = byT[ts[k % ts.length]]; k++;
+      if (arr && arr.length) picked.push(arr.shift());
+      if (!ts.some(function(t){ return byT[t].length; })) break;
+    }
+    return shuffle(picked).map(prepQ);
+  }
+  function prepQ(q){
+    if (q.type !== "mc") return q;
+    var idx = shuffle(q.o.map(function(_, i){ return i; }));
+    return Object.assign({}, q, {o: idx.map(function(i){ return q.o[i]; }), ans: idx.indexOf(q.ans)});
+  }
+
+  function startQuiz(qs, isAI){
+    cur.qs = qs; cur.i = 0; cur.score = 0; cur.wrong = []; cur.ai = !!isAI; cur.res = []; cur.token = Date.now(); cur.waiting = null; cur.gain = 0; cur.appeals = 0;
+    show("quiz"); renderQ();
+  }
+
+  // ── 圖（扇形、圓）──
+  function figSVG(f){
+    if (!f) return "";
+    var cx = 110, cy = 110, r = 80, s = '<svg width="220" height="' + (f.sector && f.sector[1] <= 180 ? 140 : 220) + '" viewBox="0 0 220 ' + (f.sector && f.sector[1] <= 180 ? 140 : 220) + '" style="max-width:100%">';
+    var st = 'fill="#f3ecff" stroke="#6d4bd8" stroke-width="3"';
+    if (f.sector){
+      var a = f.sector[1] * Math.PI / 180, x2 = cx + r * Math.cos(a), y2 = cy - r * Math.sin(a);
+      s += '<path d="M' + cx + ' ' + cy + ' L' + (cx + r) + ' ' + cy + ' A' + r + ' ' + r + ' 0 ' + (f.sector[1] > 180 ? 1 : 0) + ' 0 ' + x2.toFixed(1) + ' ' + y2.toFixed(1) + ' Z" ' + st + '/>';
+      s += '<text x="' + (cx + r / 2) + '" y="' + (cy + 22) + '" font-size="16" text-anchor="middle" fill="#2d2a26">' + esc(f.sector[0]) + '</text>';
+      s += '<text x="' + (cx + 14) + '" y="' + (cy - 10) + '" font-size="15" fill="#6d4bd8">' + f.sector[1] + '°</text>';
+    } else if (f.circle){
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" ' + st + '/>';
+      s += f.d ? '<line x1="' + (cx - r) + '" y1="' + cy + '" x2="' + (cx + r) + '" y2="' + cy + '" stroke="#6d4bd8" stroke-width="2"/>'
+               : '<line x1="' + cx + '" y1="' + cy + '" x2="' + (cx + r) + '" y2="' + cy + '" stroke="#6d4bd8" stroke-width="2"/>';
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="#6d4bd8"/>';
+      s += '<text x="' + (f.d ? cx : cx + r / 2) + '" y="' + (cy - 8) + '" font-size="16" text-anchor="middle" fill="#2d2a26">' + esc(f.circle) + '</text>';
+    }
+    return s + "</svg>";
+  }
+
+  // ── 作答 ──
+  function renderQ(){
+    var q = cur.qs[cur.i], n = cur.qs.length;
+    $("qCount").textContent = "第 " + (cur.i + 1) + " / " + n + " 題";
+    $("qTopic").textContent = (cur.unit.topicName[q.t] || "") + (cur.ai ? "・AI 出題" : "");
+    $("qBar").style.width = (cur.i / n * 100) + "%";
+    renderDots();
+    $("qText").innerHTML = (q.type === "tf" ? "（是非）" : "") + fmt(q.q);
+    $("qFig").innerHTML = figSVG(q.fig);
+    $("qExp").innerHTML = ""; $("nextBtn").classList.add("hide");
+    var box = $("qOpts"); box.innerHTML = ""; box.className = q.type === "tf" ? "tf" : "";
+    $("workArea").classList.toggle("hide", q.type !== "w");
+    if (q.type === "w"){ startWork(q); return; }
+    var choices = q.type === "tf" ? [{label:"⭕", v:true}, {label:"❌", v:false}] : q.o.map(function(t, i){ return {label: "①②③④".charAt(i) + " " + t, v:i}; });
+    choices.forEach(function(c){
+      var b = document.createElement("button");
+      b.className = "opt"; b.innerHTML = fmt(c.label);
+      b.onclick = function(){ answer(c.v, b); };
+      box.appendChild(b);
+    });
+  }
+  function answer(v, btn){
+    var q = cur.qs[cur.i];
+    var btns = $("qOpts").querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+    var ok = v === q.ans;
+    var correctIdx = q.type === "tf" ? (q.ans ? 0 : 1) : q.ans;
+    btns[correctIdx].classList.add("right");
+    if (!ok) btn.classList.add("wrong");
+    var ansText = q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : "①②③④".charAt(q.ans) + " " + q.o[q.ans];
+    $("qExp").innerHTML = '<div class="exp ' + (ok ? "ok" : "no") + '"><b>' + (ok ? "✅ 答對了！" : "😅 正確答案是：" + fmt(ansText)) + "</b><br>" + fmt(q.exp || "") + "</div>";
+    cur.res[cur.i] = {done:true, sc: ok ? 1 : 0};
+    logStat(q, ok ? 1 : 0, ok ? "none" : "", "quiz");
+    record(q, ok ? 1 : 0, {pick: v});
+    renderDots();
+    showNext();
+  }
+  function record(q, sc, extra){
+    cur.score += sc;
+    if (sc < 1) cur.wrong.push(Object.assign({q: q, sc: sc}, extra || {}));
+    // 錯題本：沒拿滿分加入、拿滿分移除（AI 題目不記）
+    if (!cur.ai){
+      var list = wrongBook[wbKey()] || [];
+      var at = list.indexOf(q.q);
+      if (sc < 1 && at < 0) list.push(q.q);
+      if (sc >= 1 && at >= 0) list.splice(at, 1);
+      wrongBook[wbKey()] = list; store.set("subWrong", wrongBook); syncSoon();
+    }
+  }
+  function showNext(){
+    $("nextBtn").textContent = cur.i + 1 < cur.qs.length ? "下一題 →" : "看結果 🎉";
+    $("nextBtn").classList.remove("hide");
+  }
+  $("nextBtn").onclick = function(){ cur.i++; if (cur.i < cur.qs.length) renderQ(); else finish(); };
+  $("quitBtn").onclick = function(){ if (confirm("確定要放棄嗎？這次不會算分。")) renderUnit(); };
+
+  // ── 數學答案比對 ──
+  function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b){ var t = a % b; a = b; b = t; } return a || 1; }
+  function parseAns(s){
+    s = String(s || "").replace(/\s+/g, "").replace(/：/g, ":");
+    var m;
+    if ((m = s.match(/^(\d+):(\d+)$/))) return {kind:"ratio", a:+m[1], b:+m[2]};
+    if ((m = s.match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/))) return {kind:"ratio", a:+m[1], b:+m[2]};
+    if ((m = s.match(/^(\d+)又(\d+)\/(\d+)$/))){ var w = +m[1], n = +m[2], d = +m[3]; if (!d) return null; return {kind:"num", n:w * d + n, d:d, reduced: gcd(n, d) === 1 && n < d && n > 0}; }
+    if ((m = s.match(/^(\d+)\/(\d+)$/))){ var n2 = +m[1], d2 = +m[2]; if (!d2) return null; return {kind:"num", n:n2, d:d2, reduced: gcd(n2, d2) === 1 && d2 !== 1}; }
+    if ((m = s.match(/^(\d+)(?:\.(\d+))?$/))){ var k = Math.pow(10, (m[2] || "").length); return {kind:"num", n:Math.round(parseFloat(s) * k), d:k, reduced:true}; }
+    return null;
+  }
+  function checkAns(input, correct){
+    var a = parseAns(input), c = parseAns(correct);
+    if (!a || !c) return {ok:false, msg:"答案的寫法看不懂"};
+    if (c.kind === "ratio"){
+      if (a.kind !== "ratio") return {ok:false, msg:"這題答案要寫成比，例如 3:4"};
+      if (a.a === c.a && a.b === c.b) return {ok:true};
+      if (Math.abs(a.a * c.b - a.b * c.a) < 1e-9) return {ok:false, msg:"比例是對的，但還沒化成最簡整數比"};
+      return {ok:false};
+    }
+    if (a.kind !== "num") return {ok:false};
+    if (a.n * c.d !== c.n * a.d) return {ok:false};
+    if (!a.reduced) return {ok:false, msg:"數值對了，但分數要約成最簡分數（假分數可以化成帶分數）"};
+    return {ok:true};
+  }
+
+  // ── 手寫板 ──
+  var pad = (function(){
+    var wrap = $("padWrap"), cv = $("pad"), ctx = cv.getContext("2d");
+    var strokes = [], curS = null, tool = "pen", H0 = 440, H = H0, W = 0;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var penSeen = store.get("subPenSeen", false), finger = store.get("subFinger", null);
+    function allowTouch(){ return finger === null ? !penSeen : finger; }
+    function updFinger(){ $("tFinger").textContent = allowTouch() ? "✋ 手指可以寫" : "🖊️ 只用筆寫"; }
+    function size(){ W = wrap.clientWidth || 600; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.height = H + "px"; redraw(); }
+    function seg(c, s, k, from){
+      c.save();
+      c.globalCompositeOperation = s.tool === "eraser" ? "destination-out" : "source-over";
+      c.strokeStyle = "#1d2a44"; c.lineCap = "round"; c.lineJoin = "round";
+      c.lineWidth = (s.tool === "eraser" ? 28 : 3) * k;
+      var p = s.pts, i0 = Math.max(0, from - 1);
+      c.beginPath(); c.moveTo(p[i0][0] * k, p[i0][1] * k);
+      if (p.length === 1) c.lineTo(p[0][0] * k + 0.1, p[0][1] * k);
+      for (var i = i0 + 1; i < p.length; i++) c.lineTo(p[i][0] * k, p[i][1] * k);
+      c.stroke(); c.restore();
+    }
+    function redraw(){ ctx.clearRect(0, 0, cv.width, cv.height); strokes.forEach(function(s){ seg(ctx, s, dpr, 0); }); }
+    function pos(e){ var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    cv.addEventListener("pointerdown", function(e){
+      if (e.pointerType === "pen" && !penSeen){ penSeen = true; store.set("subPenSeen", true); updFinger(); }
+      if (e.pointerType === "touch" && !allowTouch()) return;
+      if (curS) return;
+      e.preventDefault();
+      try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+      curS = {tool: tool, pts: [pos(e)], id: e.pointerId};
+      strokes.push(curS); seg(ctx, curS, dpr, 0);
+    });
+    cv.addEventListener("pointermove", function(e){
+      if (!curS || e.pointerId !== curS.id) return;
+      e.preventDefault();
+      var evs = (e.getCoalescedEvents && e.getCoalescedEvents()) || [];
+      if (!evs.length) evs = [e];
+      var from = curS.pts.length;
+      evs.forEach(function(ev){ curS.pts.push(pos(ev)); });
+      seg(ctx, curS, dpr, from);
+    });
+    function end(e){ if (curS && e.pointerId === curS.id) curS = null; }
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+    // 寫字時不要讓 iPad 捲動頁面
+    cv.addEventListener("touchstart", function(e){ if (allowTouch() || (e.touches[0] && e.touches[0].touchType === "stylus")) e.preventDefault(); }, {passive:false});
+    cv.addEventListener("touchmove", function(e){ if (curS) e.preventDefault(); }, {passive:false});
+    function setTool(t){ tool = t; $("tPen").classList.toggle("on", t === "pen"); $("tEraser").classList.toggle("on", t === "eraser"); }
+    $("tPen").onclick = function(){ setTool("pen"); };
+    $("tEraser").onclick = function(){ setTool("eraser"); };
+    $("tUndo").onclick = function(){ strokes.pop(); redraw(); };
+    $("tClear").onclick = function(){ if (!strokes.length || confirm("全部擦掉？")){ strokes = []; redraw(); } };
+    $("tMore").onclick = function(){ H += 300; size(); };
+    $("tFinger").onclick = function(){ finger = !allowTouch(); store.set("subFinger", finger); updFinger(); };
+    addEventListener("resize", function(){ if (!$("workArea").classList.contains("hide")) size(); });
+    updFinger();
+    return {
+      reset: function(){ strokes = []; curS = null; H = H0; setTool("pen"); size(); },
+      hasInk: function(){ return strokes.some(function(s){ return s.tool === "pen"; }); },
+      // 輸出成白底 JPEG（只裁有寫字的範圍），回傳 base64
+      exportJPEG: function(){
+        var pens = strokes.filter(function(s){ return s.tool === "pen"; });
+        if (!pens.length) return null;
+        var x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+        pens.forEach(function(s){ s.pts.forEach(function(p){ x0 = Math.min(x0, p[0]); y0 = Math.min(y0, p[1]); x1 = Math.max(x1, p[0]); y1 = Math.max(y1, p[1]); }); });
+        var m = 30; x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m); x1 = Math.min(W, x1 + m); y1 = Math.min(H, y1 + m);
+        var bw = Math.max(60, x1 - x0), bh = Math.max(60, y1 - y0);
+        var k = Math.max(1, Math.min(2, 1000 / Math.max(bw, bh)));
+        var off = document.createElement("canvas"); off.width = Math.round(bw * k); off.height = Math.round(bh * k);
+        var oc = off.getContext("2d"); oc.translate(-x0 * k, -y0 * k);
+        strokes.forEach(function(s){ seg(oc, s, k, 0); });
+        var out = document.createElement("canvas"); out.width = off.width; out.height = off.height;
+        var c2 = out.getContext("2d"); c2.fillStyle = "#fff"; c2.fillRect(0, 0, out.width, out.height); c2.drawImage(off, 0, 0);
+        return out.toDataURL("image/jpeg", 0.85).split(",")[1];
+      }
+    };
+  })();
+
+  // ── 拍照 ──
+  var photo = {b64: null};
+  $("photoBtn").onclick = function(){ $("photoIn").value = ""; $("photoIn").click(); };
+  $("photoIn").onchange = function(){
+    var f = this.files && this.files[0]; if (!f) return;
+    $("wNote").textContent = "照片處理中…";
+    var url = URL.createObjectURL(f), img = new Image();
+    img.onload = function(){
+      var k = Math.min(1, 1200 / Math.max(img.naturalWidth, img.naturalHeight));
+      var c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+      var data = c.toDataURL("image/jpeg", 0.85);
+      photo.b64 = data.split(",")[1];
+      $("photoPrev").src = data; $("photoPrev").classList.remove("hide");
+      $("photoBtn").textContent = "📷 重拍";
+      $("wNote").textContent = "";
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = function(){ $("wNote").textContent = "這張照片讀不出來，換一張試試"; };
+    img.src = url;
+  };
+
+  // ── 作答模式、鍵盤 ──
+  var mode = store.get("subMathMode", "pad");
+  function setMode(m){
+    mode = m; store.set("subMathMode", m);
+    $("mPad").classList.toggle("on", m === "pad"); $("mPhoto").classList.toggle("on", m === "photo");
+    $("padBox").classList.toggle("hide", m !== "pad"); $("photoBox").classList.toggle("hide", m !== "photo");
+    if (m === "pad") pad.reset.call(null, true);
+  }
+  $("mPad").onclick = function(){ if (mode !== "pad"){ setMode("pad"); } };
+  $("mPhoto").onclick = function(){ if (mode !== "photo"){ setMode("photo"); } };
+  var ans = "";
+  function showAns(){ $("ansBox").innerHTML = fmt(ans); }
+  (function(){
+    var K = ["7","8","9","/","又","⌫","4","5","6",".",":","清除","1","2","3","0"];
+    K.forEach(function(k){
+      var b = document.createElement("button");
+      b.textContent = k;
+      if ("/又⌫.:清除".indexOf(k) >= 0) b.className = "fn";
+      if (k === "0") b.className = "wide";
+      b.onclick = function(){
+        if (k === "⌫") ans = ans.slice(0, -1);
+        else if (k === "清除") ans = "";
+        else if (ans.length < 14) ans += k;
+        showAns();
+      };
+      $("keys").appendChild(b);
+    });
+  })();
+  function startWork(q){
+    ans = ""; showAns();
+    $("ansUnit").textContent = q.u || "";
+    photo.b64 = null; $("photoPrev").classList.add("hide"); $("photoBtn").textContent = "📷 拍照 / 選照片";
+    $("submitW").disabled = false; $("submitW").classList.remove("hide"); $("wNote").textContent = "";
+    $("keys").style.pointerEvents = "";
+    setMode(mode);
+  }
+
+  // ── 交出計算題：答案馬上比對，過程交給 AI 在背景看，小朋友不用等 ──
+  $("submitW").onclick = function(){
+    var q = cur.qs[cur.i];
+    if (!parseAns(ans)){ $("wNote").textContent = ans ? "⚠️ 答案的寫法看不懂，檢查一下（分數用 /、帶分數用 又、比用 :）" : "⚠️ 先在答案格填答案"; return; }
+    var img = mode === "pad" ? pad.exportJPEG() : photo.b64;
+    if (!img && !confirm("你沒有寫計算過程，這題最多只能拿 0.5 分。確定要交嗎？")) return;
+    $("submitW").classList.add("hide"); $("keys").style.pointerEvents = "none"; $("wNote").textContent = "";
+    var e = {w:true, q:q, pick:ans, chk:checkAns(ans, q.ans), img:img, idx:cur.i, r:null, err:"", done:false, sc:0};
+    cur.res[cur.i] = e;
+    var tok = cur.token;
+    if (!img){ e.r = {method:"none", feedback:"這題沒有寫算式喔，下次把過程寫出來，才拿得到滿分。"}; settle(e, tok); }
+    else gradeWork(q, ans, e.chk.ok, img).then(function(r){ e.r = r; }, function(err){ e.err = err.message; }).then(function(){ settle(e, tok); });
+    renderWork(e);
+    renderDots();
+    showNext();
+  };
+  var METHOD_TXT = {right:"⭐ 過程正確", slip:"🟡 方法對，但計算有小錯", wrong:"❌ 方法不對", none:"⚪ 看不到計算過程"};
+  function scoreOf(e){
+    var r = e.r, ok = e.chk.ok, m = r && r.method;
+    if (!r) return ok ? 1 : 0;                         // AI 沒辦法看：只看答案
+    if (r.readable === false) return ok ? 0.5 : 0;
+    return ok ? (m === "right" ? 1 : 0.5) : (m === "right" || m === "slip" ? 0.5 : 0);
+  }
+  function settle(e, tok){
+    if (e.done || tok !== cur.token) return;
+    e.done = true; e.sc = scoreOf(e);
+    logStat(e.q, e.sc, e.sc >= 1 ? "none" : (e.r && e.r.errType) || (e.chk.msg && /最簡/.test(e.chk.msg) ? "simplify" : ""), "quiz");
+    record(e.q, e.sc, {pick: e.pick, e: e});
+    renderDots();
+    if (cur.i === e.idx && !$("quiz").classList.contains("hide")) renderWork(e);
+    if (cur.waiting) cur.waiting();
+  }
+  // 過程的評語（作答中和結果頁共用）
+  function aiHTML(e){
+    var r = e.r, h = "";
+    if (!e.done) return "<p>🤖 AI 老師在背景看你的算式，可以先做下一題，最後會告訴你結果。</p>";
+    if (r){
+      h += "<p><b>" + (r.readable === false ? "🔍 字有點看不清楚" : (!e.chk.ok && r.method === "right") ? "🟡 過程對，但答案格填錯了" : (METHOD_TXT[r.method] || "")) + "</b>　本題 " + e.sc + " 分</p>";
+      if (r.errorStep) h += "<p>👉 " + esc(r.errorStep) + "</p>";
+      if (r.feedback) h += "<p>💬 " + esc(r.feedback) + "</p>";
+    } else h += "<p>本題 " + e.sc + " 分（" + esc(e.err || "AI 暫時沒辦法看算式") + "，這題只看答案）</p>";
+    return h;
+  }
+  function renderWork(e){
+    var q = e.q, ok = e.chk.ok;
+    var cls = e.done ? (e.sc >= 1 ? "ok" : e.sc > 0 ? "mid" : "no") : (ok ? "ok" : "no");
+    var h = '<p><b>' + (ok ? "✅ 答案正確！" : "😅 答案不對") + "</b>" + (e.chk.msg ? "（" + esc(e.chk.msg) + "）" : "") + "</p>" + aiHTML(e);
+    if (!ok || (e.done && e.sc < 1)) h += "<p><b>正確答案：</b>" + fmt(q.ans) + " " + esc(q.u || "") + "</p><p class=\"muted\">📘 " + fmt(q.sol || "") + "</p>";
+    $("qExp").innerHTML = '<div class="exp ' + cls + '">' + h + "</div>";
+  }
+  function appealBtn(e){
+    var b = document.createElement("button"); b.className = "appeal"; b.textContent = "🙋 還是覺得不對？請爸媽看";
+    b.onclick = function(){ b.disabled = true; e.parentAsked = true; saveAppeal(e.q, e.pick, e.sc, e.r, e.img, e.reply).then(function(ok){ b.textContent = ok ? "✅ 已經送給家長了" : "⚠️ 存不下來，直接拿給家長看吧"; }); };
+    return b;
+  }
+  // 題號列：⭐ 滿分、🟡 半分、❌ 0 分、⏳ AI 還在看
+  function renderDots(){
+    var n = cur.qs.length, s = "";
+    for (var i = 0; i < n; i++){
+      var e = cur.res[i];
+      s += e ? (e.done ? (e.sc >= 1 ? "⭐" : e.sc > 0 ? "🟡" : "❌") : "⏳") : (i === cur.i ? "✏️" : "▫️");
+    }
+    $("qDots").textContent = s;
+  }
+
+  // ── 申訴（存縮小的圖，給家長看）──
+  function shrink(b64, max, qual){
+    return new Promise(function(res){
+      var img = new Image();
+      img.onload = function(){
+        var k = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL("image/jpeg", qual));
+      };
+      img.onerror = function(){ res(null); };
+      img.src = "data:image/jpeg;base64," + b64;
+    });
+  }
+  function saveAppeal(q, a, sc, r, img, reply){
+    return shrink(img, 800, 0.6).then(function(small){
+      var list = store.get("subAppeals", []);
+      list.unshift({id: "ap" + Date.now(), date: today(), kid: kidName(), unit: cur.unit.title, q: q.q, ans: q.ans, u: q.u || "", pick: a, sc: sc, fb: (r.errorStep ? r.errorStep + " " : "") + (r.feedback || "") + (reply ? "｜申訴回覆：" + reply : ""), img: small});
+      list = list.slice(0, 8);
+      while (list.length && !store.set("subAppeals", list)) list.pop();
+      return list.length > 0;
+    });
+  }
+  function askPin(){
+    var pin = store.get("subParentPin", "");
+    if (!pin){
+      var p1 = prompt("第一次使用，請設定家長密碼（4 位數字以上）");
+      if (!p1 || p1.length < 4) return false;
+      store.set("subParentPin", p1); return true;
+    }
+    return prompt("家長密碼") === pin;
+  }
+  function renderParent(){
+    var list = store.get("subAppeals", []), box = $("apList");
+    if (!list.length){ box.innerHTML = '<div class="note">目前沒有申訴 👍</div>'; return; }
+    box.innerHTML = "";
+    list.forEach(function(a){
+      var d = document.createElement("div"); d.className = "rev";
+      d.innerHTML = "<div class=\"muted\">" + esc(a.date + "・" + a.kid + "・" + a.unit) + "</div><b>" + fmt(a.q) + "</b>" +
+        "<div>正確答案：" + fmt(a.ans) + " " + esc(a.u) + "　小朋友填：" + fmt(a.pick) + "　AI 給 " + a.sc + " 分</div>" +
+        "<div class=\"muted\">AI 說：" + esc(a.fb) + "</div>" + (a.img ? '<img class="apImg" src="' + a.img + '" alt="">' : "");
+      var row = document.createElement("div"); row.className = "row";
+      var give = document.createElement("button"); give.className = "btn"; give.textContent = "補 0.5 點";
+      give.onclick = function(){
+        send({action:"earn", name: a.kid, amt: 0.5, why: "數學申訴補分 📐", ref: "sub:math:appeal:" + a.id});
+        drop(a.id); alert(cloudOn() ? "已補 0.5 點" : "這台沒有設定雲端，點數沒有送出");
+      };
+      var keep = document.createElement("button"); keep.className = "btn2"; keep.textContent = "AI 沒看錯，刪除";
+      keep.onclick = function(){ drop(a.id); };
+      row.appendChild(give); row.appendChild(keep); d.appendChild(row); box.appendChild(d);
+    });
+  }
+  function drop(id){ store.set("subAppeals", store.get("subAppeals", []).filter(function(x){ return x.id !== id; })); renderParent(); }
+  $("parentBtn").onclick = function(){ if (askPin()){ renderParent(); renderStarSet(); show("parent"); } };
+  $("parentBack").onclick = function(){ renderHome(); show("home"); };
+
+  // ── 結果與點數 ──
+  var earned = store.get("subEarned", {});
+  function refBase(){ return "sub:" + cur.unit.subject + ":" + cur.unit.id + ":" + today() + ":" + kidName(); }
+  function earnedToday(){ var b = refBase(); return (earned[b + ":pass"] || 0) + (earned[b + ":full"] || 0); }
+
+  function finish(){
+    var pend = cur.res.filter(function(e){ return e && !e.done; });
+    if (pend.length){
+      show("result");
+      $("rEmoji").textContent = "⏳"; $("rPoints").innerHTML = ""; $("rReview").innerHTML = "";
+      $("rScore").textContent = "AI 老師還在看 " + pend.length + " 題的算式，等一下下…";
+      if (!cur.waiting){
+        var tok = cur.token;
+        var timer = setTimeout(function(){   // 等太久：還沒改完的只看答案
+          if (tok !== cur.token) return;
+          cur.res.forEach(function(e){ if (e && !e.done){ e.err = "AI 太久沒回應"; settle(e, tok); } });
+        }, 60000);
+        cur.waiting = function(){
+          var left = cur.res.filter(function(e){ return e && !e.done; }).length;
+          if (left) $("rScore").textContent = "AI 老師還在看 " + left + " 題的算式，等一下下…";
+          else { clearTimeout(timer); cur.waiting = null; finish(); }
+        };
+      }
+      return;
+    }
+    cur.gain = cur.gain || 0;
+    renderScore(); renderReview();
+    if (isMapLevel()) runTeacher(); else $("rTeacher").classList.add("hide");
+    show("result");
+  }
+  // 計分與給點（可以重複呼叫：申訴成功後再算一次，點數靠 ref 不會重複給）
+  function renderScore(){
+    var n = cur.qs.length, s = Math.round(cur.score * 10) / 10, need = needScore(n), isMath = cur.unit.subject === "math";
+    $("qBar").style.width = "100%";
+    $("rEmoji").textContent = s >= n ? "🏆" : s >= need ? "🎉" : s >= n / 2 ? "💪" : "📖";
+    $("rScore").textContent = isMath ? "得分 " + s + " / " + n : "答對 " + s + " / " + n + " 題";
+    var gain = [], base = refBase(), emo = SUBJ_EMOJI[cur.unit.subject] || "📚",
+        why = cur.unit.subjName + "「" + cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "") + "」" + (isMath ? "得分 " : "答對 ") + s + "/" + n;
+    if (s >= need && !earned[base + ":pass"]) gain.push({ref: base + ":pass", amt: rules.passPt, why: why + " " + emo});
+    if (s >= n && !earned[base + ":full"]) gain.push({ref: base + ":full", amt: rules.fullPt, why: why + " 全對加碼 🏆"});
+    gain.forEach(function(g){ earned[g.ref] = g.amt; cur.gain += g.amt; send({action:"earn", name: kidName(), amt: g.amt, why: g.why, ref: g.ref}); });
+    if (gain.length) store.set("subEarned", earned);
+    if (cur.gain > 0){
+      $("rPoints").innerHTML = '<span class="pill pop">+' + cur.gain + ' 點</span>' + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>');
+    } else if (s >= need){
+      $("rPoints").innerHTML = '<div class="muted">今天這個單元的點數已經拿過了，繼續練習會更熟喔！</div>';
+    } else {
+      $("rPoints").innerHTML = '<div class="muted">' + (isMath ? "得分 " + need + " 分以上" : "答對 " + need + " 題以上") + '就有點數，看看下面的錯題再試一次！</div>';
+    }
+  }
+  // ── 數學島：AI 老師講評、0～5 顆星、星等獎勵 ──
+  // 星星：先照得分算基本星（滿分 5、85% 以上 4、70% 以上 3、50% 以上 2、有分 1），AI 老師看過程可以 ±1；不是滿分最多 4 顆。4 顆以上過關。
+  // subMap[名字][單元id] = {best 最高星, paid 已給獎勵到幾星, pass, chest, last:{d, st, s, n, comment, good[], focus[]}, hist:[{d, st, s, n}]}
+  var starRules = Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {}));
+  var BOX_NAME = {green:"綠色寶箱", blue:"藍色寶箱", purple:"紫色寶箱", gold:"金色寶箱"};
+  function boxOfUnit(id){ return /^(m6a|c6a|n6a|s6a)-(r\d|all)$|^e6a-/.test(id) ? (BOX_NAME[starRules.reviewBox] ? starRules.reviewBox : "blue") : (BOX_NAME[starRules.unitBox] ? starRules.unitBox : "green"); }
+  function isMapLevel(){ return !!(cur.unit && MAP_RE.test(cur.unit.id) && cur.scope === "all"); }
+  function baseStars(s, n){ var p = n ? s / n : 0; return p >= 1 ? 5 : p >= 0.85 ? 4 : p >= 0.7 ? 3 : p >= 0.5 ? 2 : p > 0 ? 1 : 0; }
+  function clampStars(st, s, n){ var b = baseStars(s, n); st = Math.round(+st); if (isNaN(st)) st = b; st = Math.max(b - 1, Math.min(b + 1, st)); if (s < n) st = Math.min(st, 4); return Math.max(0, Math.min(5, st)); }
+  function qLines(){
+    return cur.qs.map(function(q, i){
+      var e = cur.res[i] || {}, w = cur.wrong.filter(function(x){ return x.q === q; })[0];
+      var line = (i + 1) + ". [" + (cur.unit.topicName[q.t] || "") + "] " + String(q.q).replace(/\s+/g, " ").slice(0, 70) + " → " + (e.sc || 0) + " 分";
+      if (e.w) line += "（填 " + e.pick + "，答案 " + q.ans + (e.r && e.r.errorStep ? "；算式問題：" + e.r.errorStep : "") + (e.r && e.r.errType && e.r.errType !== "none" ? "；錯誤類型 " + e.r.errType : "") + "）";
+      else if (w) line += "（選錯，正確是 " + (q.type === "tf" ? (q.ans ? "對" : "錯") : q.o[q.ans]) + "）";
+      return line;
+    }).join("\n");
+  }
+  function localReview(s, n){
+    var weak = {}; cur.qs.forEach(function(q, i){ var e = cur.res[i] || {}; if ((e.sc || 0) < 1) weak[cur.unit.topicName[q.t] || "其他"] = 1; });
+    var f = Object.keys(weak);
+    return {stars: baseStars(s, n), comment: "這次得 " + s + " / " + n + " 分。" + (f.length ? "把錯的題目看懂再挑戰一次，星星會更多！" : "全部答對，太厲害了！"), good: [], focus: f.slice(0, 3).map(function(x){ return "再練習「" + x + "」"; }), ai: false};
+  }
+  function teacherReview(s, n){
+    var b = baseStars(s, n);
+    var prompt = "你是台灣國小" + cur.unit.grade + "年級的" + cur.unit.subjName + "老師，學生剛考完「" + cur.unit.title + "」（" + cur.unit.book + "）的闖關測驗，請寫講評並給星星。\n" +
+      "得分：" + s + " / " + n + "。每題結果：\n" + qLines() + "\n" +
+      "星星規則：0～5 顆。依得分算出的基本星是 " + b + " 顆。你可以看計算過程和錯誤類型調整 1 顆（例如答案對但過程常常有問題就少 1 顆；錯的都只是小粗心、觀念清楚可以多 1 顆），不是滿分不能給 5 顆。4 顆以上算過關。\n" +
+      "講評要具體、溫和、鼓勵，用六年級看得懂的字。good 寫 1～2 個做得好的地方；focus 寫 1～3 個下次要加強的具體重點（例如" + ({math:"「異分母相除要先把除數倒過來再乘」", chi:"「律詩是八句、絕句是四句，七言律詩共 56 字」", sci:"「酸性讓藍色石蕊試紙變紅，鹼性讓紅色變藍」", soc:"「參政權是選舉、罷免、創制、複決」", eng:"「He / She 後面的動詞要加 s，例如 goes」"}[cur.unit.subject] || "「把錯的觀念再讀一次課本」") + "），不要只寫單元名稱。全部答對 focus 可以空。\n" +
+      "只回傳 JSON：{\"stars\":整數,\"comment\":\"2～3 句講評\",\"good\":[\"\"],\"focus\":[\"\"]}";
+    return callGemini(prompt, {think: "low", temp: 0.3, timeout: 30000}).then(function(j){
+      if (!j || j.stars == null || !j.comment) throw new Error("格式不對");
+      var arr = function(a, k){ return (Array.isArray(a) ? a : []).filter(Boolean).slice(0, k).map(String); };
+      return {stars: clampStars(j.stars, s, n), comment: String(j.comment).slice(0, 300), good: arr(j.good, 2), focus: arr(j.focus, 3), ai: true};
+    });
+  }
+  function runTeacher(){
+    var n = cur.qs.length, s = Math.round(cur.score * 10) / 10, tok = cur.token, box = $("rTeacher");
+    cur.review = null; cur.levelSaved = false;
+    box.classList.remove("hide");
+    box.innerHTML = '<h2>🧑‍🏫 AI 老師講評</h2><div class="muted">AI 老師正在看你這次的表現，幫你打星星…</div>';
+    teacherReview(s, n).catch(function(){ return localReview(s, n); }).then(function(rv){
+      if (tok !== cur.token) return;
+      cur.review = rv; saveLevel(rv, s, n); renderTeacher();
+    });
+  }
+  function bumpStars(){   // 申訴成功、分數變高：星星至少是新分數的基本星
+    var rv = cur.review; if (!rv) return;
+    var n = cur.qs.length, s = Math.round(cur.score * 10) / 10, ns = Math.max(rv.stars, s >= n ? 5 : Math.min(4, baseStars(s, n)));
+    if (ns === rv.stars) return;
+    rv.stars = ns; saveLevel(rv, s, n); renderTeacher();
+  }
+  function saveLevel(rv, s, n){
+    var all = store.get("subMap", {}), k = nameKey(kidName()), m = all[k] = all[k] || {}, key = cur.unit.id;
+    var old = m[key] && m[key].hist ? m[key] : {best:0, paid:0, chest:false, hist:[]};
+    if (!cur.levelSaved) cur.prevBest = old.best || 0;
+    var hist = old.hist.slice(); if (cur.levelSaved) hist.pop();
+    hist.push({d: today(), st: rv.stars, s: s, n: n, t: Date.now()});
+    var rec = {best: Math.max(cur.prevBest, rv.stars), paid: old.paid || 0, chest: !!old.chest, hist: hist.slice(-20),
+      last: {d: today(), st: rv.stars, s: s, n: n, comment: rv.comment, good: rv.good, focus: rv.focus, t: Date.now()}};
+    rec.pass = rec.best >= 4;
+    var gain = 0, title = cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "");
+    for (var t = rec.paid + 1; t <= rec.best; t++){
+      var p = +starRules.pts[t] || 0;
+      if (p > 0){ gain += p; send({action:"earn", name: kidName(), amt: p, why: "學習大冒險「" + title + "」" + t + " 顆星 ⭐", ref: "sub:" + cur.unit.subject + ":map:" + key + ":" + kidName() + ":star" + t}); }
+    }
+    rec.paid = Math.max(rec.paid, rec.best);
+    var newChest = +starRules.chest > 0 && rec.best >= +starRules.chest && !rec.chest; if (newChest) rec.chest = true;
+    m[key] = rec; store.set("subMap", all); syncSoon(1000);
+    cur.levelSaved = true;
+    rv.gain = (rv.gain || 0) + gain; rv.newChest = rv.newChest || newChest; rv.best = rec.best;
+  }
+  function renderTeacher(){
+    var rv = cur.review, box = $("rTeacher"); if (!rv) return;
+    var h = '<h2>🧑‍🏫 AI 老師講評</h2><div class="tstars pop">' + "★".repeat(rv.stars) + '<span class="off">' + "★".repeat(5 - rv.stars) + "</span></div>";
+    h += '<div class="center" style="font-weight:700">' + (rv.stars >= 4 ? "✅ " + rv.stars + " 顆星，過關！" : rv.stars + " 顆星，還差 " + (4 - rv.stars) + " 顆星過關，加油！") + "</div>";
+    h += '<div class="exp ok" style="margin-top:10px"><p>' + esc(rv.comment) + "</p>" + (rv.good.length ? "<p>👍 " + rv.good.map(esc).join("　") + "</p>" : "") + "</div>";
+    if (rv.focus.length) h += '<div class="exp mid"><b>🎯 下次加強</b><ul style="margin:4px 0 0;padding-left:22px">' + rv.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul></div>";
+    if (rv.best > cur.prevBest && cur.prevBest > 0) h += '<div class="center">🆙 刷新這一關的最佳紀錄：' + cur.prevBest + " → " + rv.best + " 顆星</div>";
+    if (rv.gain) h += '<div class="center" style="margin-top:8px"><span class="pill pop">星星獎勵 +' + rv.gain + " 點</span>" + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>') + "</div>";
+    if (rv.newChest) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:#e3f7ea;color:#1d7a43">🎁 ' + BOX_NAME[boxOfUnit(cur.unit.id)] + '可以打開了！回地圖點寶箱抽點數</span></div>';
+    if (!rv.ai) h += '<div class="note">（AI 老師暫時連不上，這次的星星只照分數算）</div>';
+    box.innerHTML = h;
+  }
+  // 🎯 段考大寶箱的預設範圍（每科一組期中、期末；家長存過的設定優先，新加的科目自動補上）
+  var DEF_EXAMS = [
+    {id:"mid", pre:"m6a", name:"數學期中考", box:"purple", uids:["m6a-1","m6a-2","m6a-3","m6a-4","m6a-r1"]},
+    {id:"final", pre:"m6a", name:"數學期末考", box:"purple", uids:["m6a-5","m6a-6","m6a-7","m6a-8","m6a-r2","m6a-all"]}
+  ];
+  [["c6a","國語"],["n6a","自然"],["s6a","社會"]].forEach(function(x){
+    DEF_EXAMS.push({id:x[0] + "-mid", pre:x[0], name:x[1] + "期中考", box:"purple", uids:[x[0] + "-1", x[0] + "-2", x[0] + "-r1"]});
+    DEF_EXAMS.push({id:x[0] + "-final", pre:x[0], name:x[1] + "期末考", box:"purple", uids:[x[0] + "-3", x[0] + "-4", x[0] + "-r2", x[0] + "-all"]});
+  });
+  function examList(saved){
+    var L = Array.isArray(saved) ? saved.map(function(e){ var d = DEF_EXAMS.filter(function(x){ return x.id === e.id; })[0]; return Object.assign({}, e, {pre: e.pre || (d ? d.pre : "m6a"), name: d && /^期[中末]考$/.test(e.name) ? d.name : e.name}); }) : [];
+    DEF_EXAMS.forEach(function(d){ if (!L.some(function(e){ return e.id === d.id; })) L.push(Object.assign({}, d)); });
+    return L;
+  }
+  // 家長區：星星獎勵設定
+  function renderStarSet(){
+    var h = "";
+    for (var k = 1; k <= 5; k++) h += '<div class="starRow"><span>' + "★".repeat(k) + '</span><input type="number" min="0" step="0.5" id="sp' + k + '" value="' + (+starRules.pts[k] || 0) + '"> 點</div>';
+    h += '<div class="starRow"><span>🎁 開寶箱</span><select id="spChest">' + [0,3,4,5].map(function(v){ return '<option value="' + v + '"' + (+starRules.chest === v ? " selected" : "") + ">" + (v ? "拿到 " + v + " 顆星" : "不給寶箱") + "</option>"; }).join("") + "</select></div>";
+    var boxSel = function(id, v){ return '<select id="' + id + '" style="width:150px">' + Object.keys(BOX_NAME).map(function(k){ return '<option value="' + k + '"' + (v === k ? " selected" : "") + ">" + BOX_NAME[k] + "</option>"; }).join("") + "</select>"; };
+    h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">一般單元（各科每一單元）</span>' + boxSel("spUnitBox", boxOfUnit("m6a-1")) + "</div>";
+    h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">綜合單元（期中／期末複習、學力挑戰、學校英語）</span>' + boxSel("spReviewBox", boxOfUnit("m6a-r1")) + "</div>";
+    h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">英文課文／單字（英文口說練習）</span>' + boxSel("spEngBox", BOX_NAME[starRules.engBox] ? starRules.engBox : "green") + "</div>";
+    // 🎯 段考大寶箱
+    var EX = examList(starRules.exams);
+    h += '<h2 style="margin-top:18px">🎯 期中考／期末考大寶箱</h2><div class="muted">範圍內每一關的寶箱都打開後，地圖上會出現一個大寶箱可以再開。換學期時改一下學期，大寶箱就能重新拿。</div>';
+    h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">學期</span><input id="exTerm" value="' + esc(starRules.examTerm || "115-1") + '" style="width:120px"> <span class="muted" style="width:auto;font-size:15px">例如 115-1（115 學年度上學期）</span></div>';
+    EX.forEach(function(ex, k){
+      h += '<div class="apBox" data-exk="' + k + '"><div class="starRow" style="margin:0"><b style="font-size:19px">' + esc(ex.name) + "</b>" + boxSel("exBox" + k, BOX_NAME[ex.box] ? ex.box : "purple") + "</div>";
+      var pre = ex.pre || "m6a", mapUnits = UNITS.filter(function(u){ return u.id.indexOf(pre + "-") === 0; });
+      h += mapUnits.map(function(u){ return '<label style="display:block;font-size:17px;margin:4px 0"><input type="checkbox" data-u="' + u.id + '"' + (ex.uids.indexOf(u.id) >= 0 ? " checked" : "") + ' style="width:20px;height:20px;vertical-align:-3px"> ' + esc(u.title) + "</label>"; }).join("") + "</div>";
+    });
+    cur.exEdit = EX;
+    h += '<div class="note">每一關地圖上都有一個寶箱。寶箱的獎品和機率跟英文口說練習一樣（綠 &lt; 藍 &lt; 紫 &lt; 金），要改獎品請到英文 App 的家長區。</div>';
+    $("starSet").innerHTML = h; $("starNote").textContent = "";
+  }
+  $("starSave").onclick = function(){
+    var pts = [0];
+    for (var k = 1; k <= 5; k++){ var v = Math.max(0, Math.round((+$("sp" + k).value || 0) * 10) / 10); pts.push(v); }
+    var exs = (cur.exEdit || []).map(function(ex, k){
+      var box = document.querySelector('[data-exk="' + k + '"]');
+      return {id: ex.id, name: ex.name, pre: ex.pre, box: $("exBox" + k).value, uids: Array.prototype.filter.call(box.querySelectorAll("input[data-u]"), function(c){ return c.checked; }).map(function(c){ return c.getAttribute("data-u"); })};
+    });
+    starRules = {pts: pts, chest: +$("spChest").value, unitBox: $("spUnitBox").value, reviewBox: $("spReviewBox").value, engBox: $("spEngBox").value, exams: exs, examTerm: ($("exTerm").value || "115-1").trim()};
+    store.set("subStarRules", starRules); syncSoon(500);
+    $("starNote").textContent = "✅ 已儲存（只影響之後拿到的星等）";
+  };
+  var MAP_RE = /^(m6a|e6a|c6a|n6a|s6a)-/;
+  function worldName(){ var id = cur.unit ? cur.unit.id : ""; return /^c6a/.test(id) ? "🌳 魔法森林" : /^n6a/.test(id) ? "❄️ 冰雪王國" : /^s6a/.test(id) ? "🏜️ 沙漠神殿" : /^e6a/.test(id) ? "☁️ 天空之城" : "🏝️ 數學島"; }
+  function fromMap(){ return !!(MAP.back && cur.unit && MAP.unit === cur.unit.id); }
+  // 小關編號：第 3 單元的第 2 個主題 → 3-2
+  function mapCode(){
+    var m = /^m6a-(\d)$/.exec(cur.unit.id);
+    if (!m || cur.scope === "all") return cur.unit.title;
+    var ks = Object.keys(cur.unit.topicName);
+    return m[1] + "-" + (ks.indexOf(cur.scope) + 1) + " " + cur.unit.topicName[cur.scope];
+  }
+  function goMap(){ location.href = (MAP.back || MAP_PAGE); }
+  function renderReview(){
+    var rv = $("rReview");
+    var list = cur.wrong.filter(function(w){ return !w.e || w.e.sc < 1; });
+    if (!list.length){ rv.innerHTML = "<h2>全部答對，太厲害了！</h2>"; return; }
+    rv.innerHTML = "<h2>📌 錯題複習</h2>";
+    list.slice().sort(function(a, b){ return (a.e ? a.e.idx : 0) - (b.e ? b.e.idx : 0); }).forEach(function(w){ rv.appendChild(reviewItem(w)); });
+  }
+  function reviewItem(w){
+    var q = w.q, d = document.createElement("div"); d.className = "rev";
+    if (q.type !== "w"){
+      var a = q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : q.o[q.ans];
+      d.innerHTML = "<b>" + fmt(q.q) + '</b><div style="color:var(--ok)">正確：' + fmt(a) + '</div><div class="muted">' + fmt(q.exp || "") + "</div>";
+      return d;
+    }
+    var e = w.e;
+    d.innerHTML = "<b>" + fmt(q.q) + "</b><div>你的答案：" + fmt(w.pick || "") + (e && e.chk.ok ? " ✅" : " ❌") + '</div><div style="color:var(--ok)">正確：' + fmt(q.ans) + " " + esc(q.u || "") + "</div>" +
+      (e ? '<div class="exp ' + (e.sc >= 1 ? "ok" : e.sc > 0 ? "mid" : "no") + '">' + aiHTML(e) + (e.reply ? "<p>🧑‍🏫 " + esc(e.reply) + "</p>" : "") + "</div>" : "") +
+      '<div class="muted">📘 ' + fmt(q.sol || "") + "</div>";
+    if (e && e.img && e.r && e.sc < 1){
+      if (!e.appealed) d.appendChild(aiAppealBox(e, w, d));
+      else if (!e.parentAsked) d.appendChild(appealBtn(e));
+    }
+    return d;
+  }
+
+  // ── 跟 AI 老師申訴：AI 重新獨立看一次圖，有證據才改判 ──
+  var REASONS = ["我的答案是對的", "AI 看錯我的字了", "我用的是別的方法", "我有寫過程"];
+  function aiAppealBox(e, w, item){
+    var wrap = document.createElement("div");
+    var open = document.createElement("button"); open.className = "appeal"; open.textContent = "🙋 請 AI 老師再看一次";
+    wrap.appendChild(open);
+    open.onclick = function(){
+      if ((cur.appeals || 0) >= 3){ open.textContent = "這一回已經申訴 3 次了，有問題請爸媽看"; open.disabled = true; return; }
+      var pick = [];
+      var box = document.createElement("div"); box.className = "apBox";
+      box.innerHTML = '<div style="font-weight:700">覺得哪裡改錯了？（可以選好幾個）</div>';
+      var chips = document.createElement("div"); chips.className = "row";
+      REASONS.forEach(function(t){
+        var c = document.createElement("button"); c.className = "chip"; c.textContent = t;
+        c.onclick = function(){ var i = pick.indexOf(t); if (i < 0) pick.push(t); else pick.splice(i, 1); c.classList.toggle("on", i < 0); };
+        chips.appendChild(c);
+      });
+      box.appendChild(chips);
+      var ta = document.createElement("textarea"); ta.className = "apText"; ta.placeholder = "說說看，例如：我寫的是 7 不是 1；我先約分再乘"; ta.maxLength = 200;
+      box.appendChild(ta);
+      var go = document.createElement("button"); go.className = "btn"; go.textContent = "送出申訴"; go.style.width = "100%";
+      var msg = document.createElement("div"); msg.className = "note";
+      go.onclick = function(){
+        var reason = pick.concat(ta.value.trim() ? [ta.value.trim()] : []).join("；");
+        if (!reason){ msg.textContent = "選一個理由或寫一句話"; return; }
+        go.disabled = true; msg.textContent = "🧑‍🏫 AI 老師重新仔細看中…（大約 20～40 秒）";
+        cur.appeals = (cur.appeals || 0) + 1;
+        aiAppeal(e, reason).then(function(res){
+          e.appealed = true; e.reply = res.reply || "";
+          var old = e.sc;
+          if (res.accept){
+            if (res.keyWrong && cur.ai && res.rightAns && parseAns(res.rightAns)){ e.q.ans = String(res.rightAns).replace(/\s+/g, ""); e.chk = checkAns(e.pick, e.q.ans); }
+            e.r = Object.assign({}, e.r, {readable:true, method: res.method || e.r.method, errorStep: res.errorStep || "", feedback: ""});
+            var nsc = scoreOf(e);
+            if (nsc > old){
+              e.sc = nsc; cur.score += nsc - old; w.sc = nsc;
+              fixStat(e.q, old, nsc);
+              if (nsc >= 1 && !cur.ai){ var l = wrongBook[wbKey()] || [], at = l.indexOf(e.q.q); if (at >= 0){ l.splice(at, 1); store.set("subWrong", wrongBook); } }
+              e.reply = "✅ 申訴成功！" + e.reply;
+              renderScore(); bumpStars();
+            } else if (res.accept) e.reply = "（分數不變）" + e.reply;
+          } else e.reply = "❎ 維持原判：" + e.reply;
+          item.parentNode.replaceChild(reviewItem(w), item);
+        }).catch(function(err){ go.disabled = false; cur.appeals--; msg.textContent = "⚠️ " + err.message; });
+      };
+      box.appendChild(go); box.appendChild(msg);
+      wrap.replaceChild(box, open);
+    };
+    return wrap;
+  }
+  function aiAppeal(e, reason){
+    var q = e.q, r = e.r;
+    var prompt = "你是台灣國小" + cur.unit.grade + "年級的數學老師，負責處理學生對批改結果的申訴。你要比第一次批改更仔細。\n" +
+      "題目：" + q.q + "\n標準答案：" + q.ans + (q.u ? " " + q.u : "") + "\n參考解法：" + (q.sol || "（無）") + "\n" +
+      "學生在答案格填的是：" + e.pick + "（程式比對：" + (e.chk.ok ? "正確" : "錯誤") + (e.chk.msg ? "，" + e.chk.msg : "") + "）\n" +
+      "第一次批改結果：method=" + r.method + (r.readable === false ? "（字看不清楚）" : "") + "；錯誤：" + (r.errorStep || "無") + "；評語：" + (r.feedback || "") + "\n" +
+      "學生申訴的理由：「" + reason + "」\n" +
+      "請重新、獨立地看圖片裡的計算過程。學生的理由只是參考，可能對也可能不對：只有圖片上的證據支持時才改判，不可以因為學生堅持或語氣就改判。" +
+      "常見的誤判：看錯手寫數字、把約分記號當成錯誤、不認得不同但正確的解法、漏看寫在旁邊的算式。\n" +
+      (cur.ai ? "這題是 AI 出的，標準答案也可能算錯。請自己算兩次；如果標準答案錯了，keyWrong 填 true，rightAns 填正確答案（格式：整數、小數、最簡分數 3/4、帶分數 1又3/4、最簡整數比 3:4）。\n" : "標準答案已經人工確認是對的。\n") +
+      "只回傳 JSON：{\"accept\":true或false,\"method\":\"right|slip|wrong|none\",\"errorStep\":\"重新判斷後第一個錯誤，沒有就空字串\",\"keyWrong\":false,\"rightAns\":\"\",\"reply\":\"回覆學生，1～2 句，說明為什麼接受或不接受，語氣溫和、具體\"}\n" +
+      "method 定義：right=方法和計算都對；slip=方法對但計算有錯；wrong=方法或列式錯；none=沒有過程。accept=true 代表第一次批改確實有誤。";
+    return callGemini([{inlineData:{mimeType:"image/jpeg", data: e.img}}, {text: prompt}], {think:"high", temp:0.1, timeout:90000})
+      .then(function(j){
+        if (!j || typeof j.accept !== "boolean") throw new Error("AI 回覆格式不對，再試一次");
+        if (j.method && ["right","slip","wrong","none"].indexOf(j.method) < 0) j.method = "";
+        return j;
+      });
+  }
+  $("againBtn").onclick = function(){ startQuiz(buildQuiz(), false); };
+  $("toUnit").onclick = renderUnit;
+
+  // ── 送點數到雲端（自己的排隊）──
+  var queue = store.get("subQueue", []), flushing = false;
+  function send(obj){
+    if (!cloudOn()) return;
+    queue.push(Object.assign({qid: "q" + Date.now() + Math.random().toString(36).slice(2, 7)}, obj));
+    store.set("subQueue", queue.slice(-200)); flush();
+  }
+  function flush(){
+    if (flushing || !cloudOn() || !queue.length) return;
+    flushing = true;
+    var item = Object.assign({}, queue[0], {key: cloud.key});
+    fetch(cloud.url, {method: "POST", body: JSON.stringify(item)})
+      .then(function(r){ return r.json().catch(function(){ return {}; }); })
+      .then(function(j){
+        flushing = false;
+        if (j && j.ok === false && /密碼/.test(j.error || "")) return;
+        queue.shift(); store.set("subQueue", queue); flush();
+      })
+      .catch(function(){ flushing = false; });
+  }
+  addEventListener("online", flush);
+  flush();
+
+  // ── Gemini（用英文 App 存好的金鑰）──
+  var MODELS = [store.get("gmodel", "gemini-3.6-flash"), "gemini-3.6-flash", "gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+    .filter(function(m, i, a){ return m && a.indexOf(m) === i; });
+  var good = store.get("subGoodModel", ""), bad = store.get("subBadModels", {});
+  function modelList(){
+    var month = today().slice(0, 7);
+    var l = [good].concat(MODELS).filter(function(m, i, a){ return m && a.indexOf(m) === i && !(bad[m] && bad[m].slice(0, 7) === month); });
+    return l.length ? l : MODELS;
+  }
+  // parts：文字或 [{text}, {inlineData}]；opt：{think:"low"|"medium", temp, timeout}
+  function callGemini(parts, opt){
+    opt = opt || {};
+    if (typeof parts === "string") parts = [{text: parts}];
+    var keys = [store.get("gkey", ""), store.get("gkey2", "")].map(function(k){ return String(k || "").trim(); }).filter(function(k, i, a){ return k && a.indexOf(k) === i; });
+    if (!keys.length) return Promise.reject(new Error("這台還沒有 Gemini 金鑰（先在英文 App 設定）"));
+    var tries = [], ml = modelList();
+    keys.forEach(function(k){ ml.forEach(function(m){ tries.push({k:k, m:m}); }); });
+    var last = "";
+    function next(i){
+      if (i >= tries.length) return Promise.reject(new Error(last || "AI 暫時沒有回應，等一下再試"));
+      var t = tries[i], think = opt.think || "low";
+      var gen = {responseMimeType:"application/json", temperature: opt.temp == null ? 0.8 : opt.temp, maxOutputTokens:8192};
+      gen.thinkingConfig = /2\.5/.test(t.m) ? {thinkingBudget: think === "low" ? 0 : think === "high" ? 8192 : 2048} : {thinkingLevel: think};
+      var ctl = window.AbortController ? new AbortController() : null;
+      var timer = setTimeout(function(){ ctl && ctl.abort(); }, opt.timeout || 30000);
+      return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(t.m) + ":generateContent", {
+        method:"POST", signal: ctl ? ctl.signal : undefined,
+        headers:{"Content-Type":"application/json","x-goog-api-key": t.k},
+        body: JSON.stringify({contents:[{role:"user", parts: parts}], generationConfig: gen})
+      }).then(function(res){
+        clearTimeout(timer);
+        return res.json().catch(function(){ return {}; }).then(function(d){
+          if (res.status === 404){ bad[t.m] = today(); store.set("subBadModels", bad); }   // 這個模型名稱不能用，這個月先跳過
+          if (!res.ok){
+            last = res.status === 429 ? "今天 AI 的免費額度用完了（下午 3～4 點左右會重置）" : "AI 回應失敗（" + res.status + "）";
+            return next(i + 1);
+          }
+          if (good !== t.m){ good = t.m; store.set("subGoodModel", t.m); }   // 記住能用的模型，下次先用它
+          var txt = ((((d.candidates || [])[0] || {}).content || {}).parts || []).map(function(p){ return p.thought ? "" : (p.text || ""); }).join("");
+          try{ return JSON.parse(txt.replace(/^```(json)?|```$/g, "").trim()); }catch(e){ last = "AI 回覆格式不對"; return next(i + 1); }
+        });
+      }).catch(function(){ clearTimeout(timer); last = "連不到 AI，請檢查網路"; return next(i + 1); });
+    }
+    return next(0);
+  }
+
+  // AI 看算式
+  function gradeWork(q, a, ansOk, img){
+    var prompt = "你是台灣國小" + cur.unit.grade + "年級的數學老師，正在批改學生的手寫計算過程。\n" +
+      "題目：" + q.q + "\n標準答案：" + q.ans + (q.u ? " " + q.u : "") + "\n參考解法：" + (q.sol || "（無）") + "\n" +
+      "學生在答案格填的是：" + a + "（系統比對：" + (ansOk ? "正確" : "錯誤") + "）\n" +
+      "圖片是學生的計算過程，可能是直式或橫式、短除法、分數算式、列式，可能寫在 iPad 上，也可能寫在紙上拍照。\n" +
+      "請做這些事：\n1. 仔細辨識學生寫了什麼（直式要注意對齊、借位、進位、小數點位置；分數要看分子分母）。\n" +
+      "2. 判斷方法對不對、每一步計算對不對。不同但合理的解法也算對，不要求和參考解法一樣。\n" +
+      "3. 應用題要看列式合不合理：有沒有找對基準量、份數、單位換算。\n" +
+      "4. 如果過程算出來的答案和答案格不一樣，要指出來。\n" +
+      "不要因為字醜扣分，看得出來就好。只寫答案沒有過程、或圖片和這題無關，method 填 none。\n" +
+      "只回傳 JSON：{\"readable\":true,\"seen\":\"你看到的算式，簡短\",\"method\":\"right|slip|wrong|none\",\"errorStep\":\"第一個錯在哪一步、為什麼錯；全對就空字串\",\"feedback\":\"給學生的話，1～2 句，具體、鼓勵，用六年級看得懂的字\",\"errType\":\"none|calc|concept|setup|unit|simplify|copy\"}\n" +
+      "errType（主要錯誤類型）：none=沒錯；calc=計算粗心（加減乘除、進位借位、小數點）；concept=觀念不懂（例如除法沒有乘倒數、公式用錯）；setup=應用題列式錯；unit=單位換算或單位錯；simplify=沒約分或沒化簡；copy=抄錯題目或數字。\n" +
+      "method：right=方法和計算都對；slip=方法對但計算有錯（粗心）；wrong=方法或列式錯；none=沒有過程或看不出來。字太亂真的看不出來時 readable 填 false。";
+    return callGemini([{inlineData:{mimeType:"image/jpeg", data: img}}, {text: prompt}], {think: ansOk ? "low" : "medium", temp:0.2, timeout:45000})
+      .then(function(j){
+        if (!j || ["right","slip","wrong","none"].indexOf(j.method) < 0) throw new Error("AI 回覆格式不對");
+        return j;
+      });
+  }
+
+  // ✨ AI 出新題
+  function aiPrompt(u, topics, sample){
+    var range = "範圍只包含這些主題：" + topics.map(function(t){ return t + "=" + u.topicName[t]; }).join("、") + "。\n";
+    var avoid = "不要和這些題目重複：" + sample.map(function(q){ return q.q; }).join(" / ");
+    if (u.subject === "math"){
+      return "你是台灣國小數學老師。請替國小" + u.grade + "年級學生出 " + qCount() + " 題練習題。\n" +
+        "教材：" + u.book + " 數學「" + u.title + "」（" + u.desc + "）。\n" + range +
+        "規則：台灣繁體中文；計算題和應用題各半，最多 2 題四選一；數字不要太大，國小六年級可以手算；圓周率用 3.14；答案必須正確，出完每題請自己再算一次確認。\n" +
+        "計算題 type 用 \"w\"，ans 只能是這幾種寫法的字串：整數 \"12\"、小數 \"2.5\"、最簡分數 \"3/4\"、帶分數 \"1又3/4\"、最簡整數比 \"3:4\"；單位放在 u（沒有就空字串）；sol 寫簡短的解題步驟。\n" +
+        "只回傳 JSON：{\"questions\":[{\"t\":\"主題代號\",\"type\":\"w\",\"q\":\"題目\",\"ans\":\"答案\",\"u\":\"單位\",\"sol\":\"解法\"},{\"t\":\"主題代號\",\"type\":\"mc\",\"q\":\"題目\",\"o\":[\"選項1\",\"選項2\",\"選項3\",\"選項4\"],\"ans\":0,\"exp\":\"解析\"}]}\n" + avoid;
+    }
+    if (u.subject === "eng"){
+      return "你是台灣國小英語老師。請替國小" + u.grade + "年級學生出 " + qCount() + " 題英語練習題。\n" +
+        "教材：" + u.book + "「" + u.title + "」（" + u.desc + "）。\n" + range +
+        "規則：題目說明用台灣繁體中文，英文用國小六年級學過的簡單單字和句型；約 3 題是非、其餘四選一；考句型、單字意思、字母拼讀；答案必須正確無爭議，每題附一句簡短解析。\n" +
+        "只回傳 JSON：{\"questions\":[{\"t\":\"主題代號\",\"type\":\"tf\",\"q\":\"題目\",\"ans\":true,\"exp\":\"解析\"},{\"t\":\"主題代號\",\"type\":\"mc\",\"q\":\"題目\",\"o\":[\"選項1\",\"選項2\",\"選項3\",\"選項4\"],\"ans\":0,\"exp\":\"解析\"}]}，mc 的 ans 是正確選項的索引(0-3)。\n" + avoid;
+    }
+    var subjWord = {chi:"國語", soc:"社會", sci:"自然科學"}[u.subject] || u.subjName;
+    var focusRule = {chi:"考字音字形、詞語成語、修辭、文體和課文內容理解（不要考課本原文背誦）；", soc:"考重要名詞、因果關係和生活中的應用；", sci:"結合生活情境和實驗觀察；"}[u.subject] || "";
+    return "你是台灣國小" + subjWord + "老師。請替國小" + u.grade + "年級學生出 " + qCount() + " 題練習題。\n" +
+      "教材：" + u.book + " " + subjWord + "「" + u.title + "」（" + u.desc + "）。\n" + range +
+      "規則：用台灣繁體中文和國小" + u.grade + "年級看得懂的字詞；" + focusRule + "結合生活情境；不可超出範圍；答案必須正確無爭議；約 3 成是非、其餘四選一；每題附一句簡短解析。\n" +
+      "只回傳 JSON：{\"questions\":[{\"t\":\"主題代號\",\"type\":\"tf\",\"q\":\"題目\",\"ans\":true,\"exp\":\"解析\"},{\"t\":\"主題代號\",\"type\":\"mc\",\"q\":\"題目\",\"o\":[\"選項1\",\"選項2\",\"選項3\",\"選項4\"],\"ans\":0,\"exp\":\"解析\"}]}，mc 的 ans 是正確選項的索引(0-3)。\n" + avoid;
+  }
+  $("aiBtn").onclick = function(){
+    var u = cur.unit, topics = scopeTopics(), N = qCount();
+    var sample = shuffle(u.bank.filter(function(q){ return topics.indexOf(q.t) >= 0; })).slice(0, 5);
+    $("aiBtn").disabled = true; $("aiNote").textContent = "✨ AI 正在出題，大約 10～30 秒…";
+    callGemini(aiPrompt(u, topics, sample), {think: u.subject === "math" ? "medium" : "low", timeout: 60000}).then(function(j){
+      var qs = ((j && j.questions) || []).filter(function(q){
+        if (!q || !q.q || topics.indexOf(q.t) < 0) return false;
+        if (q.type === "tf") return typeof q.ans === "boolean";
+        if (q.type === "w"){ q.ans = String(q.ans || "").replace(/\s+/g, ""); q.u = q.u || ""; return !!parseAns(q.ans) && checkAns(q.ans, q.ans).ok; }
+        return q.type === "mc" && q.o && q.o.length === 4 && q.ans >= 0 && q.ans <= 3;
+      }).slice(0, N);
+      if (qs.length < Math.ceil(N / 2)) throw new Error("AI 出的題目不完整，再按一次試試");
+      $("aiBtn").disabled = false;
+      startQuiz(shuffle(qs).map(prepQ), true);
+    }).catch(function(e){ $("aiBtn").disabled = false; $("aiNote").textContent = "⚠️ " + e.message; });
+  };
+
+  $("startBtn").onclick = function(){ startQuiz(buildQuiz(), false); };
+  $("backHome").onclick = function(){ if (fromMap()) goMap(); else { renderHome(); show("home"); } };
+  $("toMap").onclick = goMap;
+  $("mapBtn").onclick = goMap;
+
+  // ── 強弱統計（存在這台 iPad 的 mathStats）──
+  var stats = store.get("mathStats", {});
+  var ERR_NAME = {calc:"計算粗心", concept:"觀念不懂", setup:"應用題列式錯", unit:"單位換算", simplify:"沒約分／沒化簡", copy:"抄錯題目"};
+  function kstat(name){ var k = nameKey(name || kidName()); return stats[k] = stats[k] || {t:{}, err:{}, day:{}}; }
+  function topicKey(q){
+    var t = q.ot || q.t, uid = q.uid || (cur.unit && cur.unit.id) || "";
+    var m = /^u(\d)$/.exec(t); if (m) return "m6a-" + m[1] + ":*";
+    return uid + ":" + t;
+  }
+  function saveStats(){ store.set("mathStats", stats); syncSoon(); }
+  function logRaw(key, sc, errType, src){
+    var s = kstat(), t = s.t[key] = s.t[key] || {n:0, last:[]};
+    t.n++; t.last.push(Math.round(sc * 100) / 100); if (t.last.length > 12) t.last.shift();
+    if (src === "hw") t.hw = (t.hw || 0) + 1;
+    if (errType && ERR_NAME[errType]) s.err[errType] = (s.err[errType] || 0) + 1;
+    var d = today(), dd = s.day[d] = s.day[d] || {n:0, s:0}; dd.n++; dd.s += sc;
+    var days = Object.keys(s.day).sort(); while (days.length > 60) delete s.day[days.shift()];
+  }
+  function logStat(q, sc, errType, src){
+    if (!cur.unit || cur.unit.subject !== "math") return;
+    logRaw(topicKey(q), sc, errType, src); saveStats();
+  }
+  function fixStat(q, oldSc, newSc){
+    var s = kstat(), t = s.t[topicKey(q)]; if (!t) return;
+    var i = t.last.lastIndexOf(Math.round(oldSc * 100) / 100); if (i >= 0) t.last[i] = newSc;
+    var dd = s.day[today()]; if (dd) dd.s += newSc - oldSc;
+    saveStats();
+  }
+  function avg(a){ return a.length ? a.reduce(function(x, y){ return x + y; }, 0) / a.length : null; }
+  function level(p){ return p == null ? {c:"#ddd5c9", i:"", t:"還沒練"} : p >= 0.8 ? {c:"#2f9e63", i:"⭐", t:"熟練"} : p >= 0.6 ? {c:"#e3a008", i:"🟡", t:"還可以"} : {c:"#d6453d", i:"🔴", t:"要加強"}; }
+  function hbar(label, p, right){
+    var lv = level(p);
+    return '<div class="lab"><span>' + (lv.i ? lv.i + " " : "") + esc(label) + '</span><span>' + (p == null ? "還沒練" : Math.round(p * 100) + "%") + (right ? "・" + right : "") + '</span></div>' +
+      '<div class="track"><div class="fill" style="width:' + (p == null ? 0 : Math.max(3, p * 100)) + '%;background:' + lv.c + '"></div></div>';
+  }
+
+  // ── 學習狀況頁 ──
+  var stOpen = {};
+  function renderStats(){
+    var box = $("stKids"); box.innerHTML = "";
+    readers.filter(function(r){ return gradeOf(r) === 6; }).forEach(function(r){
+      var b = document.createElement("button"); b.className = "kid" + (r.id === cur.kid ? " on" : "");
+      b.textContent = (r.avatar || "🙂") + " " + r.name;
+      b.onclick = function(){ cur.kid = r.id; renderStats(); };
+      box.appendChild(b);
+    });
+    var s = kstat(), keys = Object.keys(s.t);
+    var all = [], hw = 0;
+    keys.forEach(function(k){ all = all.concat(s.t[k].last); hw += s.t[k].hw || 0; });
+    var week = 0; for (var i = 0; i < 7; i++){ var d = new Date(); d.setDate(d.getDate() - i); week += (s.day[dstr(d)] || {n:0}).n; }
+    var tot = keys.reduce(function(a, k){ return a + s.t[k].n; }, 0), ov = avg(all);
+    $("stSummary").innerHTML = '<div><b>' + tot + '</b>總共練習題數</div><div><b>' + week + '</b>最近 7 天</div><div><b>' + (ov == null ? "－" : Math.round(ov * 100) + "%") + '</b>整體平均</div><div><b>' + hw + '</b>作業檢查題數</div>';
+    // 各單元
+    var ub = $("stUnits"); ub.innerHTML = "";
+    var topicRows = [];
+    MATH6A.forEach(function(c){
+      var uid = "m6a-" + c.no, sc = [], n = 0;
+      keys.filter(function(k){ return k.indexOf(uid + ":") === 0; }).forEach(function(k){ sc = sc.concat(s.t[k].last); n += s.t[k].n; });
+      var b = document.createElement("button"); b.className = "hb";
+      b.innerHTML = hbar(c.title, avg(sc), n ? n + " 題" : "");
+      var sub = document.createElement("div"); sub.className = "sub" + (stOpen[uid] ? "" : " hide");
+      Object.keys(c.topicName).forEach(function(t){
+        var st = s.t[uid + ":" + t], p = st ? avg(st.last) : null;
+        sub.insertAdjacentHTML("beforeend", '<div class="hb">' + hbar(c.topicName[t], p, st ? st.n + " 題" : "") + "</div>");
+        if (st && st.last.length >= 2) topicRows.push({uid:uid, t:t, name:c.topicName[t], unit:c.title, p:p, n:st.n});
+      });
+      b.onclick = function(){ stOpen[uid] = !stOpen[uid]; sub.classList.toggle("hide"); };
+      ub.appendChild(b); ub.appendChild(sub);
+    });
+    // 最需要加強
+    var weak = topicRows.filter(function(r){ return r.p < 0.8; }).sort(function(a, b){ return a.p - b.p; }).slice(0, 3);
+    var wb = $("stWeak"); wb.innerHTML = weak.length ? "" : '<div class="muted">' + (topicRows.length ? "目前練過的主題都很熟練，太棒了！⭐" : "多練幾題之後，這裡會列出最需要加強的主題。") + "</div>";
+    weak.forEach(function(r){
+      var d = document.createElement("div"); d.className = "rev row"; d.style.justifyContent = "space-between";
+      d.innerHTML = "<div>" + level(r.p).i + " <b>" + esc(r.name) + '</b><div class="muted">' + esc(r.unit) + "・最近平均 " + Math.round(r.p * 100) + "%</div></div>";
+      var go = document.createElement("button"); go.className = "btn"; go.textContent = "去練習";
+      go.onclick = function(){ cur.unit = UNITS.filter(function(u){ return u.id === r.uid; })[0]; cur.scope = r.t; renderUnit(); };
+      d.appendChild(go); wb.appendChild(d);
+    });
+    // 常犯的錯
+    var ek = Object.keys(ERR_NAME).filter(function(k){ return s.err[k]; }).sort(function(a, b){ return s.err[b] - s.err[a]; });
+    var max = ek.length ? s.err[ek[0]] : 1;
+    $("stErr").innerHTML = ek.length ? ek.map(function(k){
+      return '<div class="hb"><div class="lab"><span>' + ERR_NAME[k] + "</span><span>" + s.err[k] + ' 次</span></div><div class="track"><div class="fill" style="width:' + (s.err[k] / max * 100) + '%;background:#8b5cf6"></div></div></div>';
+    }).join("") : '<div class="muted">還沒有記錄到錯誤 👍</div>';
+    // 最近 14 天
+    var cols = "", labs = "", dmax = 1, arr = [];
+    for (var j = 13; j >= 0; j--){ var dd = new Date(); dd.setDate(dd.getDate() - j); var ds = dstr(dd); arr.push({d:dd, n:(s.day[ds] || {n:0}).n}); }
+    arr.forEach(function(x){ dmax = Math.max(dmax, x.n); });
+    arr.forEach(function(x){
+      cols += '<div style="height:' + (x.n / dmax * 100) + '%" title="' + (x.d.getMonth() + 1) + "/" + x.d.getDate() + "：" + x.n + ' 題">' + (x.n ? "<span>" + x.n + "</span>" : "") + "</div>";
+      labs += "<span>" + (x.d.getMonth() + 1) + "/" + x.d.getDate() + "</span>";
+    });
+    $("stDays").innerHTML = '<div class="cols">' + cols + '</div><div class="colLab">' + labs + "</div>";
+    $("stTitle").textContent = "📊 " + kidName() + " 的學習狀況";
+    show("stats");
+  }
+  function dstr(d){ return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+  $("statsBtn").onclick = renderStats;
+  $("stBack").onclick = function(){ renderHome(); show("home"); };
+
+  // ── 作業檢查 ──
+  var hwPics = [];
+  (function(){
+    var sel = $("hwUnit");
+    sel.innerHTML = '<option value="">讓 AI 自己判斷</option>' + MATH6A.map(function(c){ return '<option value="' + c.no + '">' + esc(c.title) + "</option>"; }).join("");
+  })();
+  function hwThumbs(){
+    var b = $("hwThumbs"); b.innerHTML = "";
+    hwPics.forEach(function(p, i){
+      var d = document.createElement("div");
+      d.innerHTML = '<img src="data:image/jpeg;base64,' + p + '" alt="">';
+      var x = document.createElement("button"); x.textContent = "✕"; x.onclick = function(){ hwPics.splice(i, 1); hwThumbs(); };
+      d.appendChild(x); b.appendChild(d);
+    });
+    $("hwGo").disabled = !hwPics.length;
+    $("hwAdd").disabled = hwPics.length >= 3;
+  }
+  $("hwBtn").onclick = function(){
+    var r = readers.filter(function(x){ return x.id === cur.kid; })[0];
+    if (!r || gradeOf(r) !== 6){ alert("作業檢查目前只有 6 年級數學"); return; }
+    hwPics = []; hwThumbs(); $("hwResult").innerHTML = ""; $("hwNote").textContent = ""; show("hw");
+  };
+  $("hwBack").onclick = function(){ renderHome(); show("home"); };
+  $("hwAdd").onclick = function(){ $("hwIn").value = ""; $("hwIn").click(); };
+  $("hwIn").onchange = function(){
+    var f = this.files && this.files[0]; if (!f) return;
+    var url = URL.createObjectURL(f), img = new Image();
+    img.onload = function(){
+      var k = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+      var c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      var x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+      hwPics.push(c.toDataURL("image/jpeg", 0.85).split(",")[1]); URL.revokeObjectURL(url); hwThumbs();
+    };
+    img.onerror = function(){ $("hwNote").textContent = "這張照片讀不出來，換一張試試"; };
+    img.src = url;
+  };
+  var HW_ST = {right:"✅ 對", wrong:"❌ 再看一次", blank:"⬜ 還沒寫", unclear:"🔍 看不清楚"};
+  $("hwGo").onclick = function(){
+    var no = $("hwUnit").value;
+    var tlist = Object.keys(TOPICS).filter(function(k){ return !no || TOPICS[k].no === +no; }).map(function(k){ return k + "=" + TOPICS[k].unit + "／" + TOPICS[k].name; }).join("、");
+    var prompt = "你是台灣國小六年級的數學老師，正在檢查學生的作業（翰林版數學 6 上" + (no ? "，" + MATH6A[no - 1].title : "") + "）。圖片是作業本或考卷的照片，共 " + hwPics.length + " 頁。\n" +
+      "請一題一題檢查：\n1. 讀出題號和題目（簡短）。\n2. 讀出學生寫的答案和計算過程。\n3. 自己算出正確答案，算兩次確認，不要只相信學生寫的。\n" +
+      "4. 判斷 status：right=答案和過程都對；wrong=答案錯或過程有明顯錯誤；blank=學生還沒寫；unclear=照片看不清楚，不要猜。\n" +
+      "5. 錯的題目：issue 說明錯在哪一步；hint 給一個提示，引導學生自己改，不要直接說答案；ans 填正確答案（學生要按按鈕才看得到）。\n" +
+      "6. topic 從這些代號挑最符合的一個：" + tlist + "。\n" +
+      "7. errType：none=沒錯；calc=計算粗心；concept=觀念不懂；setup=應用題列式錯；unit=單位換算或單位錯；simplify=沒約分或沒化簡；copy=抄錯題目或數字。\n" +
+      "老師已經打的勾、叉和訂正如果看得到，可以參考，但還是要自己算。用台灣繁體中文、六年級看得懂的字。\n" +
+      "只回傳 JSON：{\"items\":[{\"no\":\"題號\",\"q\":\"題目摘要\",\"kid\":\"學生的答案\",\"status\":\"right|wrong|blank|unclear\",\"issue\":\"\",\"hint\":\"\",\"ans\":\"\",\"topic\":\"代號\",\"errType\":\"none\"}],\"summary\":\"一兩句總評，先講做得好的地方\"}";
+    var parts = hwPics.map(function(p){ return {inlineData:{mimeType:"image/jpeg", data:p}}; }).concat([{text: prompt}]);
+    $("hwGo").disabled = true; $("hwAdd").disabled = true; $("hwResult").innerHTML = "";
+    $("hwNote").textContent = "🧑‍🏫 AI 老師正在一題一題檢查…（大約 30～90 秒，可以先休息一下）";
+    callGemini(parts, {think:"high", temp:0.1, timeout:150000}).then(function(j){
+      var items = ((j && j.items) || []).filter(function(it){ return it && HW_ST[it.status]; });
+      if (!items.length) throw new Error("AI 沒有找到題目，照片拍清楚一點再試一次");
+      $("hwNote").textContent = "";
+      var c = {right:0, wrong:0, blank:0, unclear:0};
+      items.forEach(function(it){ c[it.status]++; });
+      var card = document.createElement("div"); card.className = "card";
+      card.innerHTML = "<h2>檢查結果</h2><div>" + "✅ " + c.right + " 題　❌ " + c.wrong + " 題" + (c.blank ? "　⬜ " + c.blank + " 題沒寫" : "") + (c.unclear ? "　🔍 " + c.unclear + " 題看不清楚" : "") + "</div>" +
+        (j.summary ? '<div class="exp ok" style="margin-top:10px">💬 ' + esc(j.summary) + "</div>" : "") +
+        '<div class="note">AI 也可能看錯或算錯，覺得怪怪的就問爸媽。改完可以再拍一次檢查。</div>';
+      items.forEach(function(it){
+        var d = document.createElement("div"); d.className = "hwItem";
+        d.innerHTML = '<div class="st">' + esc(it.no || "") + "　" + HW_ST[it.status] + '</div><div class="muted">' + fmt(it.q || "") + "</div>" +
+          (it.kid ? "<div>你寫的：" + fmt(it.kid) + "</div>" : "") +
+          (it.status === "wrong" ? (it.issue ? "<div>👉 " + esc(it.issue) + "</div>" : "") + (it.hint ? "<div>💡 提示：" + esc(it.hint) + "</div>" : "") : "");
+        if (it.status === "wrong" && it.ans){
+          var b = document.createElement("button"); b.className = "reveal"; b.textContent = "自己改過了，看答案";
+          b.onclick = function(){ b.outerHTML = '<div style="color:var(--ok)">正確答案：' + fmt(it.ans) + "</div>"; };
+          d.appendChild(b);
+        }
+        card.appendChild(d);
+        if ((it.status === "right" || it.status === "wrong") && TOPICS[it.topic]) logRaw(it.topic, it.status === "right" ? 1 : 0, it.status === "right" ? "none" : it.errType, "hw");
+      });
+      saveStats();
+      $("hwResult").appendChild(card);
+      $("hwGo").disabled = false; $("hwAdd").disabled = hwPics.length >= 3;
+    }).catch(function(e){ $("hwNote").textContent = "⚠️ " + e.message; $("hwGo").disabled = false; $("hwAdd").disabled = hwPics.length >= 3; });
+  };
+
+  // ── 學科紀錄雲端同步（sub-sync.js）──
+  function syncSoon(ms){ if (window.SubSync) SubSync.soon(ms); }
+  addEventListener("subsync", function(){   // 收到別台的紀錄：記憶體裡的也換成新的
+    wrongBook = store.get("subWrong", {}); stats = store.get("mathStats", {});
+    starRules = Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {}));
+    rules = Object.assign({pass:8, passPt:1, fullPt:1}, store.get("subRules", {}));
+    if (!$("home").classList.contains("hide")) renderHome();
+  });
+  addEventListener("subsync-status", function(e){
+    var st = e.detail, n = $("cloudNote"); if (!n || !cloudOn()) return;
+    var t = st.last ? new Date(st.last) : null, hm = t ? ("0" + t.getHours()).slice(-2) + ":" + ("0" + t.getMinutes()).slice(-2) : "";
+    n.textContent = "☁️ 點數會自動記到 LINE 點數帳本　" + (st.busy ? "🔄 學習紀錄同步中…" : st.err ? "⚠️ 學習紀錄同步失敗（資料還在這台，等一下會再試）" : t ? "✅ 學習紀錄已同步 " + hm : "");
+  });
+  if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
+
+  // 測試用
+  window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }};
+
+  if (MAP.kid && readers.some(function(r){ return r.id === MAP.kid; })) cur.kid = MAP.kid;
+  renderHome();
+  var mapUnit = MAP.unit && UNITS.filter(function(u){ return u.id === MAP.unit; })[0];
+  if (mapUnit){ cur.unit = mapUnit; cur.scope = MAP.scope; renderUnit(); }
+})();
+</script>
+</body>
+</html>
