@@ -515,36 +515,92 @@ function engStat(it){
   words.forEach(function(w, i){ var a = say[i] === 1, b = spell[i] === 1; got += (a ? .5 : 0) + (b ? .5 : 0); if (say[i] != null || spell[i] != null) tried++; if (!(a && b)) wk.push((w && (w.en || w)) + (a ? "（要練拼寫）" : b ? "（要練唸）" : "")); });
   return {avg: got / m * 5, done: tried, total: words.length, unit: "個單字", at: sc.at || 0, weak: wk.slice(0, 4)};
 }
+// 📗 小朋友在補習班用的英文課本（何嘉仁）：依目次排關卡，課文／單字卡依頁數或標題自動歸到單元
+// key：名字小寫。p＝課本頁數範圍；re＝標題或單元欄位裡出現就算這個單元
+var ENG_BOOKS = {
+  yuna: {name: "Tree House 8", units: [
+    {k: "u1", tag: "Unit 1", name: "Time for School",   p: [4, 11],  re: /unit\s*(one|1)\b|time for school/i},
+    {k: "u2", tag: "Unit 2", name: "At the Clinic",     p: [12, 19], re: /unit\s*(two|2)\b|clinic/i},
+    {k: "u3", tag: "Unit 3", name: "In Music Class",    p: [20, 27], re: /unit\s*(three|3)\b|music class/i},
+    {k: "r1", tag: "Review 1", name: "Review One",      p: [28, 29], re: /review\s*(one|1)\b/i, review: true},
+    {k: "u4", tag: "Unit 4", name: "Our Solar System",  p: [30, 37], re: /unit\s*(four|4)\b|solar system/i},
+    {k: "u5", tag: "Unit 5", name: "Stars",             p: [38, 45], re: /unit\s*(five|5)\b|(^|[—–\-:：]\s*)stars\b/i},
+    {k: "u6", tag: "Unit 6", name: "Humans and Space",  p: [46, 53], re: /unit\s*(six|6)\b|humans and space/i},
+    {k: "r2", tag: "Review 2", name: "Review Two",      p: [54, 55], re: /review\s*(two|2)\b/i, review: true},
+    {k: "hol", tag: "Holiday", name: "Lantern Festival", p: [56, 61], re: /holiday|lantern/i, review: true}
+  ], pts: [0, 1, 2, 4, 5, 6, 7, 8, 9], free: [3, 11, 12, 13, 10, 14]}
+};
+function engBook(){ return ENG_BOOKS[nameKey(kid.name)] || null; }
+function pageOf(x){
+  var p = +x.page; if (p > 0) return p;
+  var m = String(x.title || "").match(/(?:^|[^a-z])p(?:age)?\.?\s*(\d{1,3})\b|第\s*(\d{1,3})\s*頁/i);
+  return m ? +(m[1] || m[2]) : 0;
+}
+function unitOf(x, B){
+  if (!B) return null;
+  var p = pageOf(x), txt = String(x.unit || "") + " " + String(x.title || "");
+  for (var i = 0; i < B.units.length; i++){ var u = B.units[i]; if (x.unit && u.k === x.unit) return u; if (p && p >= u.p[0] && p <= u.p[1]) return u; }
+  for (var j = 0; j < B.units.length; j++) if (B.units[j].re.test(txt)) return B.units[j];
+  return null;
+}
 function buildEng(){
   var w = WORLDS.filter(function(x){ return x.eng; })[0]; if (!w) return;
   var d = engData(), list = d.L.filter(engMine).map(function(x){ return {kind: "lesson", x: x}; }).concat(d.V.filter(engMine).map(function(x){ return {kind: "vocab", x: x}; }));
   list.sort(function(a, b){ return (a.x.at || 0) - (b.x.at || 0); });
-  list = list.slice(-ENG_SLOTS);
   engById = {};
-  var nL = 0, nV = 0, lv = w.pts.map(function(p, i){ return {xy: p, tag: "第 " + (i + 1) + " 關", engSlot: true}; });
-  list.forEach(function(it, i){
-    var uid = "eng:" + (it.kind === "lesson" ? "L" : "V") + it.x.id, t = String(it.x.title || "").trim(), short = t.replace(/^(hess|何嘉仁)\s*/i, "") || t;
+  var B = engBook(), lv = w.pts.map(function(p, i){ return {xy: p, tag: "第 " + (i + 1) + " 關", engSlot: true}; });
+  var up = function(i){ return [0, 6, 10, 12].indexOf(i) >= 0; };
+  var itemUid = function(it){ return "eng:" + (it.kind === "lesson" ? "L" : "V") + it.x.id; };
+  var others = list, where = {};
+  if (B){
+    var byU = {}; others = [];
+    list.forEach(function(it){ var u = unitOf(it.x, B); if (u){ (byU[u.k] = byU[u.k] || []).push(it); where[itemUid(it)] = u.tag; } else others.push(it); });
+    B.units.forEach(function(u, i){
+      var pi = B.pts[i], uid = "eng:U:" + u.k, L = byU[u.k] || [];
+      engById[uid] = {kind: "unit", unit: u, list: L, book: B.name};
+      lv[pi] = {xy: w.pts[pi], labelUp: up(pi), uid: uid, eng: true, engUnit: true, review: !!u.review, tag: u.tag, name: u.name,
+        title: "📗 " + B.name + "　" + u.tag + "：" + u.name + "（課本 p." + u.p[0] + "–" + u.p[1] + "）"};
+    });
+  }
+  // 沒歸到單元的課文／單字卡：放在剩下的點（最近的幾個）
+  var free = B ? B.free : w.pts.map(function(_, i){ return i; }).slice(0, ENG_SLOTS), nL = 0, nV = 0;
+  others.slice(-free.length).forEach(function(it, j){
+    var i = free[j], uid = itemUid(it), t = String(it.x.title || "").trim(), short = t.replace(/^(hess|何嘉仁)\s*/i, "") || t;
     engById[uid] = it;
-    lv[i] = {xy: w.pts[i], labelUp: [0, 6, 10, 12].indexOf(i) >= 0, uid: uid, eng: true, tag: it.kind === "lesson" ? "課文 " + (++nL) : "單字 " + (++nV), name: short, title: (it.kind === "lesson" ? "📖 " : "🔤 ") + t};
+    lv[i] = {xy: w.pts[i], labelUp: up(i), uid: uid, eng: true, tag: it.kind === "lesson" ? "課文 " + (++nL) : "單字 " + (++nV), name: short, title: (it.kind === "lesson" ? "📖 " : "🔤 ") + t};
   });
-  // 新出現的課文／單字卡：回到地圖時提示，並讓它閃亮
+  // 新的課文／單字卡：回到地圖時提示放進哪一關
   var seenAll = store.get("subEngSeen", {}), k = nameKey(kid.name), first = !seenAll[k], seen = seenAll[k] || [], fresh = [];
-  list.forEach(function(it, i){ var u = lv[i] && lv[i].uid; if (u && seen.indexOf(u) < 0){ seen.push(u); if (!first) fresh.push(lv[i]); } });
-  seenAll[k] = seen.slice(-200); store.set("subEngSeen", seenAll);
-  fresh.forEach(function(l){ l.fresh = performance.now(); });
-  if (fresh.length) setTimeout(function(){ toast("☁️ 天空之城多了 " + fresh.length + " 關：" + fresh.map(function(l){ return l.tag + "「" + l.name + "」"; }).join("、"), 4500); }, 600);
+  list.forEach(function(it){ var u = itemUid(it); if (seen.indexOf(u) < 0){ seen.push(u); if (!first) fresh.push(it); } });
+  seenAll[k] = seen.slice(-300); store.set("subEngSeen", seenAll);
+  if (fresh.length){
+    lv.forEach(function(l){ if (!l.uid) return; var e = engById[l.uid]; if (!e) return; if ((e.kind === "unit" ? e.list : [e]).some(function(x){ return fresh.indexOf(x) >= 0; })) l.fresh = performance.now(); });
+    setTimeout(function(){ toast("☁️ 天空之城多了 " + fresh.length + " 份：" + fresh.slice(0, 3).map(function(it){ return "「" + String(it.x.title || "").slice(0, 24) + "」→ " + (where[itemUid(it)] || "其他課文"); }).join("、"), 5000); }, 600);
+  }
   lv[15] = {xy: w.pts[15], uid: "e6a-1", review: true, tag: "學校英語", name: "段考複習一", title: "學校英語 段考複習（一）：Here We Go 7"};
   lv[16] = {xy: w.pts[16], uid: "e6a-2", review: true, tag: "學校英語", name: "段考複習二", title: "學校英語 段考複習（二）：Here We Go 7"};
   if (kidGrade() !== 6){ [15, 16].forEach(function(i){ lv[i] = {xy: w.pts[i], tag: "學校英語", gradeLock: kidGrade()}; }); }
   w.levels = lv;
 }
+// 單元關卡的成績：這個單元每一課（課文、單字卡）的平均星星，還沒練的那一課算 0
+function unitStat(e){
+  var L = e.list; if (!L.length) return {avg: 0, done: 0, total: 0, unit: "份", at: 0, weak: [], n: 0};
+  var sum = 0, done = 0, at = 0, rows = [];
+  L.forEach(function(it){ var st = engStat(it); sum += st.avg; done += st.done; at = Math.max(at, st.at); rows.push({it: it, st: st}); });
+  rows.sort(function(a, b){ return a.st.avg - b.st.avg; });
+  return {avg: sum / L.length, done: done, total: L.length, unit: "份", at: at, n: L.length, nL: L.filter(function(x){ return x.kind === "lesson"; }).length,
+    weak: rows.filter(function(r){ return r.st.avg < 4; }).slice(0, 4).map(function(r){ return (r.it.kind === "lesson" ? "📖 " : "🔤 ") + String(r.it.x.title || "").slice(0, 30) + "：" + (r.st.done ? r.st.avg.toFixed(1) + " ★" : "還沒練"); }),
+    worst: rows[0] && rows[0].it};
+}
 // 英文關卡的「成績」：從英文口說練習的分數算出來，格式跟其他關卡一樣
 function engRec(uid){
   var it = engById[uid]; if (!it) return null;
-  var s = engStat(it); if (!s.done) return null;
+  var isU = it.kind === "unit", s = isU ? unitStat(it) : engStat(it); if (!s.done) return null;
   var best = Math.min(5, Math.floor(s.avg + 1e-9)), need = chestNeed(), d = dstr(s.at);
+  var comment = isU ? "這個單元有 " + s.n + " 份（課文 " + s.nL + "、單字卡 " + (s.n - s.nL) + "），平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "整個單元都很棒！🎉" : best >= PASS ? "已經過關，把星星少的那幾份練到滿分吧！" : "把下面這幾份多練幾次，就能過關！")
+    : (it.kind === "lesson" ? "跟讀" : "單字小考") + "練了 " + s.done + " / " + s.total + " " + s.unit + "，平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "全部都很棒！🎉" : best >= PASS ? "已經過關，再把星星少的練到滿分吧！" : "把下面這幾" + s.unit.replace("個", "") + "多練幾次，就能過關！");
   return {eng: true, best: best, pass: best >= PASS, chest: need > 0 && best >= need, avg: s.avg, hist: [{d: d, st: best}],
-    last: {d: d, st: best, s: s.done, n: s.total, unit: s.unit, comment: (it.kind === "lesson" ? "跟讀" : "單字小考") + "練了 " + s.done + " / " + s.total + " " + s.unit + "，平均 " + s.avg.toFixed(1) + " 顆星。" + (best >= 5 ? "全部都很棒！🎉" : best >= PASS ? "已經過關，再把星星少的練到滿分吧！" : "把下面這幾" + s.unit.replace("個", "") + "多練幾次，就能過關！"), good: [], focus: s.weak}};
+    last: {d: d, st: best, s: isU ? s.n : s.done, n: s.total, unit: s.unit, comment: comment, good: [], focus: s.weak}};
 }
 
 // ── 成績：數學測驗考完、AI 老師講評後寫進 subMap[名字][關卡uid] ──
@@ -701,17 +757,21 @@ function gotoSubject(i){
 
 function teacherHTML(r){
   if (!r) return "";
-  var L = r.last, h = r.eng ? '<div><b>🔤 英文口說練習紀錄</b>（' + md(L.d) + "・練了 " + L.s + "/" + L.n + " " + L.unit + "・平均 " + r.avg.toFixed(1) + " 顆星）</div>"
+  var L = r.last, h = r.eng ? '<div><b>🔤 英文口說練習紀錄</b>（' + md(L.d) + (L.unit === "份" ? "・共 " + L.n + " 份" : "・練了 " + L.s + "/" + L.n + " " + L.unit) + "・平均 " + r.avg.toFixed(1) + " 顆星）</div>"
     : '<div><b>🧑‍🏫 AI 老師講評</b>（' + md(L.d) + "・得分 " + L.s + "/" + L.n + "・" + L.st + " 顆星）</div>";
   if (L.comment) h += "<div>" + esc(L.comment) + "</div>";
   if (L.good && L.good.length) h += "<div>👍 做得好：" + L.good.map(esc).join("、") + "</div>";
-  if (L.focus && L.focus.length) h += "<div>🎯 " + (r.eng ? "多練這幾" + (L.unit === "句" ? "句" : "個") : "下次加強") + "：</div><ul>" + L.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>";
+  if (L.focus && L.focus.length) h += "<div>🎯 " + (r.eng ? "多練這幾" + (L.unit === "句" ? "句" : L.unit === "份" ? "份" : "個") : "下次加強") + "：</div><ul>" + L.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul>";
   return h;
 }
 function startQuiz(lv){
   if (lv.engSlot){ toast("📖 在英文口說練習新增課文或單字卡，這裡就會多一關", 3500); return; }
   if (!lv.uid){ toast("🚧 這一關的題目還在準備中"); return; }
-  if (lv.eng){ var it = engById[lv.uid]; location.href = ENG_PAGE + "#" + (it && it.kind === "vocab" ? "vocab=" : "lesson=") + encodeURIComponent(it ? it.x.id : ""); return; }
+  if (lv.eng){
+    var it = engById[lv.uid];
+    if (it && it.kind === "unit"){ var wst = it.list.length ? unitStat(it).worst : null; if (!wst){ location.href = ENG_PAGE; return; } it = wst; }
+    location.href = ENG_PAGE + "#" + (it && it.kind === "vocab" ? "vocab=" : "lesson=") + encodeURIComponent(it ? it.x.id : ""); return;
+  }
   var back = location.pathname.split("/").pop() || "index.html";
   location.href = QUIZ_PAGE + "?unit=" + encodeURIComponent(lv.uid) + "&kid=" + encodeURIComponent(kid.id) + "&back=" + encodeURIComponent(back);
 }
@@ -753,7 +813,7 @@ function ui(){
   if (r){
     h += '<div class="teacher">' + teacherHTML(r) + "</div>";
     h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
-  } else h += '<div class="teacher">' + (lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
+  } else h += '<div class="teacher">' + (lv.engUnit ? (engById[lv.uid].list.length ? "這個單元有 " + engById[lv.uid].list.length + " 份課文／單字卡，還沒開始練。" : "還沒有這個單元的課文。") + "在英文口說練習用相機拍課本第 " + engById[lv.uid].unit.p[0] + "–" + engById[lv.uid].unit.p[1] + " 頁新增課文（照片拍到頁碼，或標題寫 " + engById[lv.uid].unit.tag + "），就會自動放進這一關。" : lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
   var bt = boxOf(lv), op = chests()[lv.uid], need = chestNeed();
   h += '<div class="chline">' + chestIco(bt) + "<b>" + CHEST_TIERS[bt].name + "</b>　" +
     (op ? "已經打開了（" + md(chestDate(op)) + (typeof op === "object" && op.amt != null ? "，抽到 " + op.amt + " 點" : "") + "）" :
