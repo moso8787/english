@@ -651,7 +651,7 @@ function refresh(){
     if (news.w !== wi) setWorld(news.w, true);
     cur = news.i;
     var r = news.r;
-    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") + (r.chest && !chests()[news.lv.uid] ? " 🎁 有寶箱可以開" : ""), 4200);
+    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") + (r.chest && !chests()[news.lv.uid] && !WORLDS[news.w].eng ? " 🎁 有寶箱可以開" : ""), 4200);
   }
   renderKids(); ui();
 }
@@ -814,14 +814,16 @@ function ui(){
     h += '<div class="teacher">' + teacherHTML(r) + "</div>";
     h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
   } else h += '<div class="teacher">' + (lv.engUnit ? (engById[lv.uid].list.length ? "這個單元有 " + engById[lv.uid].list.length + " 份課文／單字卡，還沒開始練。" : "還沒有這個單元的課文。") + "在英文口說練習用相機拍課本第 " + engById[lv.uid].unit.p[0] + "–" + engById[lv.uid].unit.p[1] + " 頁新增課文（照片拍到頁碼，或標題寫 " + engById[lv.uid].unit.tag + "），就會自動放進這一關。" : lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
+  if (!w.eng){
   var bt = boxOf(lv), op = chests()[lv.uid], need = chestNeed();
   h += '<div class="chline">' + chestIco(bt) + "<b>" + CHEST_TIERS[bt].name + "</b>　" +
     (op ? "已經打開了（" + md(chestDate(op)) + (typeof op === "object" && op.amt != null ? "，抽到 " + op.amt + " 點" : "") + "）" :
       r && r.chest ? "可以打開了！點地圖上的寶箱 👆" : need ? "拿到 " + need + " 顆星就能打開" : "家長還沒開放") +
     '<span style="width:100%;font-size:14px;color:#6a8a70">可能抽到：' + chestList(bt).map(function(x){ return x.amt + " 點"; }).join("・") + "（獎品表跟英文口說練習一樣）</span></div>";
+  }
   var tiers = [];
   for (var k = 1; k <= 5; k++){ var p = +ru.pts[k] || 0; if (p || k === +ru.chest) tiers.push(k + "★" + (p ? " +" + p + " 點" : "") + (k === +ru.chest ? " 🎁開寶箱" : "")); }
-  h += lv.eng ? '<div class="rule">星星來自英文口說練習（跟讀每句的星星、單字小考唸對寫對）。練習的點數在英文 App 已經給過了，這裡不重複給，只有寶箱驚喜。4 顆星以上過關。</div>'
+  h += lv.eng ? '<div class="rule">星星來自英文口說練習（跟讀每句的星星、單字小考唸對寫對）。練習的點數在英文 App 已經給過了，這裡不重複給，也沒有寶箱。4 顆星以上過關。</div>'
     : '<div class="rule">獎勵（每關每個星等第一次拿到時給）：' + (tiers.join("、") || "家長還沒設定") + "。4 顆星以上過關。</div>";
   h += '<button class="go" id="goQuiz">' + (lv.eng ? "🔤 去英文口說練習：" : "✏️ 出發測驗：") + lv.tag + " " + esc(lv.name) + "</button>";
   $("panel").innerHTML = h;
@@ -937,7 +939,7 @@ function renderWorld(g, w, t, opt){
     g.font = "bold " + (pin.length > 1 ? 16 : 19) + "px system-ui"; g.fillText(pin, 0, -9);
     if (lv.uid) labels.push({x: x, y: yy, lv: lv, b: b, sel: sel});
     g.restore();
-    if (lv.uid) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));
+    if (lv.uid && !w.eng) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));   // 天空之城（英文）先不放寶箱
   });
   function drawLabel(o){
     var lv = o.lv, sel = o.sel;
@@ -1040,7 +1042,7 @@ function xy(e){ var r = c.getBoundingClientRect(); return [(e.clientX - r.left) 
 function toMap(p){ return [(p[0] - ox) / z, (p[1] - oy) / z - world().oy]; }
 function pinAt(x, y){ var best = -1, bd = 48; world().levels.forEach(function(lv, i){ var d = Math.hypot(lv.xy[0] - x, lv.xy[1] - 25 - y); if (d < bd){ bd = d; best = i; } }); return best; }
 function examAt(x, y){ var L = exams(); for (var i = 0; i < L.length; i++){ var an = examAnchor(L[i]); if (an && Math.hypot(an.x - x, an.y - 10 - y) < 32) return L[i]; } return null; }
-function chestAt(x, y){ var L = world().levels; for (var i = 0; i < L.length; i++){ if (L[i].uid && Math.hypot(L[i].xy[0] + 42 - x, L[i].xy[1] - 12 - y) < 26) return i; } return -1; }
+function chestAt(x, y){ if (world().eng) return -1; var L = world().levels; for (var i = 0; i < L.length; i++){ if (L[i].uid && Math.hypot(L[i].xy[0] + 42 - x, L[i].xy[1] - 12 - y) < 26) return i; } return -1; }
 function showTip(i, e){
   var tip = $("tip");
   if (i < 0 || flipping){ tip.style.display = "none"; return; }

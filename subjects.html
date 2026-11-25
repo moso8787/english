@@ -1489,7 +1489,7 @@
     if (rv.focus.length) h += '<div class="exp mid"><b>🎯 下次加強</b><ul style="margin:4px 0 0;padding-left:22px">' + rv.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul></div>";
     if (rv.best > cur.prevBest && cur.prevBest > 0) h += '<div class="center">🆙 刷新這一關的最佳紀錄：' + cur.prevBest + " → " + rv.best + " 顆星</div>";
     if (rv.gain) h += '<div class="center" style="margin-top:8px"><span class="pill pop">星星獎勵 +' + rv.gain + " 點</span>" + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>') + "</div>";
-    if (rv.newChest) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:#e3f7ea;color:#1d7a43">🎁 ' + BOX_NAME[boxOfUnit(cur.unit.id)] + '可以打開了！回地圖點寶箱抽點數</span></div>';
+    if (rv.newChest && !/^e6a-/.test(cur.unit.id)) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:#e3f7ea;color:#1d7a43">🎁 ' + BOX_NAME[boxOfUnit(cur.unit.id)] + '可以打開了！回地圖點寶箱抽點數</span></div>';
     if (!rv.ai) h += '<div class="note">（AI 老師暫時連不上，這次的星星只照分數算）</div>';
     box.innerHTML = h;
   }
