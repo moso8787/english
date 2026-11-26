@@ -41,6 +41,10 @@ function ckdays_() {
   rows_().forEach(r => { const ref = String(r[6] || ''); if (/^ck:/.test(ref)) { const n = String(r[1]); (b[n] = b[n] || []).push(ref.slice(ref.lastIndexOf(':') + 1)); } });
   return b;
 }
+// 小朋友名單＝在 App 賺過點數（earn）的名字；打錯的名字（例如「分YUNA」）不會被當成新的小朋友
+function kidNames_() { const s = {}; rows_().forEach(r => { if (String(r[4]) === 'earn' && String(r[1])) s[String(r[1])] = 1; }); return Object.keys(s); }
+function kidOf_(t) { const k = String(t || '').toLowerCase(); return kidNames_().find(n => n.toLowerCase() === k) || ''; }
+function noKid_(t, eg) { const ks = kidNames_(); return '找不到「' + (t || '') + '」這個小朋友 🤔' + (ks.length ? '\n目前有：' + ks.join('、') : '') + '\n例如：' + eg; }
 function findName_(name) {
   const known = Object.keys(balances_());
   return known.find(k => k.toLowerCase() === String(name || '').toLowerCase()) || String(name || '');
@@ -171,16 +175,15 @@ function handleEvent_(ev) {
       return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + (who ? '' : r[1] + ' ') + (Number(r[2]) > 0 ? '+' : '') + r[2] + ' ' + r[3];
     }).join('\n'));
   }
-  if ((m = text.match(/^(扣點|加點|扣|加)\s*(.+)$/))) {
+  if ((m = text.match(/^(扣點|加點|扣分|加分|扣|加)\s*(.+)$/))) {
     if (!isAdmin) return reply_(ev.replyToken, '只有家長可以加點、扣點喔 😉');
     const rest = m[2].trim(), num = rest.match(/\d+(?:\.\d+)?/);
     if (!num) return reply_(ev.replyToken, '請寫點數，例如：扣 100 Yuna 換Roblox');
     const toks = rest.replace(num[0], ' ').trim().split(/\s+/).filter(Boolean);
-    const known = Object.keys(balances_());
-    let name = toks.find(t => known.some(k => k.toLowerCase() === t.toLowerCase())) || toks[0];
-    if (!name) return reply_(ev.replyToken, '請寫名字，例如：扣 100 Yuna 換Roblox');
+    let name = toks.find(t => kidOf_(t));
+    if (!name) return reply_(ev.replyToken, toks.length ? noKid_(toks[0], '扣 Yuna 100 換Roblox') : '請寫名字，例如：扣 Yuna 100 換Roblox');
     const why = toks.filter(t => t !== name).join(' ');
-    name = findName_(name);
+    name = kidOf_(name);
     const sign = m[1].charAt(0) === '扣' ? -1 : 1, amt = r1_(sign * Number(num[0]));
     add_(name, amt, why || (sign < 0 ? '換獎勵' : '額外獎勵'), sign < 0 ? 'spend' : 'give', 'LINE');
     return reply_(ev.replyToken, (sign < 0 ? '🎮 ' : '🎁 ') + name + (sign < 0 ? ' 用了 ' : ' 加了 ') + Math.abs(amt) + ' 點' + (why ? '（' + why + '）' : '') + '\n' + (sign < 0 ? '目前剩下 ' : '目前共 ') + balances_()[name] + ' 點');
@@ -387,11 +390,9 @@ function choreCmd_(text) {
   const cancel = /^取消/.test(s); s = s.replace(/^取消/, '').replace(/家事/g, ' ').trim();
   const toks = s.split(/\s+/).filter(Boolean);
   if (!toks.length) return choreListText_();
-  const known = Object.keys(balances_());
-  let ni = toks.findIndex(t => known.some(k => k.toLowerCase() === t.toLowerCase()));
-  if (ni < 0) ni = toks.findIndex(t => /^[A-Za-z]/.test(t));
-  if (ni < 0) ni = 0;
-  const name = findName_(toks[ni]), rest = toks.filter((_, i) => i !== ni);
+  const ni = toks.findIndex(t => kidOf_(t));
+  if (ni < 0) return noKid_((toks.find(t => /^[A-Za-z]/.test(t)) || toks[0]), '家事 Yuna 洗碗');
+  const name = kidOf_(toks[ni]), rest = toks.filter((_, i) => i !== ni);
   if (cancel) {
     const sh = choreSheet_(), v = sh.getDataRange().getValues();
     for (let i = v.length - 1; i >= 1; i--) {
