@@ -1179,7 +1179,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
       <div id="ckList"></div>
     </section>
     <section class="card tasks" id="taskCard">
-      <div class="loghead"><h2 style="margin:0">🗓️ 每週・每月任務</h2><button class="b" id="taskEdit">✏️ 編輯任務（家長）</button></div>
+      <div class="loghead"><h2 style="margin:0">🗓️ 每日・每週・每月任務</h2><button class="b" id="taskEdit">✏️ 編輯任務（家長）</button></div>
       <p class="muted" style="margin:6px 0 4px">達到目標後按「打卡領取」拿點數。每週從星期一開始算，每月從 1 號開始算。只有<b>完整做完</b>的練習才算進度。</p>
       <div id="taskBox"></div>
     </section>
@@ -1215,7 +1215,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
           <div class="chpz" id="chestInfo"></div>
           <div class="row"><label>🎁 送一個寶箱給</label><select id="giftWho"></select><select id="giftTier"></select><input type="text" id="giftWhy" placeholder="原因，例如 段考進步" style="max-width:180px"><button class="b" id="giftBtn">送出（在這台打開）</button></div>
           <details class="chcfg"><summary><b>🧹 家事清單</b>（一行一項：圖示 名稱, 點數, 每天或每週, 最多幾次；0＝不限）</summary><p class="muted" style="margin:4px 0">在 LINE 打「家事 Yuna 洗碗」就會登記並加點；「家事」看清單編號；「取消家事 Yuna」撤銷最後一筆。最多幾次只是提醒，超過還是會登記。</p><textarea id="choreCfg" spellcheck="false"></textarea><div class="row"><button class="b" id="choreCfgSave">💾 儲存家事清單</button><span class="muted" id="choreCfgNote"></span></div></details>
-          <details class="tkcfgwrap"><summary><b>🗓️ 每週・每月任務</b>（數量填 0 就是不要這個任務）</summary><div class="tkcfg" id="taskCfg"></div><div class="muted" id="taskEst"></div></details>
+          <details class="tkcfgwrap"><summary><b>🗓️ 每日・每週・每月任務</b>（數量填 0 就是不要這個任務）</summary><div class="tkcfg" id="taskCfg"></div><div class="muted" id="taskEst"></div></details>
           <div class="row"><label for="ptR_notify">LINE 通知方式</label><select id="ptR_notify"><option value="each">每次練完都通知（比較耗 LINE 額度）</option><option value="daily">每天一則總結（省額度）</option><option value="off">不主動通知（在 LINE 打「點數」查）</option></select><select id="ptR_nhour"></select></div>
           <div class="muted" style="font-size:13px;margin:-4px 0 6px">傳到群組時，LINE 是「一則 × 群組人數」計算免費額度（每月 200 則）。在 LINE 打「點數」「總結」查詢是免費的。</div>
           <div class="row"><label>升級需要的經驗值</label><span>A</span><input type="number" step="any" id="ptR_lvA" style="max-width:70px"><span>× 等級² ＋ B</span><input type="number" step="any" id="ptR_lvB" style="max-width:70px"><span>× 等級 ＋ C</span><input type="number" step="any" id="ptR_lvC" style="max-width:70px"></div>
@@ -1425,7 +1425,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/26 第 58 版";
+  const APP_VER = "11/26 第 59 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5336,7 +5336,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     if (lesson){ rQueue = null; try{ if (rFinished) rFinish(); else rGo(rIdx, false); }catch(_){} }
     try{ ptToast("👋 現在是 " + r.name); }catch(_){}
   }
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") readerFollow(); });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible"){ readerFollow(); try{ taskNudge(); if (!$("tabPt").hidden) taskRender(); }catch(_){} } });
   addEventListener("pageshow", readerFollow); addEventListener("focus", readerFollow);
   addEventListener("storage", e => { if (e.key === "reader") readerFollow(); });
   function renderReaders(){
@@ -7585,7 +7585,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     const m = el("div","kcmodal"), b = el("div","kcbox chodds-box"); m.onclick = () => m.remove();
     const h = el("h3"); h.append(chestIco(t, true, true), " " + tierName(t)); b.appendChild(h);
     const from = []; if (chestDay() && chestTier() === t) from.push("連續簽到 " + chestDay() + " 天");
-    ["wk","mo"].forEach(per => { try{ if (taskCfg(per).box === t) from.push(TASK_PER[per][0] + "全部完成"); }catch(_){} });
+    TASK_PERS.forEach(per => { try{ if (taskCfg(per).box === t) from.push(TASK_PER[per][0] + "全部完成"); }catch(_){} });
     const lv = Object.entries(lvChests()).filter(([, x]) => x === t).map(([n]) => "Lv" + n); if (lv.length) from.push("升到 " + lv.join("、"));
     if (t === "gold") from.push("爸媽送的特別獎勵");
     if (from.length) b.appendChild(el("p","muted", "怎麼拿到：" + from.join("・")));
@@ -7720,12 +7720,27 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     setTimeout(() => { try{ taskNudge(); }catch(_){} }, 2500);
   }
   // ── 🗓️ 每週・每月任務 ──
-  const TASK_KINDS = [["ck","📅 簽到","天"],["read","📖 課本跟讀：整課唸完","課"],["vocab","🔤 單字小考：整回考完","回"],["chat","💬 對話練習：講到老師講評","次"],["hw","📝 檢查作業","份"],["chore","🧹 做家事（爸媽確認過的）","次"]];
+  const TASK_KINDS = [["ck","📅 簽到","天"],["read","📖 課本跟讀：整課唸完","課"],["vocab","🔤 單字小考：整回考完","回"],["chat","💬 對話練習：講到老師講評","次"],["hw","📝 檢查作業","份"],["chore","🧹 做家事（爸媽確認過的）","次"],["quiz","🏅 小測驗過關（不同科目）","科"]];
   const TASK_DEF = {
-    wk: {ck: [5, 3], read: [3, 5], vocab: [2, 3], chat: [2, 3], hw: [0, 2], chore: [3, 3], all: 5, box: "blue"},
-    mo: {ck: [20, 10], read: [12, 15], vocab: [8, 10], chat: [8, 10], hw: [0, 5], chore: [12, 10], all: 10, box: "purple"}
+    dy: {ck: [0, 1], read: [0, 1], vocab: [0, 1], chat: [0, 1], hw: [0, 1], chore: [1, 1], quiz: [3, 2], all: 0, box: "none"},
+    wk: {ck: [5, 3], read: [3, 5], vocab: [2, 3], chat: [2, 3], hw: [0, 2], chore: [3, 3], quiz: [0, 5], all: 5, box: "blue"},
+    mo: {ck: [20, 10], read: [12, 15], vocab: [8, 10], chat: [8, 10], hw: [0, 5], chore: [12, 10], quiz: [0, 15], all: 10, box: "purple"}
   };
-  const TASK_PER = {wk: ["每週任務", "本週"], mo: ["每月任務", "本月"]};
+  const TASK_PER = {dy: ["每日任務", "今天"], wk: ["每週任務", "本週"], mo: ["每月任務", "本月"]};
+  const TASK_PERS = ["dy", "wk", "mo"], TASK_ICON = {dy: "☀️ ", wk: "🗓️ ", mo: "📆 "};
+  // 🏅 小測驗過關（每日任務）：一科算一次，要不同科目
+  //  英文＝課本跟讀整課唸完平均 ⭐4 以上，或單字小考整回答對 8 成以上（這個 App）
+  //  國語／數學／自然／社會（學科測驗）＝ localStorage "subMap"[名字小寫][單元].hist 裡有 {d: 這段期間, st ≥ 4}（拿到 4 顆星＝過關；單元 id 開頭 c／m／n／s／e）
+  const SUBJ_OF = {c: "國語", m: "數學", n: "自然", s: "社會", e: "英文"};
+  function quizSubjects(rid, R){
+    const inR = t => t >= R.t0 && t < R.t1, set = new Set(), a = dayKey(R.t0), b = dayKey(R.t1);
+    if (rLog.some(e => e.r === rid && e.done && e.full && (+e.avg || 0) >= 4 && inR(e.t)) || voLog.some(e => e.r === rid && e.full && e.total && e.right / e.total >= 0.8 && inR(e.t))) set.add("英文");
+    try{
+      const m = (store.get("subMap", {}) || {})[nameKey(readerName(rid))] || {};
+      Object.keys(m).forEach(uid => { const sj = SUBJ_OF[uid.charAt(0)]; if (sj && (m[uid].hist || []).some(h => h && h.d >= a && h.d < b && (+h.st || 0) >= 4)) set.add(sj); });
+    }catch(_){}
+    return set;
+  }
   function taskCfg(per){
     const d = TASK_DEF[per], c = ((ptRules.tasks || {})[per]) || {}, o = {all: c.all != null ? r1(c.all) : d.all, box: c.box != null ? c.box : d.box}; // box：寶箱顏色、"pts"＝固定點數、"none"＝不給
     o.chest = !!CHEST_TIERS[o.box];
@@ -7734,6 +7749,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   }
   function taskRange(per, t){
     const d = new Date(t || Date.now()); d.setHours(0, 0, 0, 0);
+    if (per === "dy"){ const e = new Date(d); e.setDate(e.getDate() + 1); return {t0: d.getTime(), t1: e.getTime(), key: dayKey(d.getTime()), left: 0}; }
     if (per === "wk"){ d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); const e = new Date(d); e.setDate(e.getDate() + 7); return {t0: d.getTime(), t1: e.getTime(), key: dayKey(d.getTime()), left: Math.ceil((e - Date.now()) / 864e5)}; }
     d.setDate(1); const e = new Date(d); e.setMonth(e.getMonth() + 1);
     return {t0: d.getTime(), t1: e.getTime(), key: dayKey(d.getTime()).slice(0, 7), left: Math.ceil((e - Date.now()) / 864e5)};
@@ -7746,6 +7762,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     else if (k === "chat") chHist.forEach(h => { if (h && h.r === rid && (h.sentences || 0) >= CHAT_FULL && inR(h.at || h.id)) set.add(String(h.id)); });
     else if (k === "chore") choreCache.forEach(c => { if (c.st === "ok" && nameKey(c.name) === nameKey(readerName(rid)) && inR(c.t)) set.add(c.id); });
     else if (k === "hw") hwHist.forEach(h => { if (h && (h.who || curReader) === rid && inR(h.at || h.id)) set.add(String(h.id || h.at)); });
+    else if (k === "quiz") return quizSubjects(rid, R).size;
     return set.size;
   }
   const taskRef = (per, rid, R, k) => per + ":" + nameKey(readerName(rid)) + ":" + R.key + ":" + k;
@@ -7759,13 +7776,14 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     const allRef = taskRef(per, rid, R, "all");
     return {per, c, R, items, allOk: items.length > 0 && items.every(x => x.got), allGot: taskClaimed(rid, allRef), allRef, hasAll: c.chest || (c.box === "pts" && c.all > 0)};
   }
-  function taskClaimable(rid){ let n = 0; ["wk","mo"].forEach(per => { const T = taskList(rid, per); n += T.items.filter(x => x.ok && !x.got).length + (T.hasAll && T.allOk && !T.allGot ? 1 : 0); }); return n; }
+  function taskClaimable(rid){ let n = 0; TASK_PERS.forEach(per => { const T = taskList(rid, per); n += T.items.filter(x => x.ok && !x.got).length + (T.hasAll && T.allOk && !T.allGot ? 1 : 0); }); return n; }
   // 給學習大冒險地圖看的摘要（localStorage "kidStat"，key＝名字小寫）：今天簽到了沒、每週／每月任務完成幾個
   function whoStat(){
     const all = {}, today = dayKey(Date.now());
     readers.forEach(r => {
       const st = ckState(r.id), wk = taskList(r.id, "wk"), mo = taskList(r.id, "mo"), n = T => [T.items.filter(x => x.ok).length, T.items.length];
-      all[nameKey(r.name)] = {d: today, ck: st.did, streak: st.streak, wk: n(wk), wkKey: wk.R.key, mo: n(mo), moKey: mo.R.key, at: Date.now()};
+      const dy = taskList(r.id, "dy");
+      all[nameKey(r.name)] = {d: today, ck: st.did, streak: st.streak, wk: n(wk), wkKey: wk.R.key, mo: n(mo), moKey: mo.R.key, dy: n(dy), dyKey: dy.R.key, at: Date.now()};
     });
     store.set("kidStat", all);
   }
@@ -7777,7 +7795,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   var taskSeen = store.get("taskSeen", {});
   function taskNudge(){
     taskBadge();
-    const fresh = []; ["wk","mo"].forEach(per => taskList(curReader, per).items.forEach(x => { if (x.ok && !x.got && !taskSeen[x.ref]){ taskSeen[x.ref] = 1; fresh.push(TASK_PER[per][0] + "「" + x.nm.replace(/^\S+ /, "") + "」"); } }));
+    const fresh = []; TASK_PERS.forEach(per => taskList(curReader, per).items.forEach(x => { if (x.ok && !x.got && !taskSeen[x.ref]){ taskSeen[x.ref] = 1; fresh.push(TASK_PER[per][0] + "「" + x.nm.replace(/^\S+ /, "") + "」"); } }));
     if (fresh.length){ store.set("taskSeen", taskSeen); ptToast("🗓️ " + fresh.join("、") + " 達成了！到「🎁 點數」頁打卡領取"); }
   }
   function taskClaim(rid, T, x){
@@ -7795,12 +7813,13 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   function taskRender(){
     const box = $("taskBox"); if (!box) return; box.innerHTML = ""; const rid = curReader;
     let any = false;
-    ["wk","mo"].forEach(per => {
+    TASK_PERS.forEach(per => {
       const T = taskList(rid, per); if (!T.items.length) return; any = true;
-      const hd = el("div","tkhead"); hd.append(el("h3", null, (per === "wk" ? "🗓️ " : "📆 ") + readerName(rid) + " 的" + TASK_PER[per][0]), el("span","muted", "（還剩 " + T.R.left + " 天）")); box.appendChild(hd);
+      const hd = el("div","tkhead"); hd.append(el("h3", null, TASK_ICON[per] + readerName(rid) + " 的" + TASK_PER[per][0]), el("span","muted", per === "dy" ? "（今天晚上 12 點前）" : "（還剩 " + T.R.left + " 天）")); box.appendChild(hd);
       T.items.forEach(x => {
         const row = el("div","tkrow" + (x.ok ? " ok" : "") + (x.got ? " got" : ""));
         const mid = el("div","tkname"); mid.append(el("div", null, x.nm + " " + x.n + " " + x.unit));
+        if (x.k === "quiz"){ const got = [...quizSubjects(rid, T.R)]; mid.appendChild(el("div","muted", got.length ? "已過關：" + got.join("、") : "英文：跟讀一課平均 ⭐4、單字小考 8 成；其他科：學科測驗拿到 4 顆星")); }
         const bar = el("div","tkbar"), bi = el("i"); bi.style.width = Math.min(100, x.have / x.n * 100) + "%"; bar.appendChild(bi); mid.appendChild(bar);
         row.append(mid, el("span","tknum", Math.min(x.have, x.n) + " / " + x.n));
         if (x.got) row.appendChild(el("span","muted","✅ 已領 +" + x.pts));
@@ -7823,8 +7842,8 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   function taskCfgRender(){
     const box = $("taskCfg"); if (!box) return; box.innerHTML = "";
     ptRules.tasks = ptRules.tasks || {};
-    ["wk","mo"].forEach(per => {
-      const c = taskCfg(per), b = el("div","box"); delete c.chest; b.appendChild(el("h4", null, (per === "wk" ? "🗓️ " : "📆 ") + TASK_PER[per][0]));
+    TASK_PERS.forEach(per => {
+      const c = taskCfg(per), b = el("div","box"); delete c.chest; b.appendChild(el("h4", null, TASK_ICON[per] + TASK_PER[per][0]));
       const save = () => { ptRules.tasks[per] = c; ptRulesSave(); taskEst(); try{ taskRender(); }catch(_){} $("ptNote").textContent = "✅ " + TASK_PER[per][0] + "已更新"; };
       TASK_KINDS.forEach(([k, nm, unit]) => {
         const r = el("div","r"), n = el("input"), pts = el("input");
@@ -7849,8 +7868,8 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   function taskEst(){
     const t = $("taskEst"); if (!t) return;
     const tot = per => { const c = taskCfg(per); return TASK_KINDS.reduce((a, [k]) => a + (c[k][0] > 0 ? c[k][1] : 0), 0) + (c.chest ? chestEV(c.box) : c.box === "pts" ? c.all : 0); };
-    const w = tot("wk"), m = tot("mo");
-    t.textContent = "💰 每個小朋友全部做到：每週最多約 " + r1(w) + " 點、每月任務約 " + r1(m) + " 點（寶箱用平均值算）→ 一個月合計約 " + Math.round(w * 4.3 + m) + " 點。";
+    const dd = tot("dy"), w = tot("wk"), m = tot("mo");
+    t.textContent = "💰 每個小朋友全部做到：每日任務約 " + r1(dd) + " 點、每週最多約 " + r1(w) + " 點、每月任務約 " + r1(m) + " 點（寶箱用平均值算）→ 一個月合計約 " + Math.round(dd * 30 + w * 4.3 + m) + " 點。";
   }
 
   // ── 🧹 家事：小朋友回報 → 爸媽在 App 或 LINE 確認 → 加點 ──
