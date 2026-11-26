@@ -393,10 +393,10 @@ function kidStatHTML(r){
   if (!ck && acctCloud && acctCloud.ckdays){ var kc = findKey(acctCloud.ckdays, nm); ck = !!(kc && (acctCloud.ckdays[kc] || []).indexOf(today) >= 0); }
   if (!ck && s && s.d === today && s.ck) ck = true;
   var mon = new Date(now); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
-  var wk = s && s.wkKey === dKey(mon) ? s.wk : null, mo = s && s.moKey === today.slice(0, 7) ? s.mo : null;
+  var wk = s && s.wkKey === dKey(mon) ? s.wk : null, mo = s && s.moKey === today.slice(0, 7) ? s.mo : null, dy = s && s.dyKey === today ? s.dy : null;
   var tot = function(x, k){ return x ? x[0] + "/" + x[1] : (s && s[k] ? "0/" + s[k][1] : "0"); };
   return '<div class="kst"><div class="' + (ck ? "ok" : "no") + '">' + (ck ? "✅ 今天簽到了" : "⏳ 今天還沒簽到") + "</div>" +
-    "<div>🗓️ 週任務 <b>" + tot(wk, "wk") + "</b></div><div>📆 月任務 <b>" + tot(mo, "mo") + "</b></div></div>";
+    (s && s.dy ? "<div>☀️ 每日任務 <b>" + tot(dy, "dy") + "</b></div>" : "") + "<div>🗓️ 週任務 <b>" + tot(wk, "wk") + "</b></div><div>📆 月任務 <b>" + tot(mo, "mo") + "</b></div></div>";
 }
 function renderAcct(){
   var box = $("kids"), a = acctOf(kid);

@@ -7737,7 +7737,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (rLog.some(e => e.r === rid && e.done && e.full && (+e.avg || 0) >= 4 && inR(e.t)) || voLog.some(e => e.r === rid && e.full && e.total && e.right / e.total >= 0.8 && inR(e.t))) set.add("英文");
     try{
       const m = (store.get("subMap", {}) || {})[nameKey(readerName(rid))] || {};
-      Object.keys(m).forEach(uid => { const sj = SUBJ_OF[uid.charAt(0)]; if (sj && (m[uid].hist || []).some(h => h && h.d >= a && h.d < b && (+h.st || 0) >= 4)) set.add(sj); });
+      Object.keys(m).forEach(uid => { const sj = /^sci/.test(uid) ? "自然" : SUBJ_OF[uid.charAt(0)]; /* sci4a-3（舊的 4 上自然單元）不要被當成社會 */ if (sj && (m[uid].hist || []).some(h => h && h.d >= a && h.d < b && (+h.st || 0) >= 4)) set.add(sj); });
     }catch(_){}
     return set;
   }
