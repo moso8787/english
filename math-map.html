@@ -566,7 +566,8 @@ function unitOf(x, B){
 // 這個單元的每一顆心：{k, label, page, kind}
 function heartSlots(u){
   var s = u.p[0];
-  if (u.review) return [{k: "rd1", label: "跟讀 第 " + s + " 頁", page: s, kind: "read"}, {k: "rd2", label: "跟讀 第 " + (s + 1) + " 頁", page: s + 1, kind: "read"}];
+  // Review：第 1 頁是圖、第 2 頁有兩篇閱讀，一篇一顆心（課本內建的課文有 slot 1／2）
+  if (u.review) return [{k: "rd1", label: "跟讀・第 " + (s + 1) + " 頁第 1 篇", page: s + 1, slot: 1, kind: "read"}, {k: "rd2", label: "跟讀・第 " + (s + 1) + " 頁第 2 篇", page: s + 1, slot: 2, kind: "read"}];
   return [{k: "voc", label: "單字小考（第 " + s + " 頁的單字）", page: s, kind: "vocab"},
           {k: "rd1", label: "跟讀・對話（第 " + (s + 3) + " 頁）", page: s + 3, kind: "read"},
           {k: "rd2", label: "跟讀・發音閱讀（第 " + (s + 6) + " 頁）", page: s + 6, kind: "read"},
@@ -640,7 +641,7 @@ function unitHearts(e){
       if (best){ ok = best.say >= VOC_PASS && best.spell >= VOC_PASS; info = "唸對 " + Math.round(best.say * 100) + "%・寫對 " + Math.round(best.spell * 100) + "%（各要 " + VOC_PASS * 100 + "%）"; target = best.it; at = Math.max(at, best.at); }
       else info = vs.length ? "" : "還沒有這一頁的單字卡";
     } else if (sl.kind === "read"){
-      var ls = e.list.filter(function(it){ return it.kind === "lesson" && pageOf(it.x) === sl.page; }), bestL = null, grp = {};
+      var ls = e.list.filter(function(it){ return it.kind === "lesson" && pageOf(it.x) === sl.page && (!sl.slot || !it.x.slot || it.x.slot === sl.slot); }), bestL = null, grp = {};
       // 同一頁拆成好幾份（課本內建的長課文、歌曲）：每一份都要平均 4 星以上才給這顆心
       ls.forEach(function(it){ var k = it.x.group || ("i" + it.x.id); (grp[k] = grp[k] || []).push(it); });
       Object.keys(grp).forEach(function(k){

@@ -119,7 +119,7 @@
             var box = eng[it.k] = eng[it.k] || {};
             if (it.del || !it.d){ delete box[it.id]; return; }
             var d = it.d, txt = function(x){ return String(typeof x === "string" ? x : (x && (x.en || x.w || x.word)) || "").slice(0, 80); };
-            box[it.id] = {id: d.id, title: d.title, at: d.at, owner: d.owner, page: d.page, unit: d.unit, scores: d.scores || {}, items: it.k === "lesson" ? (d.items || []).map(function(x){ return {en: txt(x)}; }) : undefined, words: it.k === "vocab" ? (d.words || []).map(function(x){ return {en: txt(x)}; }) : undefined};
+            box[it.id] = {id: d.id, title: d.title, at: d.at, owner: d.owner, page: d.page, unit: d.unit, group: d.group, part: d.part, parts: d.parts, slot: d.slot, bookId: d.bookId, scores: d.scores || {}, items: it.k === "lesson" ? (d.items || []).map(function(x){ return {en: txt(x)}; }) : undefined, words: it.k === "vocab" ? (d.words || []).map(function(x){ return {en: txt(x)}; }) : undefined};
             return;
           }
           if (KINDS.indexOf(it.k) < 0 || it.del || it.d == null) return;
