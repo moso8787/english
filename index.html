@@ -5407,12 +5407,14 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     $("rNext").textContent = !ok ? "拿到 ⭐3 才能下一句 🔒" : isLast() ? "🏁 完成這課" : "下一句 ➡";
     $("rSkip").hidden = ok;
   }
+  var bookUnitF = null;
   function renderLessons(){
     try{ seedBooks(); }catch(_){}
     const box = $("rLessons"); box.innerHTML = "";
     $("rLessonsWrap").hidden = !lessons.length;
-    const mine = lessons.filter(l => isMine(l)), others = lessons.filter(l => !isMine(l));
-    if (!mine.length) box.appendChild(el("p","muted", readerName(curReader) + " 還沒有課文。拍一課課本，或從下面「其他人的課文」挑一課來唸。"));
+    unitBar(box);
+    const mine = lessons.filter(l => isMine(l) && inUnitF(l)), others = lessons.filter(l => !isMine(l) && inUnitF(l));
+    if (!mine.length) box.appendChild(el("p","muted", bookUnitF ? "這個單元還沒有" + readerName(curReader) + "的課文。" : readerName(curReader) + " 還沒有課文。拍一課課本，或從下面「其他人的課文」挑一課來唸。"));
     mine.forEach(l => {
       const row = el("div","rlesson");
       const t = el("div","rl-t"); t.appendChild(el("b", null, l.title));
@@ -6798,10 +6800,33 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   const addOpen = (btn, row) => { $(btn).onclick = async () => { if ($(row).hidden){ if (!(await ptAskPin())) return; $(row).hidden = false; $(btn).textContent = "🔒 收起來"; } else { $(row).hidden = true; $(btn).textContent = btn === "rAddOpen" ? "👨‍👩‍👧 家長：新增課文" : "👨‍👩‍👧 家長：新增單字"; } }; };
   addOpen("rAddOpen", "rAddRow"); addOpen("voAddOpen", "voAddRow");
   // 🗺️ 從學習大冒險點過來：#lesson=<id>、#vocab=<id>、#hw、#scan=<頁數>
+  // 從學習地圖點某個單元進來：課文、單字本只列這個單元（#lesson=ID&uk=u2&ut=Unit%202&pp=14-21）
+  function inUnitF(x){
+    const f = bookUnitF; if (!f || !x) return true;
+    if (x.unit && f.k && x.unit === f.k) return true;
+    const p = +x.page || 0; if (p && f.p0) return p >= f.p0 && p <= f.p1;
+    const m = String(x.title || "").match(/(?:^|[^a-z])p(?:age)?\.?\s*(\d{1,3})\b|第\s*(\d{1,3})\s*頁/i);
+    if (m && f.p0){ const q = +(m[1] || m[2]); return q >= f.p0 && q <= f.p1; }
+    if (!f.tag) return false;
+    const re = new RegExp("(^|[^a-z])" + f.tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s*") + "(?![0-9])", "i");
+    return re.test(String(x.unit || "") + " " + String(x.title || ""));
+  }
+  function unitBar(box){
+    if (!bookUnitF) return;
+    const bar = el("div","rl-unitbar"); bar.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;padding:8px 12px;border-radius:12px;background:#e8f4ff;border:2px solid #9cc9f5;font-weight:700";
+    bar.appendChild(el("span", null, "🗺️ 從地圖來的：只顯示「" + (bookUnitF.tag || "這個單元") + "」" + (bookUnitF.p0 ? "（課本 p." + bookUnitF.p0 + "–" + bookUnitF.p1 + "）" : "")));
+    const all = el("button","b","顯示全部"); all.onclick = () => { bookUnitF = null; renderLessons(); voRenderSets(); };
+    bar.appendChild(all); box.appendChild(bar);
+  }
   function bookDeepLink(){
-    const m = location.hash.match(/^#(lesson|vocab|hw|scan)(?:=(.*))?$/); if (!m) return;
-    const v = decodeURIComponent(m[2] || "");
+    const hp = location.hash.split("&"), m = hp[0].match(/^#(lesson|vocab|hw|scan|unit)(?:=(.*))?$/); if (!m) return;
+    const v = decodeURIComponent(m[2] || ""), q = {};
+    hp.slice(1).forEach(kv => { const i = kv.indexOf("="); if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+    if (q.uk || q.ut){ const pp = String(q.pp || "").split("-").map(Number); bookUnitF = {k: q.uk || "", tag: q.ut || "", p0: pp[0] || 0, p1: pp[1] || pp[0] || 0}; }
+    else bookUnitF = null;
+    try{ renderLessons(); voRenderSets(); }catch(_){}
     try{ history.replaceState(null, "", location.pathname + location.search); }catch(_){}
+    if (m[1] === "unit"){ setTab(q.tab === "vo" ? "vo" : "read"); return; }
     try{
       if (m[1] === "lesson"){ const l = lessons.find(x => String(x.id) === v); setTab("read"); if (l) openLesson(l); else ptToast("找不到這一課，請家長看一下"); }
       else if (m[1] === "vocab"){ const st = voSets.find(x => String(x.id) === v); setTab("vo"); if (st) voOpenStudy(st); else ptToast("找不到這組單字，請家長看一下"); }
@@ -7040,8 +7065,9 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     try{ seedBooks(); }catch(_){}
     const box = $("voSets"); box.innerHTML = ""; $("voSetsWrap").hidden = !voSets.length;
     voSets.forEach(st => { if (!st.owner) st.owner = scorers(st)[0] || readers[0].id; });
-    const mineV = voSets.filter(st => isMine(st)), othersV = voSets.filter(st => !isMine(st));
-    if (!mineV.length) box.appendChild(el("p","muted", readerName(curReader) + " 還沒有單字本。"));
+    unitBar(box);
+    const mineV = voSets.filter(st => isMine(st) && inUnitF(st)), othersV = voSets.filter(st => !isMine(st) && inUnitF(st));
+    if (!mineV.length) box.appendChild(el("p","muted", bookUnitF ? "這個單元還沒有" + readerName(curReader) + "的單字本。" : readerName(curReader) + " 還沒有單字本。"));
     if (othersV.length){
       setTimeout(() => {
         const det = el("details","rothers"); det.appendChild(el("summary", null, "👀 其他人的單字本（" + othersV.length + "）——考過就會變成" + readerName(curReader) + "的"));

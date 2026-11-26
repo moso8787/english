@@ -885,8 +885,15 @@ function startQuiz(lv){
   if (!lv.uid){ toast("🚧 這一關的題目還在準備中"); return; }
   if (lv.eng){
     var it = engById[lv.uid];
-    if (it && it.kind === "unit"){ var fm2 = unitHearts(it).firstMiss; if (!fm2 || !fm2.it){ location.href = ENG_PAGE + (fm2 && fm2.sl.kind === "hw" ? "#hw" : "#scan" + (fm2 && fm2.sl.page ? "=" + fm2.sl.page : "")); return; } it = fm2.it; }
-    location.href = ENG_PAGE + "#" + (it && it.kind === "vocab" ? "vocab=" : "lesson=") + encodeURIComponent(it ? it.x.id : ""); return;
+    var uq = "";
+    if (it && it.kind === "unit"){
+      var U = it.unit; uq = "&uk=" + encodeURIComponent(U.k) + "&ut=" + encodeURIComponent(U.tag) + "&pp=" + U.p[0] + "-" + U.p[1];
+      var fm2 = unitHearts(it).firstMiss;
+      if (!fm2){ location.href = ENG_PAGE + "#unit" + uq; return; }   // 五顆心都拿到了：打開只列這個單元的課文
+      if (!fm2.it){ location.href = ENG_PAGE + (fm2.sl.kind === "hw" ? "#hw" : "#scan" + (fm2.sl.page ? "=" + fm2.sl.page : "")) + uq; return; }
+      it = fm2.it;
+    }
+    location.href = ENG_PAGE + "#" + (it && it.kind === "vocab" ? "vocab=" : "lesson=") + encodeURIComponent(it ? it.x.id : "") + uq; return;
   }
   var back = location.pathname.split("/").pop() || "index.html";
   location.href = QUIZ_PAGE + "?unit=" + encodeURIComponent(lv.uid) + "&kid=" + encodeURIComponent(kid.id) + "&back=" + encodeURIComponent(back);
@@ -1401,7 +1408,7 @@ document.addEventListener("visibilitychange", function(){ if (!document.hidden){
 setWorld(wi, true);
 refresh();
 requestAnimationFrame(frame);
-window.__map = {WORLDS: WORLDS, flipTo: flipTo, unitHearts: unitHearts, engById: function(){ return engById; }, state: function(){ return {wi: wi, cur: cur, flipping: flipping}; }};
+window.__map = {WORLDS: WORLDS, flipTo: flipTo, startQuiz: startQuiz, unitHearts: unitHearts, engById: function(){ return engById; }, state: function(){ return {wi: wi, cur: cur, flipping: flipping}; }};
 })();
 </script>
 </body>
