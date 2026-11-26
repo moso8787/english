@@ -640,10 +640,20 @@ function unitHearts(e){
       if (best){ ok = best.say >= VOC_PASS && best.spell >= VOC_PASS; info = "唸對 " + Math.round(best.say * 100) + "%・寫對 " + Math.round(best.spell * 100) + "%（各要 " + VOC_PASS * 100 + "%）"; target = best.it; at = Math.max(at, best.at); }
       else info = vs.length ? "" : "還沒有這一頁的單字卡";
     } else if (sl.kind === "read"){
-      var ls = e.list.filter(function(it){ return it.kind === "lesson" && pageOf(it.x) === sl.page; }), bestL = null;
-      ls.forEach(function(it){ var st = engStat(it); if (!bestL || st.avg > bestL.st.avg) bestL = {it: it, st: st}; });
-      if (bestL){ ok = bestL.st.avg >= READ_PASS; info = bestL.st.done ? "平均 " + bestL.st.avg.toFixed(1) + " 星（要 " + READ_PASS + " 星）" : "還沒開始唸"; target = bestL.it; at = Math.max(at, bestL.st.at); }
-      else info = "還沒拍這一頁";
+      var ls = e.list.filter(function(it){ return it.kind === "lesson" && pageOf(it.x) === sl.page; }), bestL = null, grp = {};
+      // 同一頁拆成好幾份（課本內建的長課文、歌曲）：每一份都要平均 4 星以上才給這顆心
+      ls.forEach(function(it){ var k = it.x.group || ("i" + it.x.id); (grp[k] = grp[k] || []).push(it); });
+      Object.keys(grp).forEach(function(k){
+        var g = grp[k], need = Math.max(g[0].x.parts || 1, g.length), sts = g.map(function(it){ return {it: it, st: engStat(it)}; });
+        var avg = sts.length < need ? 0 : Math.min.apply(null, sts.map(function(o){ return o.st.done ? o.st.avg : 0; }));
+        var done = sts.some(function(o){ return o.st.done; }), atG = Math.max.apply(null, sts.map(function(o){ return o.st.at || 0; }));
+        var miss = sts.filter(function(o){ return !(o.st.done && o.st.avg >= READ_PASS); }).sort(function(a, b){ return (a.it.x.part || 0) - (b.it.x.part || 0); })[0];
+        var nOk = sts.length - sts.filter(function(o){ return !(o.st.done && o.st.avg >= READ_PASS); }).length;
+        var r = {it: (miss || sts[0]).it, st: {avg: avg, done: done, at: atG}, n: need, nOk: nOk};
+        if (!bestL || r.st.avg > bestL.st.avg || (r.st.avg === bestL.st.avg && r.nOk > bestL.nOk)) bestL = r;
+      });
+      if (bestL){ ok = bestL.st.avg >= READ_PASS; info = !bestL.st.done ? "還沒開始唸" : bestL.n > 1 ? bestL.nOk + " / " + bestL.n + " 份已經 " + READ_PASS + " 星以上" : "平均 " + bestL.st.avg.toFixed(1) + " 星（要 " + READ_PASS + " 星）"; target = bestL.it; at = Math.max(at, bestL.st.at); }
+      else info = "這一頁的課文還沒準備好";
     } else {
       var hs = e.hw.slice().sort(function(a, b){ return b.at - a.at; }), done = hs.filter(function(h){ return h.bad === 0; })[0];
       ok = !!done; info = done ? "全對 ✅" : hs.length ? "還有 " + hs[0].bad + " 題要訂正，改好再檢查一次" : "還沒檢查這個單元的作業";
@@ -1355,7 +1365,7 @@ document.addEventListener("visibilitychange", function(){ if (!document.hidden){
 setWorld(wi, true);
 refresh();
 requestAnimationFrame(frame);
-window.__map = {WORLDS: WORLDS, flipTo: flipTo, state: function(){ return {wi: wi, cur: cur, flipping: flipping}; }};
+window.__map = {WORLDS: WORLDS, flipTo: flipTo, unitHearts: unitHearts, engById: function(){ return engById; }, state: function(){ return {wi: wi, cur: cur, flipping: flipping}; }};
 })();
 </script>
 </body>

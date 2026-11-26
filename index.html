@@ -1070,9 +1070,10 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
 
   <div id="tabRead" hidden>
     <section class="card grid" id="readSetup">
-      <h2 style="margin:0">📷 拍課本，一句一句跟著唸</h2>
-      <p class="muted" style="margin:0">把課本這一頁拍下來（可以一次選好幾張），AI 會把英文句子找出來，接著一句一句唸給小朋友聽、換她跟著唸，唸得好就拿星星。</p>
-      <div class="row">
+      <h2 style="margin:0">📖 課本跟讀，一句一句跟著唸</h2>
+      <p class="muted" style="margin:0">課本的課文已經放在下面「📚 我的課文」，點一課就開始：一句一句唸給你聽，換你跟著唸，唸得好就拿星星。</p>
+      <div class="row"><span class="muted" style="flex:1">課文由家長準備，不用自己拍照新增。</span><button class="b" id="rAddOpen">👨‍👩‍👧 家長：新增課文</button></div>
+      <div class="row" id="rAddRow" hidden>
         <button class="b primary" id="rPhotoBtn">📷 拍照／選照片</button><input type="file" id="rPhotos" accept="image/*" multiple hidden>
         <button class="b" id="rPasteBtn">✍️ 直接貼上課文</button>
       </div>
@@ -1237,12 +1238,13 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
 
   <div id="tabVo" hidden>
     <section class="card grid" id="voSetup">
-      <div class="row" style="margin:0"><h2 style="margin:0;flex:1">🔤 拍單字，考考看</h2><label class="rwhosel"><span id="voWhoAv"></span><select id="voWho" title="誰要考"></select></label></div>
-      <p class="muted" style="margin:0">拍下課本的單字表（Vocabulary），AI 會把新單字找出來。先學一遍，再考「怎麼唸」和「怎麼寫」。</p>
+      <div class="row" style="margin:0"><h2 style="margin:0;flex:1">🔤 單字小考</h2><label class="rwhosel"><span id="voWhoAv"></span><select id="voWho" title="誰要考"></select></label></div>
+      <p class="muted" style="margin:0">課本每個單元的單字已經放在下面，點一本：先學一遍，再考「怎麼唸」和「怎麼寫」。</p>
       <div class="row" id="voStrictRow"><label for="voStrict">「<span id="voStrictWho"></span>」考唸的辨識強度</label>
         <select id="voStrict"><option value="veasy">1 😄 非常寬鬆</option><option value="easy">2 😊 寬鬆</option><option value="normal">3 🙂 標準</option><option value="hard">4 🤨 嚴格</option><option value="strict">5 🧐 非常嚴格（AI 聽發音）</option></select>
         <span class="muted" id="voStrictNote" style="font-size:12px;flex-basis:100%"></span></div>
-      <div class="row">
+      <div class="row"><span class="muted" style="flex:1">單字由家長準備，不用自己拍照新增。</span><button class="b" id="voAddOpen">👨‍👩‍👧 家長：新增單字</button></div>
+      <div class="row" id="voAddRow" hidden>
         <button class="b primary" id="voPhotoBtn">📷 拍照／選照片</button><input type="file" id="voPhotos" accept="image/*" multiple hidden>
         <button class="b" id="voPasteBtn">✍️ 自己輸入單字</button>
         <button class="b primary" id="voScan" hidden>🔍 找出單字</button>
@@ -1419,7 +1421,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/26 第 54 版";
+  const APP_VER = "11/26 第 55 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5389,6 +5391,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     $("rSkip").hidden = ok;
   }
   function renderLessons(){
+    try{ seedBooks(); }catch(_){}
     const box = $("rLessons"); box.innerHTML = "";
     $("rLessonsWrap").hidden = !lessons.length;
     const mine = lessons.filter(l => isMine(l)), others = lessons.filter(l => !isMine(l));
@@ -5405,11 +5408,12 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
       const ed = el("button","b","✏️ 修改"); ed.onclick = () => openEditor(l);
       const del = el("button","b","🗑");
       if (l.owner === curReader){
-        del.title = "刪除這課"; del.onclick = () => { if (!confirm("刪掉「" + l.title + "」？" + (scorers(l).some(r => r !== curReader) ? "\n（其他人在這課的紀錄也會一起刪掉）" : ""))) return; try{ syncTomb("lesson", l.id); }catch(_){} lessons = lessons.filter(x => x !== l); saveLessons(); renderLessons(); renderReaders(); };
+        del.title = "刪除這課"; del.onclick = () => { if (!confirm("刪掉「" + l.title + "」？" + (scorers(l).some(r => r !== curReader) ? "\n（其他人在這課的紀錄也會一起刪掉）" : ""))) return; try{ syncTomb("lesson", l.id); }catch(_){} bookForget(l); lessons = lessons.filter(x => x !== l); saveLessons(); renderLessons(); renderReaders(); };
       } else {
         del.title = "從我的課文拿掉（刪掉我在這課的紀錄）"; del.onclick = () => { if (!confirm("把「" + l.title + "」從 " + readerName(curReader) + " 的課文拿掉？\n（會刪掉 " + readerName(curReader) + " 在這課的星星，其他人的不受影響）")) return; delete l.scores[curReader]; saveLessons(); renderLessons(); renderReaders(); };
       }
       if (l.owner && l.owner !== curReader) t.appendChild(el("div","rl-others", "📷 " + readerName(l.owner) + " 建立的課文"));
+      if (isBookItem(l)){ pinGuard(ed); pinGuard(del); t.appendChild(el("div","rl-others", "📚 " + (l.book || "課本") + (l.page ? "・第 " + l.page + " 頁" : ""))); }
       row.append(t, go, ed, del); box.appendChild(row);
     });
     if (others.length){
@@ -6525,6 +6529,208 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   var voSets = store.get("vocabSets", []), voLog = store.get("vocabLog", []);
   var voPhotos = [], voEditing = null, voSet = null, voQ = null, voStartAt = 0;
   const voSave = () => store.set("vocabSets", voSets.slice(0, 80));
+  // ════════════════ 📚 課本內建題目（家長 2026-11-26：單字小考、課本跟讀改成內建，小朋友不再自己拍照新增）════════════════
+  // key＝小朋友名字小寫（跟學習大冒險 ENG_BOOKS 一樣）。page＝課本頁數、unit＝單元 key，地圖靠這兩個算 5 顆心。
+  // parts：同一頁太長拆成幾份（每份最多 10 句），地圖要「每一份」都平均 4 星以上才給那顆心。
+  var BOOK_SEED = {
+    howard: {book: "Tree House 5", lessons: [
+      {bid: "u1-conv", unit: "u1", page: 7, title: "Unit 1 Weather｜對話（p.7）", items: [
+        ["Hi, Wally. What are you doing?", "嗨，Wally。你在做什麼？"],
+        ["I'm watering the flowers for my mom.", "我在幫媽媽澆花。"],
+        ["Oh. Wow, look at that! There's a little rainbow in the bushes.", "哇，你看！樹叢裡有一道小彩虹。"],
+        ["Yeah, isn't it colorful?", "對啊，是不是很繽紛？"],
+        ["Hey, watch this, Becky. Now you see it, now you don't!", "Becky，你看喔。現在看得到，現在看不到了！"],
+        ["It's gone! How did you do that?", "不見了！你怎麼做到的？"],
+        ["Easy, I just turned off the water. See? There it is again.", "很簡單，我只是把水關掉。看！它又出現了。"],
+        ["Cool. So that's why we see rainbows when it rains.", "好酷。原來這就是下雨時會看到彩虹的原因。"]]},
+      {bid: "u1-read", unit: "u1", page: 10, parts: [
+        {title: "Unit 1 Weather｜閱讀 Rainbows（p.10）", items: [
+          ["Rainbows are made from sunlight.", "彩虹是由陽光形成的。"],
+          ["Sunlight has many different colors in it, but they are all mixed together.", "陽光裡有很多不同的顏色，但它們全部混在一起。"],
+          ["Usually we cannot see the colors, and the sunlight just looks white or yellow.", "我們通常看不到那些顏色，陽光看起來只是白色或黃色。"],
+          ["But, on rainy days, there is a lot of water in the air.", "但是下雨天時，空氣中有很多水。"],
+          ["When the sunlight hits the water, it changes.", "當陽光照到水，它就會改變。"],
+          ["The water breaks the sunlight into seven different colors, and we see a rainbow.", "水把陽光分成七種不同的顏色，我們就看到彩虹了。"]]},
+        {title: "Unit 1 Weather｜閱讀 The Water Cycle（p.10）", items: [
+          ["The water on the earth is always moving and changing.", "地球上的水一直在移動和變化。"],
+          ["It goes around and around in a circle called \"the water cycle\".", "它一圈又一圈地循環，叫做「水循環」。"],
+          ["First, the sun shines on water and makes it warmer.", "首先，太陽照在水上，讓水變暖。"],
+          ["This turns the water into vapor.", "這會把水變成水蒸氣。"],
+          ["Then, the vapor goes up into the air and makes clouds.", "接著，水蒸氣升到空中變成雲。"],
+          ["When the water in the clouds gets cold, rain starts to fall.", "雲裡的水變冷時，就開始下雨。"],
+          ["The rain falls back into lakes and rivers, and the cycle starts again.", "雨落回湖泊和河流，循環又重新開始。"]]}]},
+      {bid: "u1-song", unit: "u1", page: 11, parts: [
+        {title: "Unit 1 Weather｜歌曲 There Was a Storm Coming（p.11）1", items: [
+          ["Monday night at six o'clock, my cat had the biggest shock.", "星期一晚上六點，我的貓嚇了一大跳。"],
+          ["There was a storm coming, and I'm sure you know.", "暴風雨要來了，我相信你知道。"],
+          ["He was looking out the window.", "牠正看著窗外。"],
+          ["It was raining hard... really, really hard!", "雨下得很大……真的、真的很大！"],
+          ["And the wind was blowing strong... really, really strong!", "風吹得很強……真的、真的很強！"],
+          ["There was a flash!", "閃了一道光！"],
+          ["There was a crash!", "轟的一聲！"],
+          ["And then my cat was gone!", "然後我的貓就不見了！"]]},
+        {title: "Unit 1 Weather｜歌曲 There Was a Storm Coming（p.11）2", items: [
+          ["Tuesday night at six o'clock, my dog had the biggest shock.", "星期二晚上六點，我的狗嚇了一大跳。"],
+          ["There was a storm coming, and I'm sure you know.", "暴風雨要來了，我相信你知道。"],
+          ["He was looking out the window.", "牠正看著窗外。"],
+          ["It was raining hard... really, really hard!", "雨下得很大……真的、真的很大！"],
+          ["And the wind was blowing strong... really, really strong!", "風吹得很強……真的、真的很強！"],
+          ["There was a flash!", "閃了一道光！"],
+          ["There was a crash!", "轟的一聲！"],
+          ["And then my dog was gone!", "然後我的狗就不見了！"]]},
+        {title: "Unit 1 Weather｜歌曲 There Was a Storm Coming（p.11）3", items: [
+          ["Last night at six o'clock, I had the biggest shock.", "昨晚六點，我嚇了一大跳。"],
+          ["There was a storm coming, and I'm sure you know.", "暴風雨要來了，我相信你知道。"],
+          ["I was looking out the window.", "我正看著窗外。"],
+          ["It was raining hard... really, really hard!", "雨下得很大……真的、真的很大！"],
+          ["And the wind was blowing strong... really, really strong!", "風吹得很強……真的、真的很強！"],
+          ["There was a flash!", "閃了一道光！"],
+          ["There was a crash!", "轟的一聲！"],
+          ["And then I was gone!", "然後我就不見了！"]]}]},
+      {bid: "u2-conv", unit: "u2", page: 15, title: "Unit 2 Inside the House｜對話（p.15）", items: [
+        ["Chuck! Can you move my desk for me?", "Chuck！你可以幫我搬書桌嗎？"],
+        ["Not now, Susie. It's almost time for my TV show.", "現在不行，Susie。我的電視節目快開始了。"],
+        ["Please, Chuck? I just want it by the door.", "拜託嘛，Chuck？我只想把它放在門旁邊。"],
+        ["Oh, all right.", "喔，好吧。"],
+        ["Like this? But the door will hit it.", "這樣嗎？可是門會撞到它。"],
+        ["Oh, you're right. Umm... put it by the bed. Or is it better by the closet?", "喔，你說得對。嗯……放床邊好了。還是放衣櫃旁邊比較好？"],
+        ["Susie! Make up your mind. I don't have all day.", "Susie！快決定啦。我沒那麼多時間。"],
+        ["Hey, I know! Put it under the window.", "嘿，我知道了！放在窗戶下面。"],
+        ["Are you sure?", "你確定嗎？"],
+        ["Yeah! That way I can look outside when I draw.", "對！這樣我畫畫時就可以看外面。"]]},
+      {bid: "u2-read", unit: "u2", page: 18, parts: [
+        {title: "Unit 2 Inside the House｜閱讀 Susie's E-mail（p.18）", items: [
+          ["Hi, Pam!", "嗨，Pam！"],
+          ["After looking for a long time, I finally found Flopsy.", "找了好久，我終於找到 Flopsy 了。"],
+          ["First, I looked in the closet in my bedroom like you said, but she wasn't there.", "首先，我照你說的找了臥室的衣櫃，可是牠不在那裡。"],
+          ["Then, I looked everywhere upstairs, but I still couldn't find her.", "接著我找遍了樓上，還是找不到牠。"],
+          ["I even checked behind the toilet in the bathroom!", "我連浴室馬桶後面都找了！"],
+          ["Finally, I went downstairs into the living room because I heard that the TV was on.", "最後我下樓到客廳，因為我聽到電視開著。"],
+          ["I was so surprised! Flopsy was sleeping on the couch.", "我好驚訝！Flopsy 在沙發上睡覺。"],
+          ["I think she was watching cartoons!", "我想牠剛剛在看卡通！"],
+          ["OK, Mom is yelling for me. It must be time for dinner.", "好了，媽媽在叫我。一定是吃晚餐的時間了。"],
+          ["See you tomorrow, Susie.", "明天見，Susie。"]]},
+        {title: "Unit 2 Inside the House｜閱讀 Pam's Card（p.18）", items: [
+          ["Dear Susie,", "親愛的 Susie："],
+          ["I had lots of fun at your birthday party last weekend!", "上週末你的生日派對我玩得好開心！"],
+          ["It was great playing red light, green light in the living room.", "在客廳玩「紅綠燈」好好玩。"],
+          ["When it was time to eat, I didn't want to stop playing!", "要吃東西的時候，我都不想停下來！"],
+          ["But, your lemon birthday cake was really yummy.", "不過你的檸檬生日蛋糕真的很好吃。"],
+          ["The best part of the party was when we read ghost stories outside in the dark tent.", "派對最棒的是我們在外面黑黑的帳篷裡讀鬼故事。"],
+          ["It's really hard to read with a flashlight!", "用手電筒看書真的好難！"],
+          ["I hope you like the book I gave you.", "希望你喜歡我送你的書。"],
+          ["It's about cute pets.", "是關於可愛寵物的書。"],
+          ["Thank you for the fun party! Pam", "謝謝你辦這麼好玩的派對！Pam"]]}]},
+      {bid: "u2-song", unit: "u2", page: 19, parts: [
+        {title: "Unit 2 Inside the House｜歌曲 Listen to Your Parents（p.19）1", items: [
+          ["Susie! It's time for bed!", "Susie！該睡覺了！"],
+          ["OK, Mom. I'm going!", "好的，媽媽。我要去了！"],
+          ["I'm sitting in the living room, watching TV,", "我坐在客廳看電視，"],
+          ["But it's time to turn it off.", "可是該把它關掉了。"],
+          ["So I turn it off. I run upstairs.", "所以我把它關掉，我跑上樓。"],
+          ["And I jump into bed.", "然後我跳上床。"],
+          ["Because the best... thing for me... is to do what Mom says!", "因為對我最好的事……就是照媽媽說的做！"],
+          ["To do what Mom says!", "照媽媽說的做！"]]},
+        {title: "Unit 2 Inside the House｜歌曲 Listen to Your Parents（p.19）2", items: [
+          ["Chuck! It's time for dinner!", "Chuck！該吃晚餐了！"],
+          ["OK, Dad! I'm coming!", "好的，爸爸！我來了！"],
+          ["I'm sitting at my homework desk, reading a book,", "我坐在寫功課的書桌前看書，"],
+          ["But it's time to close my book.", "可是該把書闔起來了。"],
+          ["So I close my book. I go downstairs.", "所以我闔上書，我走下樓。"],
+          ["And I wash my hands.", "然後我洗手。"],
+          ["Because the best... thing for me... is to do what Dad says!", "因為對我最好的事……就是照爸爸說的做！"],
+          ["To do what Dad says!", "照爸爸說的做！"]]},
+        {title: "Unit 2 Inside the House｜歌曲 Listen to Your Parents（p.19）3", items: [
+          ["OK, Tim! It's time for school!", "好了，Tim！該上學了！"],
+          ["OK, Mom and Dad! I'm ready!", "好的，爸爸媽媽！我準備好了！"],
+          ["I'm sitting on the kitchen floor. I'm playing with cards,", "我坐在廚房地板上玩卡片，"],
+          ["But it's time to put them away.", "可是該把它們收起來了。"],
+          ["So I put them away. I go downstairs.", "所以我把它們收好，我走下樓。"],
+          ["And I get on the bus.", "然後我上了公車。"],
+          ["Because the best... thing for me... is to do what Mom says!", "因為對我最好的事……就是照媽媽說的做！"],
+          ["And to do what Dad says!", "還有照爸爸說的做！"]]}]},
+      {bid: "u3-conv", unit: "u3", page: 23, title: "Unit 3 We Can Do It!｜對話（p.23）", items: [
+        ["Hey, Paul. Can you help me out?", "嘿，Paul。你可以幫我一下嗎？"],
+        ["I ran over a nail and got a flat tire.", "我壓到釘子，輪胎爆了。"],
+        ["Wow, that looks bad. You probably need a new tube.", "哇，看起來很糟。你大概需要換新的內胎。"],
+        ["I'll take the wheel off first.", "我先把輪子拆下來。"],
+        ["You can start taking the tube out, too. I'll be right back.", "你也可以開始把內胎拿出來。我馬上回來。"],
+        ["Here, I got a new tube. Do you know how to put it in?", "來，我拿到新內胎了。你知道怎麼裝進去嗎？"],
+        ["I think so. Like this?", "應該知道。像這樣嗎？"],
+        ["Yeah, nice work. Now, let's pump it up and put the wheel back on.", "對，做得好。現在把它打氣，再把輪子裝回去。"],
+        ["That was easy. Thanks, Paul.", "好簡單。謝啦，Paul。"]]}
+    ], vocab: [
+      {bid: "u1-voc", unit: "u1", page: 4, title: "Unit 1 Weather｜單字（p.4–5）", words: [
+        ["give to", "給（某人）"], ["take from", "從…拿走"], ["pick up", "撿起來"], ["put down", "放下"], ["open the window", "打開窗戶"],
+        ["close the door", "關門"], ["turn on the TV", "打開電視"], ["turn off the computer", "關掉電腦"], ["go outside", "到外面去"], ["stay inside", "待在室內"],
+        ["storm", "暴風雨"], ["typhoon", "颱風"], ["wind", "風"], ["rain", "雨"], ["clouds", "雲"],
+        ["windy", "颳風的"], ["rainy", "下雨的"], ["cloudy", "多雲的"], ["easy", "簡單的"], ["dangerous", "危險的"]]},
+      {bid: "u2-voc", unit: "u2", page: 12, title: "Unit 2 Inside the House｜單字（p.12–13）", words: [
+        ["wake up", "醒來"], ["answer the telephone", "接電話"], ["run upstairs", "跑上樓"], ["go downstairs", "下樓"], ["shake the gift", "搖一搖禮物"],
+        ["blow away", "吹走"], ["time for bed", "睡覺時間"], ["time to eat", "吃飯時間"], ["during dinner", "晚餐時"], ["flashlight", "手電筒"],
+        ["cell phone", "手機"], ["couch", "沙發"], ["in the dining room", "在餐廳"], ["in the living room", "在客廳"], ["in the kitchen", "在廚房"],
+        ["under the stairs", "在樓梯下面"], ["on the balcony", "在陽台"], ["across the street", "在對街"], ["It's raining cats and dogs.", "雨下得好大。"], ["What's the matter?", "怎麼了？"]]},
+      {bid: "u3-voc", unit: "u3", page: 20, title: "Unit 3 We Can Do It!｜單字（p.20–21）", words: [
+        ["put on gloves", "戴上手套"], ["take off boots", "脫掉靴子"], ["make a pile of wood", "把木頭堆起來"], ["drive a truck", "開卡車"], ["cheer", "歡呼"],
+        ["hurry", "趕快"], ["push", "推"], ["pull", "拉"], ["lift", "舉起"], ["bring to", "帶給（某人）"],
+        ["meet at the bus stop", "在公車站碰面"], ["miss Grandma", "想念奶奶"], ["walk around the neighborhood", "在附近散步"], ["cut up", "切碎"], ["make a mess", "弄得亂七八糟"],
+        ["fall over", "跌倒"], ["fall down", "掉下來；跌倒"], ["get up", "起來"], ["crowded", "擁擠的"], ["mouths fall open", "嚇得張大嘴巴"]]}
+    ]}
+  };
+  function bookKey(r){ return String((r && r.name) || "").trim().toLowerCase(); }
+  function bookId(s){ let h = 5381; for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; return 7e12 + (h % 1e9); }  // 每台裝置算出來一樣，同步時不會變兩份
+  function isBookItem(x){ return !!(x && x.bookId); }
+  // 把課本內容放進每個有課本的小朋友名下（已經有的、或家長刪掉過的不會再放）
+  function seedBooks(){
+    if (!BOOK_SEED || !Array.isArray(voSets)) return 0;   // 還沒初始化完（頁面剛載入時）先不放
+    let gone = []; try{ gone = JSON.parse(localStorage.getItem("bookGone") || "[]"); }catch(_){}
+    let addL = 0, addV = 0;
+    readers.forEach(r => {
+      const B = BOOK_SEED[bookKey(r)]; if (!B) return;
+      B.lessons.forEach(def => {
+        const parts = def.parts || [{title: def.title, items: def.items}], group = parts.length > 1 ? "bk-" + r.id + "-" + def.bid : "";
+        parts.forEach((pt, k) => {
+          const bid = def.bid + (parts.length > 1 ? "-" + (k + 1) : ""), id = bookId(r.id + "|" + bid);
+          if (gone.includes(String(id)) || lessons.some(l => l.id === id || (l.bookId === bid && l.owner === r.id))) return;
+          const items = pt.items.map(([en, zh]) => ({who: "", en, zh}));
+          lessons.push({id, bookId: bid, book: B.book, title: pt.title, items, scores: {}, scale: 5, at: Date.now(), group, part: k + 1, parts: parts.length, owner: r.id, page: def.page, unit: def.unit});
+          addL++;
+        });
+      });
+      B.vocab.forEach(def => {
+        const id = bookId(r.id + "|" + def.bid);
+        if (gone.includes(String(id)) || voSets.some(v => v.id === id || (v.bookId === def.bid && v.owner === r.id))) return;
+        voSets.push({id, bookId: def.bid, book: B.book, title: def.title, words: def.words.map(([en, zh]) => ({en, zh})), scores: {}, at: Date.now(), owner: r.id, page: def.page, unit: def.unit});
+        addV++;
+      });
+    });
+    // 課本內容照單元、頁數排在前面
+    const ord = x => isBookItem(x) ? (parseInt(String(x.unit).replace(/\D/g, "")) || 0) * 1000 + (x.page || 0) * 10 + (x.part || 0) : 1e9;
+    if (addL){ lessons = lessons.filter(isBookItem).sort((a, b) => ord(a) - ord(b)).concat(lessons.filter(x => !isBookItem(x))); saveLessons(); }
+    if (addV){ voSets = voSets.filter(isBookItem).sort((a, b) => ord(a) - ord(b)).concat(voSets.filter(x => !isBookItem(x))); voSave(); }
+    return addL + addV;
+  }
+  // 家長刪掉課本內容 → 記下來，不要自動長回來
+  // 課本內容的「修改／刪除」要家長密碼
+  function pinGuard(b){ const f = b.onclick; if (!f) return; b.title = (b.title || "") + "（要家長密碼）"; b.onclick = async e => { if (!(await ptAskPin())) return; f.call(b, e); }; }
+  function bookForget(x){ if (!isBookItem(x)) return; try{ const g = JSON.parse(localStorage.getItem("bookGone") || "[]"); if (!g.includes(String(x.id))){ g.push(String(x.id)); localStorage.setItem("bookGone", JSON.stringify(g)); } }catch(_){} }
+  // 家長才能新增課文／單字（要輸入家長密碼）
+  const addOpen = (btn, row) => { $(btn).onclick = async () => { if ($(row).hidden){ if (!(await ptAskPin())) return; $(row).hidden = false; $(btn).textContent = "🔒 收起來"; } else { $(row).hidden = true; $(btn).textContent = btn === "rAddOpen" ? "👨‍👩‍👧 家長：新增課文" : "👨‍👩‍👧 家長：新增單字"; } }; };
+  addOpen("rAddOpen", "rAddRow"); addOpen("voAddOpen", "voAddRow");
+  // 🗺️ 從學習大冒險點過來：#lesson=<id>、#vocab=<id>、#hw、#scan=<頁數>
+  function bookDeepLink(){
+    const m = location.hash.match(/^#(lesson|vocab|hw|scan)(?:=(.*))?$/); if (!m) return;
+    const v = decodeURIComponent(m[2] || "");
+    try{ history.replaceState(null, "", location.pathname + location.search); }catch(_){}
+    try{
+      if (m[1] === "lesson"){ const l = lessons.find(x => String(x.id) === v); setTab("read"); if (l) openLesson(l); else ptToast("找不到這一課，請家長看一下"); }
+      else if (m[1] === "vocab"){ const st = voSets.find(x => String(x.id) === v); setTab("vo"); if (st) voOpenStudy(st); else ptToast("找不到這組單字，請家長看一下"); }
+      else if (m[1] === "hw") setTab("hw");
+      else { setTab("read"); ptToast("📚 " + (v ? "第 " + v + " 頁" : "這一頁") + "的課文還沒準備好，請家長新增"); }
+    }catch(e){ console.warn("deep link", e); }
+  }
+  setTimeout(bookDeepLink, 0); addEventListener("hashchange", bookDeepLink);
+  try{ if (seedBooks()){ renderLessons(); } }catch(e){ console.warn("seedBooks", e); }
   const voSc = (st, rid) => { rid = rid || curReader; st.scores = st.scores || {}; return st.scores[rid] = st.scores[rid] || {say: {}, spell: {}, at: 0}; };
   function voWhoFill(){
     const sel = $("voWho"); sel.innerHTML = "";
@@ -6746,6 +6952,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
   }
   $("voDexFilter").onchange = () => voDexRender();
   function voRenderSets(){
+    try{ seedBooks(); }catch(_){}
     const box = $("voSets"); box.innerHTML = ""; $("voSetsWrap").hidden = !voSets.length;
     voSets.forEach(st => { if (!st.owner) st.owner = scorers(st)[0] || readers[0].id; });
     const mineV = voSets.filter(st => isMine(st)), othersV = voSets.filter(st => !isMine(st));
@@ -6767,7 +6974,8 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       const b2 = el("button","b primary","🗣 考唸"); b2.onclick = () => voStart(st, "say");
       const b3 = el("button","b primary","✏️ 考寫"); b3.onclick = () => voStart(st, "spell");
       const b4 = el("button","b","✏️ 改"); b4.onclick = () => voOpenEditor(st);
-      const b5 = el("button","b","🗑"); b5.onclick = () => { if (!confirm("刪掉「" + st.title + "」？")) return; try{ syncTomb("vocab", st.id); }catch(_){} try{ dupRemember(st); }catch(_){} voSets = voSets.filter(x => x !== st); st.words.forEach(w => { if (w.pid) cardDel(w.pid); }); voSave(); voRenderSets(); try{ voDexRender(); }catch(_){} };
+      const b5 = el("button","b","🗑"); b5.onclick = () => { if (!confirm("刪掉「" + st.title + "」？")) return; try{ syncTomb("vocab", st.id); }catch(_){} bookForget(st); try{ dupRemember(st); }catch(_){} voSets = voSets.filter(x => x !== st); st.words.forEach(w => { if (w.pid) cardDel(w.pid); }); voSave(); voRenderSets(); try{ voDexRender(); }catch(_){} };
+      if (isBookItem(st)){ pinGuard(b4); pinGuard(b5); }
       row.append(t, b1, b2, b3, b4, b5); box.appendChild(row);
     });
   }
@@ -7960,8 +8168,8 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
         if (arrOf){
           const idOf = it.k === "reader" ? x => x.id : it.k === "hw" ? x => String(x.id || x.at) : x => String(x.id);
           const before = arrOf().length;
-          if (it.k === "lesson") lessons = lessons.filter(x => idOf(x) !== it.id);
-          if (it.k === "vocab") voSets = voSets.filter(x => idOf(x) !== it.id);
+          if (it.k === "lesson"){ lessons.filter(x => idOf(x) === it.id).forEach(x => { try{ bookForget(x); }catch(_){} }); lessons = lessons.filter(x => idOf(x) !== it.id); }
+          if (it.k === "vocab"){ voSets.filter(x => idOf(x) === it.id).forEach(x => { try{ bookForget(x); }catch(_){} }); voSets = voSets.filter(x => idOf(x) !== it.id); }
           if (it.k === "reader" && readers.length > 1) readers = readers.filter(x => idOf(x) !== it.id);
           if (it.k === "hw") hwHist = hwHist.filter(x => idOf(x) !== it.id);
           if (it.k === "chat") chHist = chHist.filter(x => String(x.id) !== it.id);
@@ -8275,9 +8483,9 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     $("tabBtnEcho").setAttribute("aria-selected", t === "echo"); $("tabBtnChat").setAttribute("aria-selected", t === "chat"); $("tabBtnRead").setAttribute("aria-selected", t === "read"); $("tabBtnHw").setAttribute("aria-selected", t === "hw"); $("tabBtnVo").setAttribute("aria-selected", t === "vo"); $("tabBtnPt").setAttribute("aria-selected", t === "pt");
     if (t === "pt"){ try{ ptRender(); }catch(_){} } else if (ptUnlocked){ ptUnlocked = false; try{ ptShowParent(); }catch(_){} }
     $("tabHelp").innerHTML = t === "pt" ? "完成練習自動得到點數。家長可以在「家長專區」輸入密碼扣點換獎勵，也可以一鍵把紀錄傳到 LINE。"
-      : t === "vo" ? "拍下課本的單字表，AI 找出新單字。先學一遍，再考「怎麼唸」和「怎麼寫」，錯的可以再考一次。"
+      : t === "vo" ? "課本每個單元的單字已經準備好了。先學一遍，再考「怎麼唸」和「怎麼寫」，錯的可以再考一次。"
       : t === "hw" ? "拍下英文作業，寫了的題目幫你檢查、告訴你錯在哪；還沒寫的先給提示，讓你自己想。"
-      : t === "read" ? "拍下課本頁面，AI 找出英文句子，一句一句唸給小朋友聽，再換她跟著唸。唸得好就拿星星 ⭐。"
+      : t === "read" ? "課本的課文已經準備好了，一句一句唸給小朋友聽，再換她跟著唸。唸得好就拿星星 ⭐。"
       : t === "echo"
       ? "按麥克風講一句英文，講完停一下就會辨識，標出要加強的字，並用 AI 自然語音唸給你聽。快捷鍵：<kbd>空白鍵</kbd> 開始／結束，<kbd>R</kbd> 重播。"
       : "選一個情境和角色，跟 AI 用英文對話。AI 的話先用聽的，你回答後會幫你修正發音和文法；不會講就按「💡 我不會講」。快捷鍵：<kbd>空白鍵</kbd> 開始／結束，<kbd>R</kbd> 再聽一次 AI。";
