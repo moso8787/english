@@ -289,8 +289,6 @@ html{scroll-padding-bottom:230px}
 .rdot.lock{background:#eef0f4;border-color:#d0d7e2;color:#9aa3b4;cursor:not-allowed;box-shadow:none}
 .rskip{font-size:13px;color:var(--muted);background:none;border:none;text-decoration:underline;cursor:pointer;padding:4px}
 .readers{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.whostat{display:inline-flex;flex-wrap:wrap;gap:4px 10px;align-items:center;padding:6px 12px;border-radius:14px;border:2px solid #9fd8a8;background:#eefaf0;color:#24572e;font-size:14px;font-weight:700;cursor:pointer;line-height:1.3}
-.whostat.ckno{border-color:#f3c27a;background:#fff6e8;color:#7a4a08}
 .whobar{position:sticky;top:0;z-index:40;background:var(--bg);padding:8px 0 10px;margin-bottom:6px;border-bottom:1px solid var(--line)}
 .whobar .rchip{padding:3px 12px 3px 3px !important;font-size:15px}
 .whomanage{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -5355,8 +5353,6 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
       b.onclick = () => { if (curReader === x.id) return; curReader = x.id; saveReaders(); onReaderChange(); };
       box.appendChild(b);
     });
-    const ws = el("button","whostat"); ws.id = "whoStat"; ws.title = "看簽到和任務"; ws.onclick = () => { try{ setTab("pt"); }catch(_){} }; box.appendChild(ws);
-    try{ whoStat(); }catch(_){}
     const more = el("button","b","⋯"); more.title = "加人、改名字、換頭像"; more.onclick = () => { $("whoManage").hidden = !$("whoManage").hidden; };
     box.appendChild(more);
     const mg = $("whoManage"); mg.innerHTML = "";
@@ -7764,15 +7760,14 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     return {per, c, R, items, allOk: items.length > 0 && items.every(x => x.got), allGot: taskClaimed(rid, allRef), allRef, hasAll: c.chest || (c.box === "pts" && c.all > 0)};
   }
   function taskClaimable(rid){ let n = 0; ["wk","mo"].forEach(per => { const T = taskList(rid, per); n += T.items.filter(x => x.ok && !x.got).length + (T.hasAll && T.allOk && !T.allGot ? 1 : 0); }); return n; }
-  // 頭像旁邊的小卡：今天簽到了沒、每週／每月任務完成幾個（跟著現在選的人）
+  // 給學習大冒險地圖看的摘要（localStorage "kidStat"，key＝名字小寫）：今天簽到了沒、每週／每月任務完成幾個
   function whoStat(){
-    const w = $("whoStat"); if (!w) return; const rid = curReader;
-    const st = ckState(rid), wk = taskList(rid, "wk"), mo = taskList(rid, "mo");
-    const cnt = T => T.items.filter(x => x.ok).length + "/" + T.items.length;
-    w.innerHTML = ""; w.classList.toggle("ckno", !st.did);
-    w.append(el("span", null, st.did ? "✅ 今天簽到了" : "⏳ 今天還沒簽到"));
-    if (wk.items.length) w.append(el("span", null, "🗓️ 週任務 " + cnt(wk)));
-    if (mo.items.length) w.append(el("span", null, "📆 月任務 " + cnt(mo)));
+    const all = {}, today = dayKey(Date.now());
+    readers.forEach(r => {
+      const st = ckState(r.id), wk = taskList(r.id, "wk"), mo = taskList(r.id, "mo"), n = T => [T.items.filter(x => x.ok).length, T.items.length];
+      all[nameKey(r.name)] = {d: today, ck: st.did, streak: st.streak, wk: n(wk), wkKey: wk.R.key, mo: n(mo), moKey: mo.R.key, at: Date.now()};
+    });
+    store.set("kidStat", all);
   }
   function taskBadge(){
     try{ whoStat(); }catch(_){}

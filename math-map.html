@@ -23,6 +23,9 @@ button.kid.on{border-color:#ffdb56;background:rgba(255,255,255,.28)}
 .acct .xp{height:8px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;margin:5px 0 2px}
 .acct .xp i{display:block;height:100%;background:linear-gradient(90deg,#ffd43b,#ff922b);border-radius:99px}
 .acct .meta{font-size:13px;font-weight:500;opacity:.85;display:flex;justify-content:space-between;gap:8px}
+.acct .kst{font-size:14px;font-weight:700;line-height:1.5;white-space:nowrap;padding:2px 10px;border-left:1px solid rgba(255,255,255,.25);border-right:1px solid rgba(255,255,255,.25)}
+@media (max-width:560px){.acct{flex-wrap:wrap}.acct .kst{order:5;flex-basis:100%;display:flex;flex-wrap:wrap;gap:2px 12px;border:0;border-top:1px solid rgba(255,255,255,.25);padding:6px 0 0}}
+.acct .kst .ok{color:#8ce99a}.acct .kst .no{color:#ffc078}.acct .kst b{color:#fff}
 .acct .pts{font-size:20px;font-weight:800;color:#ffdb56;white-space:nowrap;text-align:right;line-height:1.2}
 .acct .pts small{display:block;margin:0;font-size:12px;color:rgba(255,255,255,.7)}
 .others{display:flex;gap:6px}
@@ -357,7 +360,7 @@ function acctFetch(force){
   acctBusy = true;
   fetch(url + (url.indexOf("?") >= 0 ? "&" : "?") + "key=" + encodeURIComponent(key) + "&_=" + Date.now())
     .then(function(r){ return r.json(); })
-    .then(function(j){ if (j && j.ok){ acctCloud = {at: Date.now(), balances: j.balances || {}, earned: j.earned && j.xpv >= 2 ? j.earned : null, rules: j.settings && j.settings.rules || (acctCloud && acctCloud.rules) || null}; store.set("subAcctCache", acctCloud); renderAcct(); } })
+    .then(function(j){ if (j && j.ok){ acctCloud = {at: Date.now(), balances: j.balances || {}, earned: j.earned && j.xpv >= 2 ? j.earned : null, rules: j.settings && j.settings.rules || (acctCloud && acctCloud.rules) || null, ckdays: j.ckdays || null}; store.set("subAcctCache", acctCloud); renderAcct(); } })
     .catch(function(){}).then(function(){ acctBusy = false; });
 }
 function findKey(obj, nm){ return obj ? Object.keys(obj).filter(function(x){ return nameKey(x) === nm; })[0] : null; }
@@ -382,12 +385,25 @@ function avatarHTML(r, size, a){
   return '<span class="avwrap' + (a.tier ? " t" + a.tier : "") + '"><span class="avatar" style="' + st + '">' + inner + "</span>" +
     (a.tier === 5 ? '<span class="avcrown">👑</span>' : "") + (size >= 40 ? '<span class="avlv" style="color:' + a.color + ";border-color:" + a.color + '">Lv' + a.L + "</span>" : "") + "</span>";
 }
+// 頭像旁邊：今天簽到了沒、每週／每月任務完成幾個（任務數字由英文口說練習算好放在 localStorage "kidStat"）
+function dKey(d){ return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2); }
+function kidStatHTML(r){
+  var nm = nameKey(r.name), now = new Date(), today = dKey(now), all = store.get("kidStat", {}) || {}, s = all[findKey(all, nm)] || null;
+  var ck = (store.get("points", []) || []).some(function(e){ return e.r === r.id && String(e.ref || "") === "ck:" + nm + ":" + today; });
+  if (!ck && acctCloud && acctCloud.ckdays){ var kc = findKey(acctCloud.ckdays, nm); ck = !!(kc && (acctCloud.ckdays[kc] || []).indexOf(today) >= 0); }
+  if (!ck && s && s.d === today && s.ck) ck = true;
+  var mon = new Date(now); mon.setHours(0, 0, 0, 0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+  var wk = s && s.wkKey === dKey(mon) ? s.wk : null, mo = s && s.moKey === today.slice(0, 7) ? s.mo : null;
+  var tot = function(x, k){ return x ? x[0] + "/" + x[1] : (s && s[k] ? "0/" + s[k][1] : "0"); };
+  return '<div class="kst"><div class="' + (ck ? "ok" : "no") + '">' + (ck ? "✅ 今天簽到了" : "⏳ 今天還沒簽到") + "</div>" +
+    "<div>🗓️ 週任務 <b>" + tot(wk, "wk") + "</b></div><div>📆 月任務 <b>" + tot(mo, "mo") + "</b></div></div>";
+}
 function renderAcct(){
   var box = $("kids"), a = acctOf(kid);
   var h = '<div class="acct" title="資料來自英文口說練習">' + avatarHTML(kid, 54, a) +
     '<div class="info"><div class="nm">' + esc(kid.name) + '</div><span class="lvt" style="color:' + a.color + '">Lv' + a.L + " " + a.icon + " " + esc(a.name) + "</span>" +
     '<div class="xp"><i style="width:' + Math.round(a.pct * 100) + '%"></i></div><div class="meta"><span>經驗值 ' + a.xp + "</span><span>" + (a.max ? "已經滿級 🌈" : "再 " + a.toNext + " 升級") + "</span></div></div>" +
-    '<div class="pts">💰 ' + a.bal + '<small>點數' + (a.cloud ? "・☁️ 雲端" : "・這台") + "</small></div></div>";
+    kidStatHTML(kid) + '<div class="pts">💰 ' + a.bal + '<small>點數' + (a.cloud ? "・☁️ 雲端" : "・這台") + "</small></div></div>";
   if (kids.length > 1){
     h += '<div class="others">' + kids.filter(function(r){ return r.id !== kid.id; }).map(function(r){ return '<button class="sw" data-id="' + esc(r.id) + '" title="切換到 ' + esc(r.name) + '">' + avatarHTML(r, 38, acctOf(r)) + '<span>換 ' + esc(r.name) + "</span></button>"; }).join("") + "</div>";
   }
@@ -1400,8 +1416,8 @@ if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange"
 
 // 從數學測驗按「回數學島」或返回鍵回來時，重新讀成績
 function syncSharedKid(){ var rd = store.get("reader", null), k2 = rd && kid && rd !== kid.id && kids.filter(function(r){ return r.id === rd; })[0]; if (k2){ kid = k2; refresh(); } }
-addEventListener("storage", function(e){ if (e.key === "reader") syncSharedKid(); });
-addEventListener("focus", syncSharedKid);
+addEventListener("storage", function(e){ if (e.key === "reader") syncSharedKid(); else if (e.key === "kidStat" || e.key === "points") try{ renderAcct(); }catch(_){} });
+addEventListener("focus", function(){ syncSharedKid(); try{ renderAcct(); }catch(_){} });
 addEventListener("pageshow", function(e){ if (e.persisted){ var rd = store.get("reader", null), k2 = rd && kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; refresh(); } });
 document.addEventListener("visibilitychange", function(){ if (!document.hidden){ var rd = store.get("reader", null); if (rd && kid && rd !== kid.id){ var k2 = kids.filter(function(r){ return r.id === rd; })[0]; if (k2) kid = k2; } refresh(); acctFetch(true); } });
 
