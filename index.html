@@ -174,6 +174,7 @@ button.pplaying::before{content:"🔊 "}
 .sendbtn:focus-visible{outline:3px solid var(--fg);outline-offset:3px}
 .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
 .tabs button{white-space:nowrap}
+.tabs a.tabmap{white-space:nowrap;margin-left:auto;align-self:center;text-decoration:none;font-size:15px;font-weight:700;padding:7px 14px;border-radius:999px;background:linear-gradient(135deg,#ffd43b,#ff922b);color:#5c3200;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .tabs button{border:none;background:none;color:var(--muted);font:inherit;font-size:15px;font-weight:600;padding:10px 14px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
 .tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -938,6 +939,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     <button role="tab" id="tabBtnHw" aria-selected="false">📝 作業小幫手</button>
     <button role="tab" id="tabBtnVo" aria-selected="false">🔤 單字小考</button>
     <button role="tab" id="tabBtnPt" aria-selected="false">🎁 點數</button>
+    <a class="tabmap" id="mapLink" href="math-map.html">🗺️ 學習大冒險</a>
   </nav>
 
   <div id="warn" class="warn" hidden></div>
@@ -1082,6 +1084,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
       <div class="row" id="rScanRow" hidden><button class="b primary" id="rScan">🔍 開始辨識</button><span class="muted" id="rScanNote"></span></div>
       <div id="rEdit" hidden>
         <div class="row"><label for="rTitle">課名</label><input type="text" id="rTitle" placeholder="例如 Unit 3 My Family"></div>
+        <div class="row"><label for="rPage">課本頁碼</label><input type="number" id="rPage" min="0" step="1" style="max-width:90px" placeholder="例如 15"><label for="rUnit" style="min-width:auto">單元</label><input type="text" id="rUnit" placeholder="例如 Unit 2—Inside the House"></div>
         <p class="muted" style="margin:8px 0">檢查一下 AI 抓的句子，有錯字可以直接改，不要的按 ✕ 刪掉。</p>
         <ol class="redit" id="rEditList"></ol>
         <div class="row"><button class="b" id="rAddLine">➕ 加一句</button><button class="b primary" id="rSave">▶ 存好，開始跟讀</button></div>
@@ -1254,6 +1257,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
       <textarea id="voPaste" class="rpaste" hidden placeholder="一行一個單字或片語，可以在後面加中文，例如：&#10;flashlight 手電筒&#10;in the kitchen 在廚房"></textarea>
       <div id="voEdit" hidden>
         <div class="row"><label for="voTitle">名稱</label><input type="text" id="voTitle" placeholder="例如 Unit 2 Inside the House"></div>
+        <div class="row"><label for="voPage">課本頁碼</label><input type="number" id="voPage" min="0" step="1" style="max-width:90px" placeholder="例如 12"><label for="voUnit" style="min-width:auto">單元</label><input type="text" id="voUnit" placeholder="例如 Unit 2—Inside the House"></div>
         <p class="muted" style="margin:8px 0">檢查一下，拼錯或中文怪怪的可以直接改，不要的按 ✕。</p>
         <ol class="redit" id="voEditList"></ol>
         <div class="row"><button class="b" id="voAdd">➕ 加一個</button><button class="b primary" id="voSave">💾 存好</button></div>
@@ -1421,7 +1425,7 @@ html.haswp .tabs{background:color-mix(in srgb,var(--bg) 85%,transparent);border-
     if (ios) return "麥克風被擋了：按網址列左邊的「aA」（或頁面選單）→「網站設定」→「麥克風」改成「允許」，再重新整理網頁。";
     return "麥克風被封鎖了，請按網址列左邊的圖示，把麥克風改成「允許」，再重新整理網頁。";
   }
-  const APP_VER = "11/26 第 57 版";
+  const APP_VER = "11/26 第 58 版";
   let storeErr = null;
   const store = {
     get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
@@ -5068,6 +5072,8 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     ta.hidden = true; ta.value = ""; $("rPasteBtn").textContent = "✍️ 直接貼上課文";
     openEditor({title: "", items});
   };
+  // 課本頁碼：只留正整數（「p.12」「12」都可以），其他當 0
+  const pageNum = v => { const n = parseInt(String(v == null ? "" : v).replace(/[^0-9]/g, ""), 10); return n > 0 && n < 1000 ? n : 0; };
   function splitText(t){
     return t.replace(/\r/g,"").replace(/\b(Mr|Mrs|Ms|Dr|St)\./g, "$1\u00a7").split(/\n+/).flatMap(line => line.match(/[^.!?。！？]+[.!?。！？]*["”’]?/g) || [])
       .map(x => x.replace(/\u00a7/g, ".").trim()).filter(x => /[A-Za-z]/.test(x));
@@ -5082,16 +5088,20 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
       + "- 單字表的單字一個一筆，kind 填 word；句子 kind 填 sentence。\n- 保留原本的大小寫和標點，修正明顯的辨識錯誤，但不要改寫課文。\n"
       + "- 每筆附上自然的繁體中文翻譯（台灣用語，適合小朋友看）。\n- title：這課的標題（課本上有 Unit / Lesson 標題就用它，沒有就自己取一個短的英文標題）。\n"
       + "- 照片裡完全找不到英文就回傳空的 items。\n"
-      + '回傳 JSON：{"title":"...","items":[{"en":"...","zh":"...","who":"","kind":"sentence"}]}';
+      + "- page：照片裡看得到的課本頁碼（印在頁面角落的數字）；有好幾張照片就給最小的那個；完全看不到頁碼就給 0，不要猜。\n"
+      + "- unit：課本上印的單元標題原文（例如 Unit Two—At the Clinic、Review One、Holiday Unit—Lantern Festival）；這幾頁看不到就給空字串。\n"
+      + '回傳 JSON：{"title":"...","page":12,"unit":"...","items":[{"en":"...","zh":"...","who":"","kind":"sentence"}]}';
     try{
       const r = await gemini({parts: rPhotos.map(ph => ({inlineData: {mimeType: "image/jpeg", data: ph.b64}})), text: prompt},
         txt => { $("rScanNote").textContent = "AI 正在看課本… 已讀到 " + ((txt.match(/"en"/g) || []).length) + " 句"; });
       const items = (r.items || []).filter(it => it && it.en && /[A-Za-z]/.test(it.en)).map(it => ({en: String(it.en).trim(), zh: String(it.zh || "").trim(), who: String(it.who || "").trim()}));
       if (!items.length){ $("rScanNote").textContent = "這張照片裡沒找到英文句子，換一張清楚一點的再試試。"; return; }
+      const pg = pageNum(r.page), un = asText(r.unit).trim();
+      if (!pg){ $("rScanNote").textContent = "📄 照片裡看不到課本頁碼。地圖要靠頁碼才知道是哪一課，請把頁面角落的頁碼也拍進去，再拍一次。"; return; }
       const dd = dupLesson(items, curReader);
-      if (dd.block){ $("rScanNote").textContent = "🔁 這一頁之前已經拍過了"; dupPopLesson(dd, () => openEditor({title: r.title || "", items, __force: true})); return; }
-      $("rScanNote").textContent = "找到 " + items.length + " 句 👇" + (dd.dupN ? "（其中 " + dd.dupN + " 句以前拍過，存檔時會拿掉）" : "");
-      openEditor({title: r.title || "", items});
+      if (dd.block){ $("rScanNote").textContent = "🔁 這一頁之前已經拍過了"; dupPopLesson(dd, () => openEditor({title: r.title || "", items, page: pg, unit: un, __force: true})); return; }
+      $("rScanNote").textContent = "找到 " + items.length + " 句（第 " + pg + " 頁" + (un ? "・" + un : "") + "）👇" + (dd.dupN ? "（其中 " + dd.dupN + " 句以前拍過，存檔時會拿掉）" : "");
+      openEditor({title: r.title || "", items, page: pg, unit: un});
     }catch(e){
       $("rScanNote").textContent = e.message === "nokey" ? "要先在下面「設定」貼上 Gemini 金鑰。" : "辨識失敗：" + e.message;
     }finally{ btn.disabled = false; }
@@ -5099,7 +5109,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
 
   let editing = null; // 正在編輯的課文（新的或舊的）
   function openEditor(l){
-    editing = l; $("rEdit").hidden = false; $("rTitle").value = l.title || "";
+    editing = l; $("rEdit").hidden = false; $("rTitle").value = l.title || ""; $("rPage").value = l.page || ""; $("rUnit").value = l.unit || "";
     const ol = $("rEditList"); ol.innerHTML = "";
     l.items.forEach(it => ol.appendChild(editRow(it)));
     $("rEdit").scrollIntoView({behavior:"smooth", block:"start"});
@@ -5123,12 +5133,16 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     }).filter(it => /[A-Za-z]/.test(it.en) && multiWord(it));
     if (!items.length){ alert("課文裡都是單字（只有一個字），跟讀只練句子。單字請到「🔤 單字小考」練習喔！"); return; }
     const title = $("rTitle").value.trim() || items[0].en.split(/\s+/).slice(0, 4).join(" ");
+    const page = pageNum($("rPage").value), unit = $("rUnit").value.trim();
+    if (!page && !(editing && editing.id) && !confirm("沒有填課本頁碼，學習大冒險地圖會把它放在「其他課文」，不會算進單元的心。\n確定不填頁碼就存嗎？")){ $("rPage").focus(); return; }
     if (editing && editing.id){
       const keep = items.slice(0, MAXN), extra = items.slice(MAXN);
       const same = editing.items.length === keep.length && editing.items.every((x, i) => x.en === keep[i].en);
       Object.assign(editing, {title, items: keep}); if (!same) editing.scores = {};
+      if (page) editing.page = page; else delete editing.page;
+      if (unit) editing.unit = unit; else delete editing.unit;
       const more = extra.length ? makeParts(title + "（續）", extra) : [];
-      more.forEach(pt => pt.owner = editing.owner || curReader);
+      more.forEach(pt => { pt.owner = editing.owner || curReader; if (page) pt.page = page; if (unit) pt.unit = unit; });
       lessons = [editing, ...more, ...lessons.filter(l => l !== editing)];
     } else {
       if (!(editing && editing.__force)){
@@ -5137,7 +5151,7 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
         if (dd.dupN){ items = dd.fresh; ptToast("🔁 有 " + dd.dupN + " 句以前拍過了，這次只加新的 " + items.length + " 句"); }
       }
       const parts = makeParts(title, items);
-      parts.forEach(pt => pt.owner = curReader);
+      parts.forEach(pt => { pt.owner = curReader; if (page) pt.page = page; if (unit) pt.unit = unit; });
       editing = parts[0];
       lessons = [...parts, ...lessons];
     }
@@ -5311,6 +5325,9 @@ ${pending.map((x, i) => i + ". " + x.t).join("\n")}
     try{ showStrict(); }catch(_){} try{ showVStrict(); }catch(_){} try{ ckRender(); }catch(_){}
   }
   // 🔗 三個 App 同一個小朋友：學習大冒險、學科測驗換人時會寫 localStorage "reader"，回到這頁就跟著換
+  // 🗺️ 連回學習大冒險（帶目前的小朋友）
+  function goMap(e){ if (e) e.preventDefault(); try{ saveReaders(); }catch(_){} location.href = "math-map.html?kid=" + encodeURIComponent(curReader); }
+  try{ $("mapLink").onclick = goMap; }catch(_){}
   function readerFollow(){
     let rd; try{ rd = JSON.parse(localStorage.getItem("reader")); }catch(_){ return; }
     if (!rd || rd === curReader) return;
@@ -6283,9 +6300,10 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     }
     const again = el("button","b big","從頭再唸一次"); again.onclick = () => { const mx = dayMax(), n = runsToday(sc(lesson), "runs"); if (mx && n >= mx){ limitPop("📖「" + lesson.title + "」", n); return; } rRunDone = false; rQueue = null; rGo(0, true); };
     const back = el("button","b big","📚 回到課文列表"); back.onclick = () => $("rExit").click();
+    const toMap = el("button","b big","🗺️ 學習大冒險"); toMap.onclick = goMap;
     box.appendChild(el("p", null, "🎁 這次得到 " + gotPts + " 點，目前共 " + ptBal(curReader) + " 點"));
     const nm = readerName(curReader), lt = lesson.title;
-    row.append(lineOut(b => "【英文練習】" + nm + " 唸完「" + lt + "」✅\n平均 ⭐" + fmtAvg(avg) + "（滿分 5）\n🎁 這次 +" + gotPts + " 點，目前共 " + b + " 點"), again, back); box.appendChild(row);
+    row.append(lineOut(b => "【英文練習】" + nm + " 唸完「" + lt + "」✅\n平均 ⭐" + fmtAvg(avg) + "（滿分 5）\n🎁 這次 +" + gotPts + " 點，目前共 " + b + " 點"), again, back, toMap); box.appendChild(row);
     window.scrollTo({top: 0, behavior: "smooth"});
     readUI.status.textContent = "這課完成了 🎉";
   }
@@ -6339,10 +6357,38 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
 - note_zh：minor 時的小提醒
 
 每一大題給：passage（如果這大題有英文短文或課文，照原文抄下來；沒有就空字串）、name（例如 Part C Usage）、instruction_zh（這大題要做什麼，一句話）、rule_zh（這大題用到的規則或解題方法，用小朋友聽得懂的話，2～3 句，可以舉課本上的例子；沒有特別規則就空字串）。
+另外給 unit：作業本／習作上印的單元（例如 Unit 1、Unit 2、Review One、Holiday Unit；照原樣抄，看不到就空字串，不要猜）和 page：作業本上的頁碼（數字，好幾張給最小的，看不到就 0）。
 最後給 title（例如 Unit 2 Lesson 1）和 cheer_zh（一句溫暖正面的總評，先稱讚做得好的地方，再說要加油的地方）。
 繁體中文、台灣用語。
 
-只輸出 JSON：{"title":"","cheer_zh":"","sections":[{"name":"","passage":"","instruction_zh":"","rule_zh":"","questions":[{"no":"","q":"","q_zh":"","student":"","status":"","answer":"","full":"","full_zh":"","why_zh":"","hint_zh":"","note_zh":""}]}]}`;
+只輸出 JSON：{"title":"","unit":"","page":0,"cheer_zh":"","sections":[{"name":"","passage":"","instruction_zh":"","rule_zh":"","questions":[{"no":"","q":"","q_zh":"","student":"","status":"","answer":"","full":"","full_zh":"","why_zh":"","hint_zh":"","note_zh":""}]}]}`;
+  // 作業屬於哪個單元：整理成 "Unit 2"／"Review One"／"Holiday Unit"，學習大冒險地圖靠它給「作業全對」的心
+  const HW_NUM = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];
+  function hwUnitOf(t){
+    t = String(t || "");
+    let m = t.match(/\bunit\s*(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\b/i);
+    if (m){ const n = /\d/.test(m[1]) ? +m[1] : HW_NUM.findIndex(x => x.toLowerCase() === m[1].toLowerCase()); if (n > 0) return "Unit " + n; }
+    m = t.match(/\breview\s*(\d|one|two|three)\b/i);
+    if (m){ const n = /\d/.test(m[1]) ? +m[1] : HW_NUM.findIndex(x => x.toLowerCase() === m[1].toLowerCase()); if (n > 0) return "Review " + HW_NUM[n]; }
+    if (/holiday/i.test(t)) return "Holiday Unit";
+    return "";
+  }
+  // 照片看不到單元：請小朋友重拍；真的沒印單元的作業，可以自己選
+  function hwAskUnit(){
+    return new Promise(done => {
+      const m = el("div","kcmodal"), b = el("div","kcbox"); b.style.textAlign = "center";
+      b.append(el("div","big","📄"), el("h3", null, "看不到這份作業是哪個單元"), el("p", null, "請把作業上印著「Unit 幾」的地方也拍進去，再按一次「檢查作業」。學習大冒險地圖要知道單元，才能給「作業全對」的心喔！"));
+      const sel = el("select"); sel.style.cssText = "font-size:18px;padding:6px;margin:6px 0";
+      sel.appendChild(Object.assign(document.createElement("option"), {value: "", textContent: "作業上真的沒有印單元？選一個 ▾"}));
+      ["Unit 1","Unit 2","Unit 3","Review One","Unit 4","Unit 5","Unit 6","Review Two","Unit 7","Unit 8","Unit 9","Review Three","Holiday Unit"].forEach(u => sel.appendChild(Object.assign(document.createElement("option"), {value: u, textContent: u})));
+      b.appendChild(sel);
+      const row = el("div","btns"); row.style.justifyContent = "center";
+      const ok = el("button","b big","用這個單元"), re = el("button","b big primary","📷 我去重拍");
+      ok.onclick = () => { if (!sel.value){ sel.focus(); return; } m.remove(); done(sel.value); };
+      re.onclick = () => { m.remove(); $("hwNote").textContent = "📷 把印著「Unit 幾」的地方也拍進去，再檢查一次。"; done(""); };
+      row.append(re, ok); b.appendChild(row); m.appendChild(b); document.body.appendChild(m);
+    });
+  }
   $("hwScan").onclick = async () => {
     if (!hwPhotos.length) return;
     if (!$("gkey").value.trim()){ $("hwNote").textContent = "要先在下面「設定」貼上 Gemini 金鑰才能檢查。"; return; }
@@ -6352,7 +6398,9 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
         txt => { $("hwNote").textContent = "老師正在改作業… 已看完 " + ((txt.match(/"status"/g) || []).length) + " 題"; });
       const secs = (Array.isArray(r.sections) ? r.sections : []).filter(x => x && Array.isArray(x.questions) && x.questions.length);
       if (!secs.length){ $("hwNote").textContent = "照片裡沒找到題目，換一張清楚一點、正面拍的再試試。"; return; }
-      hwData = {id: Date.now(), at: Date.now(), who: curReader, title: asText(r.title) || "英文作業", cheer: asText(r.cheer_zh), sections: secs};
+      let unit = hwUnitOf(asText(r.unit)) || hwUnitOf(asText(r.title));
+      if (!unit){ unit = await hwAskUnit(); if (!unit) return; }
+      hwData = {id: Date.now(), at: Date.now(), who: curReader, title: asText(r.title) || "英文作業", unit, page: pageNum(r.page), cheer: asText(r.cheer_zh), sections: secs};
       hwHist.unshift(hwData); hwHist = hwHist.slice(0, 30); store.set("hwHist", hwHist);
       try{ doneEvent("hw"); }catch(_){}
       if (ptEarn(ptRules.hw, "檢查作業「" + hwData.title + "」📝", "hw:" + hwData.title + ":" + dayKey(Date.now())) && cloudOn() && notifyEach()){
@@ -6801,12 +6849,14 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
 - exzh：例句中文
 - emoji：一個最能代表這個字的表情符號
 - pic：照片裡「最能表現這個字意思」的那一格插圖位置，要拿來做單字卡的圖。img＝第幾張照片（從 0 開始），box＝[ymin, xmin, ymax, xmax]，用 0～1000 的比例座標。框住整個小圖格子（寧可大一點，不要切到人物），不要框單字表的文字。照片裡找不到對應的圖就給 null。
-另外給 title：這課的名稱（例如 Unit 2 Inside the House）。
-只輸出 JSON：{"title":"","words":[{"en":"","zh":"","ipa":"","ex":"","exzh":"","emoji":"","pic":{"img":0,"box":[0,0,0,0]}}]}`},
+另外給 title：這課的名稱（例如 Unit 2 Inside the House）；page：照片裡看得到的課本頁碼（印在頁面角落的數字，好幾張就給最小的，完全看不到就給 0，不要猜）；unit：課本上印的單元標題原文（例如 Unit Two—Inside the House、Review One；看不到就空字串）。
+只輸出 JSON：{"title":"","page":4,"unit":"","words":[{"en":"","zh":"","ipa":"","ex":"","exzh":"","emoji":"","pic":{"img":0,"box":[0,0,0,0]}}]}`},
         t => { $("voNote").textContent = "AI 正在找新單字… 已找到 " + ((t.match(/"en"/g) || []).length) + " 個"; });
       const raw = (r.words || []).filter(w => w && /[A-Za-z]/.test(w.en || ""));
       const words = raw.map(w => ({en: asText(w.en).trim(), zh: asText(w.zh), ipa: asText(w.ipa), ex: asText(w.ex), exzh: asText(w.exzh), emoji: asText(w.emoji).trim().slice(0, 8)}));
       if (!words.length){ $("voNote").textContent = "沒找到單字，換一張清楚一點的再試試。"; return; }
+      const vpg = pageNum(r.page), vun = asText(r.unit).trim();
+      if (!vpg){ $("voNote").textContent = "📄 照片裡看不到課本頁碼。地圖要靠頁碼才知道是哪一課，請把頁面角落的頁碼也拍進去，再拍一次。"; return; }
       // 從課本照片剪下對應的插圖，做成單字卡的圖
       $("voNote").textContent = "正在剪單字卡的圖…";
       for (let k = 0; k < raw.length; k++){
@@ -6817,9 +6867,9 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
       }
       const dd = dupVocab(words, curReader);
       voPhotos = []; voThumbs();
-      if (dd.block){ $("voNote").textContent = "🔁 這些單字之前已經拍過了"; dupPopVocab(dd, () => voOpenEditor({title: asText(r.title), words, __force: true})); return; }
-      $("voNote").textContent = "找到 " + words.length + " 個 👇" + (dd.dupN ? "（其中 " + dd.dupN + " 個以前拍過，存檔時會拿掉）" : "");
-      voOpenEditor({title: asText(r.title), words});
+      if (dd.block){ $("voNote").textContent = "🔁 這些單字之前已經拍過了"; dupPopVocab(dd, () => voOpenEditor({title: asText(r.title), words, page: vpg, unit: vun, __force: true})); return; }
+      $("voNote").textContent = "找到 " + words.length + " 個（第 " + vpg + " 頁" + (vun ? "・" + vun : "") + "）👇" + (dd.dupN ? "（其中 " + dd.dupN + " 個以前拍過，存檔時會拿掉）" : "");
+      voOpenEditor({title: asText(r.title), words, page: vpg, unit: vun});
     }catch(e){ $("voNote").textContent = "辨識失敗：" + e.message; }
     finally{ btn.disabled = false; }
   };
@@ -6834,7 +6884,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     li.__w = w; return li;
   }
   function voOpenEditor(st){
-    voEditing = st; $("voEdit").hidden = false; $("voTitle").value = st.title || "";
+    voEditing = st; $("voEdit").hidden = false; $("voTitle").value = st.title || ""; $("voPage").value = st.page || ""; $("voUnit").value = st.unit || "";
     const ol = $("voEditList"); ol.innerHTML = ""; st.words.forEach(w => ol.appendChild(voRow(w)));
     $("voEdit").scrollIntoView({behavior: "smooth", block: "start"});
   }
@@ -6843,14 +6893,17 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     let words = [...$("voEditList").children].map(li => { const o = li.__w || {}; const en = li.querySelector(".voen").value.trim(), zh = li.querySelector(".vozh").value.trim(); return en === o.en ? Object.assign({}, o, {zh}) : {en, zh}; }).filter(w => /[A-Za-z]/.test(w.en));
     if (!words.length) return;
     const title = $("voTitle").value.trim() || words.slice(0, 3).map(w => w.en).join(", ");
-    if (voEditing && voEditing.id){ Object.assign(voEditing, {title, words}); voSets = [voEditing, ...voSets.filter(x => x !== voEditing)]; }
+    const page = pageNum($("voPage").value), unit = $("voUnit").value.trim();
+    if (!page && !(voEditing && voEditing.id) && !confirm("沒有填課本頁碼，學習大冒險地圖不會把它算進單元的「單字小考」心。\n確定不填頁碼就存嗎？")){ $("voPage").focus(); return; }
+    const pu = o => { if (page) o.page = page; else delete o.page; if (unit) o.unit = unit; else delete o.unit; return o; };
+    if (voEditing && voEditing.id){ Object.assign(voEditing, {title, words}); pu(voEditing); voSets = [voEditing, ...voSets.filter(x => x !== voEditing)]; }
     else {
       if (!(voEditing && voEditing.__force)){
         const dd = dupVocab(words, curReader);
         if (dd.block){ dupPopVocab(dd, () => { voEditing = voEditing || {}; voEditing.__force = true; $("voSave").click(); }); return; }
         if (dd.dupN){ words = dd.fresh; ptToast("🔁 有 " + dd.dupN + " 個單字以前拍過了，這次只加新的 " + words.length + " 個"); }
       }
-      const n = Math.ceil(words.length / 15); for (let k = n - 1; k >= 0; k--) voSets.unshift({id: Date.now() + k, title: n > 1 ? title + "（" + (k + 1) + "/" + n + "）" : title, words: words.slice(k * 15, (k + 1) * 15), scores: {}, at: Date.now(), owner: curReader}); voEditing = voSets[0]; }
+      const n = Math.ceil(words.length / 15); for (let k = n - 1; k >= 0; k--) voSets.unshift(pu({id: Date.now() + k, title: n > 1 ? title + "（" + (k + 1) + "/" + n + "）" : title, words: words.slice(k * 15, (k + 1) * 15), scores: {}, at: Date.now(), owner: curReader})); voEditing = voSets[0]; }
     voSave(); $("voEdit").hidden = true; voRenderSets(); voOpenStudy(voEditing);
     // 沒有中文或音標的字，背景請 AI 補上
     voFillMissing(voEditing);
@@ -7225,6 +7278,7 @@ tip_zh：最重要的一個改進建議（15 個字以內，給小朋友聽的�
     if (voQ.wrong.length){ const b = el("button","b big primary","🔁 再考錯的 " + voQ.wrong.length + " 個"); const wr = voQ.wrong.slice(), kind = voQ.kind; b.onclick = () => voStart(voSet, kind, wr); row.appendChild(b); }
     const other = el("button","b big", voQ.kind === "say" ? "✏️ 換考寫" : "🗣 換考唸"); const k2 = voQ.kind === "say" ? "spell" : "say"; other.onclick = () => voStart(voSet, k2); row.appendChild(other);
     const back = el("button","b big","📚 回單字本"); back.onclick = () => { voQ = null; voShow("setup"); voRenderSets(); }; row.appendChild(back);
+    const toMap = el("button","b big","🗺️ 學習大冒險"); toMap.onclick = goMap; row.appendChild(toMap);
     const vk = voQ.kind, vt = voSet.title, vw = voQ.wrong.map(i => voSet.words[i].en);
     row.prepend(lineOut(b => "【英文練習】" + readerName(curReader) + " 單字" + (vk === "say" ? "考唸" : "考寫") + "「" + vt + "」\n✅ 答對 " + r + " / " + n + (vw.length ? "\n要再練：" + vw.join("、") : "") + "\n🎁 這次 +" + gotV + " 點，目前共 " + b + " 點"));
     box.appendChild(row);
