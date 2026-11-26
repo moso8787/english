@@ -220,19 +220,40 @@ var WORLDS = [
     ],
     edges:[[0,1,[[190,850],[190,680]]],[1,2,[[252,672],[300,680]]],[2,3,[[390,600],[440,550]]],[3,4,[[530,399],[570,322]]],[4,5,[[690,211],[890,211]]],
       [5,6,[[1008,260],[1008,370],[1050,550],[1000,640]]],[6,7,[[850,672]]],[6,8,[[870,790],[790,810],[780,880],[690,930]]],[8,9,[[550,1020]]],[9,10,[[612,920],[592,840]]]],
+    sub4:"4上（翰林）",
+    levels4:[
+      {uid:"m4a-1",  tag:"4上-1", name:"一億以內的數", title:"一、一億以內的數", xy:[220,908]},
+      {uid:"m4a-2",  tag:"4上-2", name:"乘法",         title:"二、乘法",         xy:[235,650]},
+      {uid:"m4a-3",  tag:"4上-3", name:"角度",         title:"三、角度",         xy:[349,625]},
+      {uid:"m4a-4",  tag:"4上-4", name:"假分數帶分數", title:"四、假分數與帶分數", xy:[530,481]},
+      {uid:"m4a-5",  tag:"4上-5", name:"公里",         title:"五、公里",         xy:[630,236]},
+      {uid:"m4a-r1", review:true, tag:"期中複習", name:"1～5 單元", title:"期中複習：第 1～5 單元", xy:[945,221]},
+      {uid:"m4a-6",  tag:"4上-6", name:"除法",         title:"六、除法",         xy:[1008,370]},
+      {uid:"m4a-7",  tag:"4上-7", name:"三角形與全等", title:"七、三角形與全等", xy:[887,702]},
+      {uid:"m4a-8",  tag:"4上-8", name:"兩步驟問題",   title:"八、兩步驟問題與併式", xy:[822,632], labelUp:true},
+      {uid:"m4a-9",  tag:"4上-9", name:"二位小數",     title:"九、二位小數",     xy:[780,880]},
+      {uid:"m4a-10", tag:"4上-10", name:"統計圖表",    title:"十、統計圖表",     xy:[601,1000], labelUp:true},
+      {uid:"m4a-r2", review:true, tag:"期末複習", name:"6～10 單元", title:"期末複習：第 6～10 單元", xy:[507,1000]},
+      {uid:"m4a-all", review:true, tag:"學力挑戰", name:"全冊總複習", title:"學力挑戰：全冊總複習", xy:[565,770]}
+    ],
+    edges4:[[0,1,[[190,850],[190,680]]],[1,2,[[252,672],[300,680]]],[2,3,[[390,600],[440,550]]],[3,4,[[530,399],[570,322]]],[4,5,[[690,211],[890,211]]],
+      [5,6,[[1008,260]]],[6,7,[[1050,550],[1000,640]]],[7,8,[[850,672]]],[7,9,[[870,790],[790,810]]],[9,10,[[690,930]]],[10,11,[[550,1020]]],[10,12,[[612,920],[592,840]]]],
     fx: fxIsland },
   { id:"forest", emoji:"🌳", name:"魔法森林", sub:"6上（南一）",
-    pick: subjLevels("c6a", "國語", [["美好時刻","壹、美好時刻：在天晴了的時候、珍珠鳥、客至"],["工作圖像","貳、工作圖像：贏得喝采的輸家、哇！原來如此、登月先鋒"],["問題解決","參、問題解決：明智的抉擇、飢渴好「火」伴、火燒連環船"],["文學之窗","肆、文學之窗：戲術、紀念照、少年筆耕"]], [0,2,4,6,8,11,13], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]], [3,4]), img:"worlds/forest.jpg", bg:"#1d5a7a",
+    pick: subjLevels("c6a", "國語", [["美好時刻","壹、美好時刻：在天晴了的時候、珍珠鳥、客至"],["工作圖像","貳、工作圖像：贏得喝采的輸家、哇！原來如此、登月先鋒"],["問題解決","參、問題解決：明智的抉擇、飢渴好「火」伴、火燒連環船"],["文學之窗","肆、文學之窗：戲術、紀念照、少年筆耕"]], [0,2,4,6,8,11,13], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]], [3,4]), img:"worlds/forest.jpg",
+    sub4:"4上（翰林）", pick4: subjLevelsN("c4a", "國語", [["我愛家鄉","第一單元 我愛家鄉：美麗島、請到我的家鄉來、鏡頭下的家鄉"],["天空的奇想","第二單元 天空的奇想：飛行夢、月光下、又遠又近的月亮"],["品德小故事","第三單元 品德小故事：松鼠先生的麵包、平凡的大俠、王子折箭"],["海洋世界","第四單元 海洋世界：海中的熱帶雨林、美食島、寧靜的音樂會"]], 2, [0,2,4,6,8,11,13], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]], [3,4]), bg:"#1d5a7a",
     pts:[[577,1009],[677,962],[624,895],[604,780],[323,709],[278,526],[340,492],[548,372],[660,296],[473,246],[930,283],[1083,482],[921,593],[845,705],[715,706],[978,192]],
     edges:[[0,1,[]],[1,2,[]],[2,3,[]],[3,4,[[470,745]]],[4,5,[[300,610]]],[5,6,[]],[6,7,[[440,440]]],[7,8,[]],[8,9,[[560,262]]],[8,10,[[800,285]]],[10,15,[]],[10,11,[[1040,360]]],[11,12,[[990,560]]],[12,13,[[880,650]]],[13,14,[]],[14,3,[[660,740]]]],
     fx: fxForest },
   { id:"desert", emoji:"🏜️", name:"沙漠神殿", sub:"6上（翰林）",
-    pick: subjLevels("s6a", "社會", [["消費與理財","一、消費選擇與理財規劃"],["戰後經濟轉型","二、戰後經濟轉型與生活轉變"],["科技新挑戰","三、迎向科技發展新挑戰"],["規範與運作","四、生活中的規範與運作"]], [0,1,3,5,7,9,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[3,6]], [5]), img:"worlds/desert.jpg", bg:"#5a3a22",
+    pick: subjLevels("s6a", "社會", [["消費與理財","一、消費選擇與理財規劃"],["戰後經濟轉型","二、戰後經濟轉型與生活轉變"],["科技新挑戰","三、迎向科技發展新挑戰"],["規範與運作","四、生活中的規範與運作"]], [0,1,3,5,7,9,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[3,6]], [5]), img:"worlds/desert.jpg",
+    sub4:"4上（翰林）", pick4: subjLevelsN("s4a", "社會", [["家鄉的地圖","第一單元 家鄉的地圖與運用"],["地形與氣候","第二單元 家鄉的地形與氣候"],["人口與生活","第三單元 家鄉的人口與生活"],["多元文化","第四單元 家鄉的多元文化"],["節慶與禮俗","第五單元 家鄉的節慶與禮俗"]], 3, [0,1,2,3,5,7,9,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[4,7]], [6]), bg:"#5a3a22",
     pts:[[460,1059],[763,966],[820,829],[382,701],[280,640],[239,510],[333,437],[376,307],[467,298],[658,203],[929,497],[931,460],[986,353]],
     edges:[[0,1,[[588,1052],[669,984]]],[1,2,[[799,918],[788,870]]],[2,3,[[749,808],[701,758],[654,747],[571,718],[490,704]]],[3,4,[[339,669]]],[4,5,[[264,597],[219,544]]],[5,6,[[303,496],[321,464]]],[6,7,[[339,394],[357,339]]],[7,8,[[423,305]]],[8,9,[[497,267],[496,237],[544,210]]],[12,11,[[986,401],[963,442]]],[11,10,[]],[6,11,[[401,439],[553,437],[654,408],[722,401],[802,415],[874,458]]]],
     fx: fxDesert },
   { id:"ice", emoji:"❄️", name:"冰雪王國", sub:"6上（康軒）",
-    pick: subjLevels("n6a", "自然", [["天氣的變化","一、探索天氣的變化"],["水溶液","二、水溶液"],["動物大解密","三、動物大解密"],["電磁作用","四、電磁作用"]], [0,2,3,5,7,8,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[4,6]], [1]), img:"worlds/ice.jpg", bg:"#102c49",
+    pick: subjLevels("n6a", "自然", [["天氣的變化","一、探索天氣的變化"],["水溶液","二、水溶液"],["動物大解密","三、動物大解密"],["電磁作用","四、電磁作用"]], [0,2,3,5,7,8,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[4,6]], [1]), img:"worlds/ice.jpg",
+    sub4:"4上（南一）", pick4: subjLevelsN("n4a", "自然", [["日月星辰","一、地球的夥伴—日月星辰"],["水中世界","二、水中世界"],["光和能源","三、光和能源"],["電路好好玩","四、電路好好玩"]], 2, [0,2,3,5,7,8,11], [[0,1],[1,2],[2,3],[3,4],[4,5],[4,6]], [1]), bg:"#102c49",
     pts:[[311,407],[307,240],[655,240],[980,243],[670,407],[677,573],[306,574],[310,753],[320,906],[644,908],[650,754],[1000,751]],
     edges:[[0,1,[[310,320]]],[1,2,[[400,240],[490,258],[570,244]]],[2,3,[[740,260],[825,240],[910,255]]],[3,4,[[1017,300],[1015,370],[975,402],[900,403],[818,369],[765,380],[730,408]]],[4,5,[[670,490]]],[5,6,[[550,580],[420,580]]],[6,7,[[310,660]]],[7,8,[[285,830]]],[8,9,[[410,900],[470,894],[560,914]]],[7,10,[[380,765],[480,735],[550,740]]],[10,11,[[745,730],[820,755],[920,785],[980,778]]]],
     fx: fxIce },
@@ -251,16 +272,17 @@ var WORLDS = [
     fx: fxBoss }
 ];
 // 國語／自然／社會：每科 4 個單元＋期中複習＋期末複習＋學力挑戰。picks = 用原本地圖的第幾個點；conn = 哪兩關之間有路
-function subjLevels(pre, book, units, picks, conn, up){
-  var defs = units.map(function(u, i){ return {uid: pre + "-" + (i + 1), tag: book + "-" + (i + 1), name: u[0], title: u[1]}; });
-  defs.push({uid: pre + "-r1", review: true, tag: "期中複習", name: "1～2 單元", title: "期中複習：第 1～2 單元"});
-  defs.push({uid: pre + "-r2", review: true, tag: "期末複習", name: "3～4 單元", title: "期末複習：第 3～4 單元"});
-  defs.push({uid: pre + "-all", review: true, tag: "學力挑戰", name: "全冊總複習", title: "學力挑戰：全冊總複習"});
-  var order = [0, 1, 4, 2, 3, 5, 6];   // 地圖上的順序：單元1、單元2、期中複習、單元3、單元4、期末複習、學力挑戰
-  return {picks: picks, conn: conn, levels: order.map(function(k, i){ return Object.assign({}, defs[k], {labelUp: (up || []).indexOf(i) >= 0}); })};
+function subjLevels(pre, book, units, picks, conn, up){ return subjLevelsN(pre, book, units, 2, picks, conn, up); }
+// mid＝期中考到第幾單元。地圖上的順序：單元 1～mid、期中複習、其餘單元、期末複習、學力挑戰
+function subjLevelsN(pre, book, units, mid, picks, conn, up){
+  var n = units.length, lv = units.map(function(u, i){ return {uid: pre + "-" + (i + 1), tag: book + "-" + (i + 1), name: u[0], title: u[1]}; });
+  var out = lv.slice(0, mid).concat([{uid: pre + "-r1", review: true, tag: "期中複習", name: "1～" + mid + " 單元", title: "期中複習：第 1～" + mid + " 單元"}])
+    .concat(lv.slice(mid)).concat([{uid: pre + "-r2", review: true, tag: "期末複習", name: (mid + 1) + "～" + n + " 單元", title: "期末複習：第 " + (mid + 1) + "～" + n + " 單元"},
+      {uid: pre + "-all", review: true, tag: "學力挑戰", name: "全冊總複習", title: "學力挑戰：全冊總複習"}]);
+  return {picks: picks, conn: conn, levels: out.map(function(l, i){ return Object.assign({}, l, {labelUp: (up || []).indexOf(i) >= 0}); })};
 }
-function pickWorld(w){
-  var P = w.pick; if (!P) return;
+function pickWorld(w, P){
+  P = P || w.pick; if (!P) return null;
   var adj = {}; w.edges.forEach(function(e){ (adj[e[0]] = adj[e[0]] || []).push({to: e[1], way: e[2]}); (adj[e[1]] = adj[e[1]] || []).push({to: e[0], way: e[2].slice().reverse()}); });
   function path(a, b){   // 沿原本的路找 a→b，回傳中間要經過的轉彎點
     var prev = {}, q = [a]; prev[a] = null;
@@ -270,10 +292,16 @@ function pickWorld(w){
     var out = []; hops.forEach(function(h, i){ out = out.concat(h.way); if (i < hops.length - 1) out.push(w.pts[h.node]); });
     return out;
   }
-  w.levels = P.levels.map(function(l, i){ return Object.assign({xy: w.pts[P.picks[i]]}, l); });
-  w.edges = P.conn.map(function(c){ return [c[0], c[1], path(P.picks[c[0]], P.picks[c[1]])]; });
+  return {levels: P.levels.map(function(l, i){ return Object.assign({xy: w.pts[P.picks[i]]}, l); }),
+          edges: P.conn.map(function(c){ return [c[0], c[1], path(P.picks[c[0]], P.picks[c[1]])]; })};
 }
-WORLDS.forEach(function(w){ pickWorld(w); if (!w.levels) w.levels = todo(w.pts); w.h = w.h || W; w.oy = (W - w.h) / 2; });
+WORLDS.forEach(function(w){
+  var r = pickWorld(w); if (r){ w.levels = r.levels; w.edges = r.edges; }
+  if (!w.levels) w.levels = todo(w.pts); w.h = w.h || W; w.oy = (W - w.h) / 2;
+  w.L6 = {levels: w.levels, edges: w.edges, sub: w.sub};
+  if (w.pick4){ var r4 = pickWorld(w, w.pick4); w.L4 = {levels: r4.levels, edges: r4.edges, sub: w.sub4}; }
+  else if (w.levels4) w.L4 = {levels: w.levels4, edges: w.edges4, sub: w.sub4};
+});
 
 // ════════════════════════════════════════════════════════════════
 //  六維雷達圖：六個科目，各自對應一個世界（world = WORLDS 的 id）
@@ -398,6 +426,12 @@ var DEF_EXAMS = [
 [["c6a","國語"],["n6a","自然"],["s6a","社會"]].forEach(function(x){
   DEF_EXAMS.push({id: x[0] + "-mid", pre: x[0], name: x[1] + "期中考", box: "purple", uids: [x[0] + "-1", x[0] + "-2", x[0] + "-r1"]});
   DEF_EXAMS.push({id: x[0] + "-final", pre: x[0], name: x[1] + "期末考", box: "purple", uids: [x[0] + "-3", x[0] + "-4", x[0] + "-r2", x[0] + "-all"]});
+});
+// 四年級（Howard）：[前綴, 科目, 單元數, 期中到第幾單元]
+[["m4a","數學",10,5],["c4a","國語",4,2],["n4a","自然",4,2],["s4a","社會",5,3]].forEach(function(x){
+  var a = [], b = []; for (var i = 1; i <= x[2]; i++) (i <= x[3] ? a : b).push(x[0] + "-" + i);
+  DEF_EXAMS.push({id: x[0] + "-mid", pre: x[0], name: "四年級" + x[1] + "期中考", box: "purple", uids: a.concat([x[0] + "-r1"])});
+  DEF_EXAMS.push({id: x[0] + "-final", pre: x[0], name: "四年級" + x[1] + "期末考", box: "purple", uids: b.concat([x[0] + "-r2", x[0] + "-all"])});
 });
 function examMerge(saved){   // 家長存過的優先；新加的科目自動補預設
   var L = Array.isArray(saved) ? saved.map(function(e){ var d = DEF_EXAMS.filter(function(x){ return x.id === e.id; })[0]; return Object.assign({}, e, {name: d && /^期[中末]考$/.test(e.name) ? d.name : e.name}); }) : [];
@@ -718,8 +752,9 @@ function gradeLevels(){
   var g = kidGrade();
   WORLDS.forEach(function(w){
     if (w.eng) return;
-    if (!w.levels6) w.levels6 = w.levels;
-    w.levels = g === 6 ? w.levels6 : w.levels6.map(function(l, i){ return {xy: l.xy, tag: "第 " + (i + 1) + " 關", labelUp: l.labelUp, gradeLock: g}; });
+    var hasUid = w.L6.levels.some(function(l){ return l.uid; }), G = g === 6 || !hasUid ? w.L6 : g === 4 ? w.L4 : null;   // 機械工廠、魔王城堡本來就是準備中
+    if (G){ w.levels = G.levels; w.edges = G.edges; w.sub = G.sub || w.L6.sub; w.gradeReady = true; }
+    else { w.levels = w.L6.levels.map(function(l, i){ return {xy: l.xy, tag: "第 " + (i + 1) + " 關", labelUp: l.labelUp, gradeLock: g}; }); w.edges = w.L6.edges; w.sub = w.L6.sub; w.gradeReady = false; }
   });
 }
 function refresh(){
@@ -863,7 +898,7 @@ function ui(){
   document.body.style.background = w.bg;
   $("wName").textContent = w.emoji + " 第 " + (wi + 1) + " 世界・" + w.name;
   var sjx = SUBJECTS.filter(function(x){ return x.world === w.id; })[0];
-  $("wSub").textContent = (sjx ? sjx.name + "・" : w.id === "boss" ? "👑 跨科總複習・" : "") + (kidGrade() !== 6 && !w.eng ? kidGrade() + " 年級關卡準備中" : w.sub);
+  $("wSub").textContent = (sjx ? sjx.name + "・" : w.id === "boss" ? "👑 跨科總複習・" : "") + (!w.gradeReady && !w.eng ? kidGrade() + " 年級關卡準備中" : w.sub);
   $("wIcon").innerHTML = sjx ? '<img src="' + sjx.icon + '" alt="' + sjx.name + '">' : "";
   $("prev").disabled = wi === 0 || flipping; $("next").disabled = wi === WORLDS.length - 1 || flipping;
   $("dots").innerHTML = WORLDS.map(function(x, i){ return '<i class="' + (i === wi ? "on" : "") + '" data-i="' + i + '" title="' + x.name + '"></i>'; }).join("");
