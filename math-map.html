@@ -734,8 +734,8 @@ function engRec(uid){
   var it = engById[uid]; if (!it) return null;
   if (it.kind === "unit"){
     var H = unitHearts(it); if (!H.got && !it.list.length && !it.hw.length) return null;
-    var dU = dstr(H.at), passU = H.max === 2 ? H.got >= 2 : H.got >= PASS;
-    return {eng: true, unitHearts: H, best: H.got, max: H.max, pass: passU, chest: false, avg: H.got, hist: [{d: dU, st: H.got}],
+    var dU = dstr(H.at), passUH = H.max === 2 ? H.got >= 2 : H.got >= PASS;
+    return {eng: true, unitHearts: H, best: H.got, max: H.max, pass: passUH, chest: false, avg: H.got, hist: [{d: dU, st: H.got}],
       last: {d: dU, st: H.got, s: H.got, n: H.max, unit: "心", comment: "拿到 " + H.got + " / " + H.max + " 顆心。" + (H.got >= H.max ? "這個單元全部完成了！🎉" : passU ? "已經過關，把剩下的心也拿到吧！" : "照下面的清單一顆一顆拿。") + (H.noPage ? "（有 " + H.noPage + " 份課文沒有頁數，請重拍課本、拍到頁碼）" : ""),
         good: H.rows.filter(function(r){ return r.ok; }).map(function(r){ return r.sl.label; }), focus: H.rows.filter(function(r){ return !r.ok; }).map(function(r){ return r.sl.label + "：" + r.info; })}};
   }
@@ -751,6 +751,10 @@ var mapData = {};
 function load(){ mapData = store.get("subMap", {}); }
 function recU(uid){ if (uid && uid.indexOf("eng:") === 0) return engRec(uid); var r = uid && (mapData[nameKey(kid.name)] || {})[uid]; return r && r.hist ? r : null; }
 function bestU(uid){ var r = recU(uid); return r ? (r.max && r.max !== 5 ? (r.pass ? 5 : Math.floor((r.best || 0) * 5 / r.max)) : r.best || 0) : 0; }
+// 學科關卡：累積 PASS_N 次 4 顆星以上才過關（2026-11-28）；英文關卡照原本（心／星數）
+var PASS_N = 5;
+function passN(uid){ var r = recU(uid); return !r ? 0 : r.passN != null ? r.passN : (r.hist || []).filter(function(h){ return (+h.st || 0) >= PASS; }).length; }
+function passU(uid){ return uid && uid.indexOf("eng:") === 0 ? bestU(uid) >= PASS : passN(uid) >= PASS_N; }
 function rules(){ return Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {})); }
 function chests(){ return store.get("subMapChest", {})[nameKey(kid.name)] || {}; }
 function openChest(uid, info){ var a = store.get("subMapChest", {}), k = nameKey(kid.name), d = new Date(); a[k] = a[k] || {}; a[k][uid] = Object.assign({d: d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2)}, info || {}); store.set("subMapChest", a); if (window.SubSync) SubSync.soon(500); }
@@ -795,7 +799,7 @@ function refresh(){
     if (news.w !== wi) setWorld(news.w, true);
     cur = news.i;
     var r = news.r;
-    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") + (r.chest && !chests()[news.lv.uid] && !WORLDS[news.w].eng ? " 🎁 有寶箱可以開" : ""), 4200);
+    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (WORLDS[news.w].eng ? (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") : r.last.st >= PASS ? (passU(news.lv.uid) ? "，累積 " + passN(news.lv.uid) + " 次，過關！🎉" : "，算 1 次（" + passN(news.lv.uid) + " / " + PASS_N + "）") : "，再加油 💪") + (r.chest && !chests()[news.lv.uid] && !WORLDS[news.w].eng ? " 🎁 有寶箱可以開" : ""), 4200);
   }
   renderKids(); ui();
 }
@@ -809,7 +813,7 @@ function subjStat(sj){
   if (!L.length) return st;
   var sum = 0;
   L.forEach(function(l){
-    var r = recU(l.uid), b = bestU(l.uid); sum += b; if (b >= PASS) st.pass++;
+    var r = recU(l.uid), b = bestU(l.uid); sum += b; if (passU(l.uid)) st.pass++;
     if (r){ st.tried++;
       if (!st.best || b > st.best.b) st.best = {l: l, b: b};
       if (!st.worst || b < st.worst.b) st.worst = {l: l, b: b};
@@ -949,7 +953,7 @@ function ui(){
   $("examBox").innerHTML = eh;
   Array.prototype.forEach.call($("examBox").querySelectorAll("button[data-ex]"), function(b){ b.onclick = function(){ var ex = exams().filter(function(e){ return e.id === b.getAttribute("data-ex"); })[0]; if (ex) tryOpenExam(ex); }; });
   var tot = 0, pass = 0;
-  ready_.forEach(function(l){ var b = bestU(l.uid); tot += b; if (b >= PASS) pass++; });
+  ready_.forEach(function(l){ var b = bestU(l.uid); tot += b; if (passU(l.uid)) pass++; });
   $("score").textContent = ready_.length ? "⭐ " + tot + " / " + (ready_.length * 5) + "　✅ 過關 " + pass + " / " + ready_.length : "🚧 這個世界的題目還在準備中";
   if (cur >= L.length) cur = 0;
   var lv = L[cur], h;
@@ -968,7 +972,8 @@ function ui(){
     h += '<div class="teacher" style="background:#fff3f6;border-color:#ffd1dc">' + HH.rows.map(function(rw){ return "<div>" + (rw.ok ? "❤️" : "🤍") + " " + esc(rw.sl.label) + '<span style="color:#7a6650">　' + esc(rw.info) + "</span></div>"; }).join("") +
       (HH.noPage ? '<div style="color:#c0392b">⚠️ 有 ' + HH.noPage + " 份這個單元的課文沒有頁數，地圖不知道是哪一篇，請在英文口說練習重拍、拍到頁碼。</div>" : "") + "</div>";
   } else
-  h += '<div class="stars">' + starHTML(b) + ' <span class="cnt">最佳 ' + b + " / 5" + (b >= PASS ? "　✅ 過關" : r ? "　還差 " + (PASS - b) + " 顆星過關" : "") + "</span></div>";
+  h += '<div class="stars">' + starHTML(b) + ' <span class="cnt">最佳 ' + b + " / 5" + (lv.uid && lv.uid.indexOf("eng:") === 0 ? (b >= PASS ? "　✅ 過關" : r ? "　還差 " + (PASS - b) + " 顆星過關" : "") : (passU(lv.uid) ? "　✅ 過關" : "　過關進度 " + passN(lv.uid) + " / " + PASS_N)) + "</span></div>" +
+    (lv.uid && lv.uid.indexOf("eng:") === 0 ? "" : '<div class="rule">每次 20 題，拿到 ' + PASS + " 顆星以上算 1 次，累積 " + PASS_N + " 次才過關。</div>");
   if (r){
     h += '<div class="teacher">' + teacherHTML(r) + "</div>";
     if (!r.unitHearts) h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
@@ -1063,7 +1068,7 @@ function edgePts(w, e){ return [w.levels[e[0]].xy].concat(e[2]).concat([w.levels
 // 畫一整個世界（主畫面和翻頁用的都是這個）
 function renderWorld(g, w, t, opt){
   opt = opt || {};
-  var A = loadWorld(w), passed = function(i){ return bestU(w.levels[i].uid) >= PASS; };
+  var A = loadWorld(w), passed = function(i){ return passU(w.levels[i].uid); };
   g.setTransform(1, 0, 0, 1, 0, 0);
   g.fillStyle = w.sky || w.bg; g.fillRect(0, 0, W, W);
   if (!ready(A.base)) return false;
@@ -1084,7 +1089,7 @@ function renderWorld(g, w, t, opt){
   // 關卡（名牌和星星先記下來，最後才畫，才不會被寶箱蓋住）
   var labels = [];
   w.levels.forEach(function(lv, i){
-    var x = lv.xy[0], y = lv.xy[1], yy = y - 15 - Math.sin(t * 3 + i) * 3, r = recU(lv.uid), b = bestU(lv.uid), ok = b >= PASS, sel = !opt.plain && (i === cur || i === hover);
+    var x = lv.xy[0], y = lv.xy[1], yy = y - 15 - Math.sin(t * 3 + i) * 3, r = recU(lv.uid), b = bestU(lv.uid), ok = passU(lv.uid), sel = !opt.plain && (i === cur || i === hover);
     g.save(); g.translate(x, yy);
     if (lv.fresh && performance.now() - lv.fresh < 8000){ for (var sp = 0; sp < 6; sp++){ var aa = t * 2 + sp * Math.PI / 3, rr2 = 34 + Math.sin(t * 6 + sp) * 6; g.fillStyle = "rgba(255,240,150," + (.6 + .4 * Math.sin(t * 8 + sp)) + ")"; g.font = "16px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("✨", Math.cos(aa) * rr2, -10 + Math.sin(aa) * rr2); } }
     if (sel){ g.strokeStyle = "rgba(255,214,80," + (.55 + .35 * Math.sin(t * 4)) + ")"; g.lineWidth = 5; g.beginPath(); g.arc(0, -10, 29 + Math.sin(t * 4) * 3, 0, 7); g.stroke(); }

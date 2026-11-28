@@ -76,7 +76,8 @@
     hist.sort(function(x, y){ return (x.t || 0) - (y.t || 0) || String(x.d).localeCompare(String(y.d)); });
     var la = a.last || {}, lb = b.last || {}, last = (lb.t || 0) > (la.t || 0) || (!(la.t || lb.t) && String(lb.d) > String(la.d)) ? lb : la;
     var best = Math.max(a.best || 0, b.best || 0);
-    return {best: best, paid: Math.max(a.paid || 0, b.paid || 0), pass: best >= 4, chest: !!(a.chest || b.chest), hist: hist.slice(-20), last: last};
+    var pc = function(r){ return r.passN != null ? r.passN : (r.hist || []).filter(function(h){ return (+h.st || 0) >= 4; }).length; }, pn = Math.max(pc(a), pc(b));
+    return {best: best, paid: Math.max(a.paid || 0, b.paid || 0), passN: pn, pass: pn >= 5, chest: !!(a.chest || b.chest), hist: hist.slice(-20), last: last};
   }
   function mergeStats(a, b){
     if (!a) return b; if (!b) return a;
