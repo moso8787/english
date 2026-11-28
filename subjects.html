@@ -306,6 +306,7 @@
 
 <script src="sub-sync.js"></script>
 <script src="subj-bank.js"></script>
+<script src="subj-fig.js"></script>
 <script>
 (function(){
   "use strict";
@@ -426,6 +427,9 @@
     var seen = {}; c.bank.forEach(function(q){ seen[q.q] = 1; });
     X.forEach(function(a){
       var q = a[0] === "m" ? M(a[1], a[2], a[3], a[4], a[5]) : a[0] === "t" ? T(a[1], a[2], a[3], a[4]) : a[0] === "w" ? W(a[1], a[2], a[3], a[4], a[5]) : null;
+      var fg = a[0] === "t" ? a[5] : a[6];
+      if (typeof fg === "string" && fg.charAt(0) === "@") fg = (window.XFIG || {})[fg.slice(1)];   // 共用的圖放在 XFIG（subj-fig.js）
+      if (q && fg) q.fig = typeof fg === "string" ? {svg: fg} : fg;   // 看圖題：最後多一格圖（SVG 字串）
       if (q && !seen[q.q] && (!c.topicName || c.topicName[q.t])){ seen[q.q] = 1; c.bank.push(q); }
     });
   }
@@ -1467,6 +1471,7 @@
   // ── 圖（扇形、圓）──
   function figSVG(f){
     if (!f) return "";
+    if (f.svg) return '<div style="max-width:100%;overflow-x:auto">' + f.svg + "</div>";   // subj-bank.js 自己畫的圖
     var cx = 110, cy = 110, r = 80, s = '<svg width="220" height="' + (f.sector && f.sector[1] <= 180 ? 140 : 220) + '" viewBox="0 0 220 ' + (f.sector && f.sector[1] <= 180 ? 140 : 220) + '" style="max-width:100%">';
     var st = 'fill="#f3ecff" stroke="#6d4bd8" stroke-width="3"';
     if (f.sector){
@@ -2539,7 +2544,7 @@
   if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
 
   // 測試用
-  window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }, cur: function(){ return cur; }};
+  window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }, cur: function(){ return cur; }, renderQ: function(){ renderQ(); }};
 
   if (MAP.kid && readers.some(function(r){ return r.id === MAP.kid; })){ cur.kid = MAP.kid; store.set("reader", MAP.kid); }
   renderHome();
