@@ -1458,20 +1458,21 @@
     } else cur.wrongFocusN = 0;
     var rest = shuffle(pool.filter(function(q){ return picked.indexOf(q) < 0; }));
     // 題型按比例出（2026-11-28）：這個單元有的題型每種都會出到，選擇／看圖／是非／計算多一點，畫圖、造句這種要 AI 改的少一點
-    var need = N - picked.length;
+    var need = N - picked.length, isM = u.subject === "math";
+    var KW = isM ? KIND_W : Object.assign({}, KIND_W, {w: 1}), KM = isM ? KIND_MAX : Object.assign({}, KIND_MAX, {w: 1});   // 不是數學：計算題最多 1 題
     if (need > 0){
       var byK = {}; rest.forEach(function(q){ var k = qKind(q); (byK[k] = byK[k] || []).push(q); });
       var have = {}; picked.forEach(function(q){ var k = qKind(q); have[k] = (have[k] || 0) + 1; });
-      var ks = Object.keys(byK), wsum = ks.reduce(function(a, k){ return a + (KIND_W[k] || 1); }, 0), quota = {};
-      ks.forEach(function(k){ quota[k] = Math.max(1, Math.round(N * (KIND_W[k] || 1) / wsum)); if (KIND_MAX[k]) quota[k] = Math.min(quota[k], KIND_MAX[k]); quota[k] = Math.max(0, quota[k] - (have[k] || 0)); });
+      var ks = Object.keys(byK), wsum = ks.reduce(function(a, k){ return a + (KW[k] || 1); }, 0), quota = {};
+      ks.forEach(function(k){ quota[k] = Math.max(1, Math.round(N * (KW[k] || 1) / wsum)); if (KM[k]) quota[k] = Math.min(quota[k], KM[k]); quota[k] = Math.max(0, quota[k] - (have[k] || 0)); });
       var got = [];
-      ks.sort(function(a, b){ return (KIND_W[a] || 1) - (KIND_W[b] || 1); }).forEach(function(k){   // 少見的題型先保證有
+      ks.sort(function(a, b){ return (KW[a] || 1) - (KW[b] || 1); }).forEach(function(k){   // 少見的題型先保證有
         spreadPick(byK[k], Math.min(quota[k], need - got.length)).forEach(function(q){ got.push(q); });
       });
       picked = picked.concat(got);
       if (picked.length < N){   // 還不夠：剩下的題目照單元主題輪流補，但畫圖、造句不超過上限
         var cnt = {}; picked.forEach(function(q){ var k = qKind(q); cnt[k] = (cnt[k] || 0) + 1; });
-        var left = rest.filter(function(q){ return picked.indexOf(q) < 0; }).filter(function(q){ var k = qKind(q); return !KIND_MAX[k] || (cnt[k] || 0) < KIND_MAX[k]; });
+        var left = rest.filter(function(q){ return picked.indexOf(q) < 0; }).filter(function(q){ var k = qKind(q); return !KM[k] || (cnt[k] || 0) < KM[k]; });
         picked = picked.concat(spreadPick(left, N - picked.length));
       }
     }
@@ -2575,7 +2576,7 @@
     var focusRule = {chi:"考字音字形、詞語成語、修辭、文體和課文內容理解（不要考課本原文背誦）；", soc:"考重要名詞、因果關係和生活中的應用；", sci:"結合生活情境和實驗觀察；"}[u.subject] || "";
     return "你是台灣國小" + subjWord + "老師。請替國小" + u.grade + "年級學生出 " + qCount() + " 題練習題。\n" +
       "教材：" + u.book + " " + subjWord + "「" + u.title + "」（" + u.desc + "）。\n" + range +
-      "規則：用台灣繁體中文和國小" + u.grade + "年級看得懂的字詞；" + focusRule + "結合生活情境；不可超出範圍；答案必須正確無爭議；約 3 成是非、其餘四選一；每題附一句簡短解析。\n" +
+      "規則：用台灣繁體中文和國小" + u.grade + "年級看得懂的字詞；" + focusRule + "結合生活情境；不可超出範圍；答案必須正確無爭議；約 3 成是非、其餘四選一；每題附一句簡短解析；不要出要計算的數學題（加減乘除、算距離、算總和、算比例都不要），考的是這一科的知識。\n" +
       "只回傳 JSON：{\"questions\":[{\"t\":\"主題代號\",\"type\":\"tf\",\"q\":\"題目\",\"ans\":true,\"exp\":\"解析\"},{\"t\":\"主題代號\",\"type\":\"mc\",\"q\":\"題目\",\"o\":[\"選項1\",\"選項2\",\"選項3\",\"選項4\"],\"ans\":0,\"exp\":\"解析\"}]}，mc 的 ans 是正確選項的索引(0-3)。\n" + avoid;
   }
   $("aiBtn").onclick = function(){
