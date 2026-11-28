@@ -571,19 +571,24 @@ function engStat(it){
 // 每個單元 8 頁、5 顆心：第 1 頁單字小考 ❤️、第 4 頁對話／第 7 頁發音閱讀／第 8 頁歌曲 跟讀各 ❤️（平均 4 星以上）、作業小幫手訂正到全對 ❤️
 // Review 2 頁：兩頁各一篇跟讀，最多 2 顆心
 // 課文／單字卡要有課本頁數（英文 App 拍照時記下來）才知道是哪一顆心；沒有頁數的請小朋友重拍
-var TH = function(name, list){ return {name: name, units: list.map(function(u){ return {k: u[0], tag: u[1], name: u[2], p: [u[3], u[3] + (u[4] ? 1 : 7)], review: !!u[4], re: u[5]}; })}; };
+var TH = function(name, list){ return {name: name, units: list.map(function(u){ return {k: u[0], tag: u[1], name: u[2], p: [u[3], u[3] + (u[4] ? 1 : 7)], review: !!u[4], re: u[5], lay: u[6] || null}; })}; };
+// Tree House 9 的頁面排法跟 5、8 不一樣：單字在第 2 頁、對話在第 5 頁；感恩節單元是 單字→文法→對話→歌曲→閱讀
+// 每一格：kind（vocab／read／hw）、o＝離單元第一頁幾頁、n＝顯示的名字
+var LAY9 = [{kind: "vocab", o: 1}, {k: "rd1", n: "對話", o: 4}, {k: "rd2", n: "發音閱讀", o: 6}, {k: "rd3", n: "歌曲", o: 7}, {kind: "hw"}];
+var LAY9H = [{kind: "vocab", o: 1}, {k: "rd1", n: "對話", o: 3}, {k: "rd2", n: "歌曲", o: 4}, {k: "rd3", n: "閱讀", o: 5}, {kind: "hw"}];
 var ENG_BOOKS = {
-  yuna: Object.assign(TH("Tree House 8", [
-    ["u1", "Unit 1", "Time for School", 4, 0, /unit\s*(one|1)\b|time for school/i],
-    ["u2", "Unit 2", "At the Clinic", 12, 0, /unit\s*(two|2)\b|clinic/i],
-    ["u3", "Unit 3", "In Music Class", 20, 0, /unit\s*(three|3)\b|music class/i],
+  // Yuna：何嘉仁 Tree House Core 9（2026-11-27 開始上；之前 Tree House 8 的課文／單字卡不算進這本的單元）
+  yuna: Object.assign(TH("Tree House 9", [
+    ["u1", "Unit 1", "Performances", 4, 0, /unit\s*(one|1)\b|performances?/i, LAY9],
+    ["u2", "Unit 2", "Behavior", 12, 0, /unit\s*(two|2)\b|behavio(u)?r/i, LAY9],
+    ["u3", "Unit 3", "Helping Others", 20, 0, /unit\s*(three|3)\b|helping others/i, LAY9],
     ["r1", "Review 1", "Review One", 28, 1, /review\s*(one|1)\b/i],
-    ["u4", "Unit 4", "Our Solar System", 30, 0, /unit\s*(four|4)\b|solar system/i],
-    ["u5", "Unit 5", "Stars", 38, 0, /unit\s*(five|5)\b|(^|[—–\-:：]\s*)stars\b/i],
-    ["u6", "Unit 6", "Humans and Space", 46, 0, /unit\s*(six|6)\b|humans and space/i],
+    ["u4", "Unit 4", "Adventures", 30, 0, /unit\s*(four|4)\b|adventures?/i, LAY9],
+    ["u5", "Unit 5", "Pirates!", 38, 0, /unit\s*(five|5)\b|pirates/i, LAY9],
+    ["u6", "Unit 6", "The Island", 46, 0, /unit\s*(six|6)\b|the island/i, LAY9],
     ["r2", "Review 2", "Review Two", 54, 1, /review\s*(two|2)\b/i],
-    ["hol", "Holiday", "Lantern Festival", 56, 0, /holiday|lantern/i]
-  ]), {pts: [0, 1, 2, 4, 5, 6, 7, 8, 9], free: [3, 11, 12, 13, 10, 14]}),
+    ["hol", "Holiday", "Thanksgiving", 56, 0, /holiday|thanksgiving/i, LAY9H]
+  ]), {pts: [0, 1, 2, 4, 5, 6, 7, 8, 9], free: [3, 11, 12, 13, 10, 14], since: new Date(2026, 10, 26).getTime()}),
   howard: Object.assign(TH("Tree House 5", [
     ["u1", "Unit 1", "Weather", 4, 0, /unit\s*(one|1)\b|weather/i],
     ["u2", "Unit 2", "Inside the House", 12, 0, /unit\s*(two|2)\b|inside the house/i],
@@ -608,6 +613,9 @@ function pageOf(x){
 }
 function unitOf(x, B){
   if (!B) return null;
+  if (x.book && x.book !== B.name) return null;   // 別本課本（例如換書前的 Tree House 8）
+  if (B.since && !x.book && (+x.at || 0) && +x.at < B.since) return null;   // 換書前拍的課文／單字卡、作業
+
   var p = pageOf(x), txt = String(x.unit || "") + " " + String(x.title || "");
   for (var i = 0; i < B.units.length; i++){ var u = B.units[i]; if (x.unit && u.k === x.unit) return u; if (p && p >= u.p[0] && p <= u.p[1]) return u; }
   for (var j = 0; j < B.units.length; j++) if (B.units[j].re.test(txt)) return B.units[j];
@@ -616,6 +624,11 @@ function unitOf(x, B){
 // 這個單元的每一顆心：{k, label, page, kind}
 function heartSlots(u){
   var s = u.p[0];
+  if (u.lay && !u.review) return u.lay.map(function(d){
+    if (d.kind === "hw") return {k: "hw", label: "作業小幫手（訂正到全對）", kind: "hw"};
+    if (d.kind === "vocab") return {k: "voc", label: "單字小考（第 " + (s + d.o) + " 頁的單字）", page: s + d.o, kind: "vocab"};
+    return {k: d.k, label: "跟讀・" + d.n + "（第 " + (s + d.o) + " 頁）", page: s + d.o, kind: "read"};
+  });
   // Review：第 1 頁是圖、第 2 頁有兩篇閱讀，一篇一顆心（課本內建的課文有 slot 1／2）
   if (u.review) return [{k: "rd1", label: "跟讀・第 " + (s + 1) + " 頁第 1 篇", page: s + 1, slot: 1, kind: "read"}, {k: "rd2", label: "跟讀・第 " + (s + 1) + " 頁第 2 篇", page: s + 1, slot: 2, kind: "read"}];
   return [{k: "voc", label: "單字小考（第 " + s + " 頁的單字）", page: s, kind: "vocab"},
