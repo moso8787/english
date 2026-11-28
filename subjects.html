@@ -1457,14 +1457,34 @@
       cur.wrongFocusN = picked.length;
     } else cur.wrongFocusN = 0;
     var rest = shuffle(pool.filter(function(q){ return picked.indexOf(q) < 0; }));
-    var byT = {}; rest.forEach(function(q){ (byT[q.t] = byT[q.t] || []).push(q); });
-    var ts = shuffle(Object.keys(byT)), k = 0, guard = 0;
-    while (picked.length < N && ts.length && guard++ < 300){
-      var arr = byT[ts[k % ts.length]]; k++;
-      if (arr && arr.length) picked.push(arr.shift());
-      if (!ts.some(function(t){ return byT[t].length; })) break;
+    // 題型按比例出（2026-11-28）：這個單元有的題型每種都會出到，選擇／看圖／是非／計算多一點，畫圖、造句這種要 AI 改的少一點
+    var need = N - picked.length;
+    if (need > 0){
+      var byK = {}; rest.forEach(function(q){ var k = qKind(q); (byK[k] = byK[k] || []).push(q); });
+      var have = {}; picked.forEach(function(q){ var k = qKind(q); have[k] = (have[k] || 0) + 1; });
+      var ks = Object.keys(byK), wsum = ks.reduce(function(a, k){ return a + (KIND_W[k] || 1); }, 0), quota = {};
+      ks.forEach(function(k){ quota[k] = Math.max(1, Math.round(N * (KIND_W[k] || 1) / wsum)); if (KIND_MAX[k]) quota[k] = Math.min(quota[k], KIND_MAX[k]); quota[k] = Math.max(0, quota[k] - (have[k] || 0)); });
+      var got = [];
+      ks.sort(function(a, b){ return (KIND_W[a] || 1) - (KIND_W[b] || 1); }).forEach(function(k){   // 少見的題型先保證有
+        spreadPick(byK[k], Math.min(quota[k], need - got.length)).forEach(function(q){ got.push(q); });
+      });
+      picked = picked.concat(got);
+      if (picked.length < N){   // 還不夠：剩下的題目照單元主題輪流補，但畫圖、造句不超過上限
+        var cnt = {}; picked.forEach(function(q){ var k = qKind(q); cnt[k] = (cnt[k] || 0) + 1; });
+        var left = rest.filter(function(q){ return picked.indexOf(q) < 0; }).filter(function(q){ var k = qKind(q); return !KIND_MAX[k] || (cnt[k] || 0) < KIND_MAX[k]; });
+        picked = picked.concat(spreadPick(left, N - picked.length));
+      }
     }
-    return shuffle(picked).map(prepQ);
+    return shuffle(picked.slice(0, N)).map(prepQ);
+  }
+  var KIND_W = {mc: 6, fig: 3, tf: 3, w: 3, fill: 2, listen: 1, multi: 1, order: 1, match: 1, sent: 1, draw: 1};
+  var KIND_MAX = {draw: 2, sent: 2, match: 2, listen: 3};
+  function qKind(q){ return q.type === "mc" ? (q.say ? "listen" : q.fig ? "fig" : "mc") : q.type === "w" && q.fig ? "fig" : q.type; }
+  function spreadPick(arr, n){   // 從 arr 挑 n 題，各個小主題輪流挑，不要都擠在同一個主題
+    var byT = {}, out = []; shuffle(arr).forEach(function(q){ (byT[q.t] = byT[q.t] || []).push(q); });
+    var ts = shuffle(Object.keys(byT)), k = 0;
+    while (out.length < n && ts.some(function(t){ return byT[t].length; })){ var a = byT[ts[k++ % ts.length]]; if (a.length) out.push(a.shift()); }
+    return out;
   }
   function prepQ(q){
     if (q.type === "multi"){ var ix = shuffle(q.o.map(function(_, i){ return i; })); return Object.assign({}, q, {o: ix.map(function(i){ return q.o[i]; }), ansIdx: q.ansIdx.map(function(a){ return ix.indexOf(a); })}); }
