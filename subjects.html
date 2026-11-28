@@ -426,7 +426,9 @@
     var X = (window.XBANK || {})[id]; if (!X || !c.bank) return;
     var seen = {}; c.bank.forEach(function(q){ seen[q.q] = 1; });
     X.forEach(function(a){
-      var q = a[0] === "m" ? M(a[1], a[2], a[3], a[4], a[5]) : a[0] === "t" ? T(a[1], a[2], a[3], a[4]) : a[0] === "w" ? W(a[1], a[2], a[3], a[4], a[5]) : null;
+      var q = a[0] === "m" ? M(a[1], a[2], a[3], a[4], a[5]) : a[0] === "t" ? T(a[1], a[2], a[3], a[4]) : a[0] === "w" ? W(a[1], a[2], a[3], a[4], a[5]) :
+        a[0] === "f" ? {t: a[1], type: "fill", q: a[2], acc: a[3], ans: a[3][0], exp: a[4]} :                       // 填充題：["f",主題,題目（空格寫（　）),[可以接受的答案],解說]
+        a[0] === "s" ? {t: a[1], type: "sent", q: "用「" + a[2] + "」造一個句子。", word: a[2], ans: a[3], exp: "例句：" + a[3] + (a[4] ? "（" + a[4] + "）" : "")} : null;   // 造句：["s",主題,詞語,例句,詞義提示]
       var fg = a[0] === "t" ? a[5] : a[6];
       if (typeof fg === "string" && fg.charAt(0) === "@") fg = (window.XFIG || {})[fg.slice(1)];   // 共用的圖放在 XFIG（subj-fig.js）
       if (q && fg) q.fig = typeof fg === "string" ? {svg: fg} : fg;   // 看圖題：最後多一格圖（SVG 字串）
@@ -1502,6 +1504,7 @@
     var box = $("qOpts"); box.innerHTML = ""; box.className = q.type === "tf" ? "tf" : "";
     $("workArea").classList.toggle("hide", q.type !== "w");
     if (q.type === "w"){ startWork(q); return; }
+    if (q.type === "fill" || q.type === "sent"){ renderTextQ(q, box); return; }
     var choices = q.type === "tf" ? [{label:"⭕", v:true}, {label:"❌", v:false}] : q.o.map(function(t, i){ return {label: "①②③④".charAt(i) + " " + t, v:i}; });
     choices.forEach(function(c){
       var b = document.createElement("button");
@@ -1509,6 +1512,54 @@
       b.onclick = function(){ answer(c.v, b); };
       box.appendChild(b);
     });
+  }
+  // ── 國語填充題、造句（2026-11-28）：填充照標準答案比對；造句請 AI 老師批改，連不上時先用簡單規則 ──
+  function normTxt(x){ return String(x || "").replace(/[\s，。、！？；：「」『』（）()《》〈〉,.!?;:'"…—-]/g, "").replace(/臺/g, "台"); }
+  function correctTxt(q){ return q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : q.type === "fill" ? q.acc.join(" 或 ") : q.type === "sent" ? "（造句）" + q.ans : q.o ? q.o[q.ans] : q.ans; }
+  function renderTextQ(q, box){
+    var sent = q.type === "sent";
+    box.innerHTML = (sent ? '<textarea id="txtAns" rows="3" placeholder="在這裡寫你的句子（要用到「' + esc(q.word) + '」）" style="width:100%;font-size:21px;padding:10px;border:3px solid var(--line);border-radius:14px;font-family:inherit"></textarea>'
+      : '<input id="txtAns" type="text" autocomplete="off" placeholder="把答案寫在這裡" style="width:100%;font-size:22px;padding:10px;border:3px solid var(--line);border-radius:14px">') +
+      '<button class="b" id="txtGo" style="margin-top:10px;width:100%">✅ 送出</button>';
+    var inp = $("txtAns"); setTimeout(function(){ try{ inp.focus(); }catch(_){} }, 50);
+    if (!sent) inp.onkeydown = function(e){ if (e.key === "Enter" && !e.isComposing) $("txtGo").click(); };
+    $("txtGo").onclick = function(){
+      var v = inp.value.trim(); if (!v){ inp.focus(); return; }
+      inp.disabled = true; $("txtGo").disabled = true;
+      if (!sent){
+        var ok = q.acc.some(function(a){ return normTxt(a) === normTxt(v); });
+        finishText(q, ok ? 1 : 0, v, ok ? "" : "正確答案：" + q.acc.join(" 或 "));
+        return;
+      }
+      $("qExp").innerHTML = '<div class="exp"><b>🧑‍🏫 AI 老師正在看你的句子…</b></div>';
+      var tok = cur.token, idx = cur.i;
+      gradeSentence(q, v).then(function(r){ if (tok !== cur.token || idx !== cur.i) return; finishText(q, r.sc, v, r.comment + (r.better ? "<br>💡 可以這樣寫：" + esc(r.better) : ""), r.ai); });
+    };
+  }
+  function gradeSentence(q, v){
+    var local = function(){   // 沒有 AI：有用到詞語、夠長、有結尾就先算對
+      var has = v.indexOf(q.word) >= 0, len = normTxt(v).length;
+      var sc = has && len >= q.word.length + 4 ? 1 : has ? 0.5 : 0;
+      return {sc: sc, comment: !has ? "句子裡要用到「" + q.word + "」喔。" : sc < 1 ? "句子有點短，可以多寫一些，把意思說完整。" : "有用到「" + q.word + "」，句子也夠完整 👍（AI 老師這次沒連上，先照簡單規則給分）", better: "", ai: false};
+    };
+    var prompt = "你是台灣國小" + ((cur.unit && cur.unit.grade) || 4) + "年級的國語老師，學生要用「" + q.word + "」造一個句子。\n學生的句子：「" + v + "」\n" +
+      "評分：1＝有用到這個詞、詞義和用法正確、句子通順完整、意思合理；0.5＝有用到但不太通順、太短、有錯字或用法有點怪；0＝沒用到這個詞，或詞義用錯、句子不合理。" +
+      "只看句子本身，不要因為句子簡單就扣分。講評要溫和、具體，用小學生看得懂的字；有錯字要指出來。\n" +
+      "只回傳 JSON：{\"sc\":1,\"comment\":\"1～2 句講評\",\"better\":\"不是滿分時，給一個改好的句子；滿分可留空\"}";
+    return callGemini(prompt, {think: "low", temp: 0.2, timeout: 25000}).then(function(j){
+      var sc = +j.sc; if (!(sc === 0 || sc === 0.5 || sc === 1)) sc = sc >= 0.75 ? 1 : sc >= 0.25 ? 0.5 : 0;
+      if (v.indexOf(q.word) < 0) sc = 0;
+      return {sc: sc, comment: String(j.comment || "").slice(0, 200), better: sc < 1 ? String(j.better || "").slice(0, 80) : "", ai: true};
+    }).catch(local);
+  }
+  function finishText(q, sc, v, msg, ai){
+    var ok = sc >= 1;
+    $("qExp").innerHTML = '<div class="exp ' + (ok ? "ok" : "no") + '"><b>' + (ok ? "✅ 答對了！" : sc > 0 ? "👍 得 " + sc + " 分，差一點點" : "😅 再想想") + "</b>" + (msg ? "<br>" + msg : "") + "<br>" + fmt(q.exp || "") + "</div>";
+    cur.res[cur.i] = {done: true, sc: sc, pick: v};
+    logStat(q, sc, ok ? "none" : "", "quiz");
+    record(q, sc, {pick: v});
+    renderDots();
+    showNext();
   }
   function answer(v, btn){
     var q = cur.qs[cur.i];
@@ -1936,7 +1987,7 @@
       var e = cur.res[i] || {}, w = cur.wrong.filter(function(x){ return x.q === q; })[0];
       var line = (i + 1) + ". [" + (cur.unit.topicName[q.t] || "") + "] " + String(q.q).replace(/\s+/g, " ").slice(0, 70) + " → " + (e.sc || 0) + " 分";
       if (e.w) line += "（填 " + e.pick + "，答案 " + q.ans + (e.r && e.r.errorStep ? "；算式問題：" + e.r.errorStep : "") + (e.r && e.r.errType && e.r.errType !== "none" ? "；錯誤類型 " + e.r.errType : "") + "）";
-      else if (w) line += "（選錯，正確是 " + (q.type === "tf" ? (q.ans ? "對" : "錯") : q.o[q.ans]) + "）";
+      else if (w) line += (q.type === "fill" || q.type === "sent" ? "（寫「" + String(w.pick || "").slice(0, 40) + "」，" + (q.type === "fill" ? "答案 " : "") + correctTxt(q) + "）" : "（選錯，正確是 " + (q.type === "tf" ? (q.ans ? "對" : "錯") : q.o[q.ans]) + "）");
       return line;
     }).join("\n");
   }
@@ -2115,8 +2166,8 @@
   function reviewItem(w){
     var q = w.q, d = document.createElement("div"); d.className = "rev";
     if (q.type !== "w"){
-      var a = q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : q.o[q.ans];
-      d.innerHTML = "<b>" + fmt(q.q) + '</b><div style="color:var(--ok)">正確：' + fmt(a) + '</div><div class="muted">' + fmt(q.exp || "") + "</div>";
+      var a = correctTxt(q);
+      d.innerHTML = "<b>" + fmt(q.q) + "</b>" + (w.pick != null && (q.type === "fill" || q.type === "sent") ? '<div class="muted">你寫：' + esc(String(w.pick)) + "</div>" : "") + '<div style="color:var(--ok)">' + (q.type === "sent" ? "參考" : "正確：") + fmt(a) + '</div><div class="muted">' + fmt(q.exp || "") + "</div>";
       return d;
     }
     var e = w.e;
