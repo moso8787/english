@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>📐 數學測驗</title>
+<title>📚 學科測驗</title>
 <style>
   :root{
     --bg:#fff8ef; --card:#ffffff; --ink:#2d2a26; --muted:#7a7066; --line:#eadfce;
@@ -116,7 +116,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>📐 數學測驗</h1>
+  <h1 id="pageTitle">📚 學科測驗</h1>
 
   <!-- 首頁 -->
   <div id="home">
@@ -1319,7 +1319,12 @@
   var wrongBook = store.get("subWrong", {});
   function wbKey(){ return nameKey(kidName()) + "|" + cur.unit.id; }
 
-  function show(id){ ["home","parent","unitPage","quiz","result","hw","stats"].forEach(function(x){ $(x).classList.toggle("hide", x !== id); }); window.scrollTo(0, 0); }
+  function show(id){
+    ["home","parent","unitPage","quiz","result","hw","stats"].forEach(function(x){ $(x).classList.toggle("hide", x !== id); }); window.scrollTo(0, 0);
+    // 標題跟著科目：在單元／測驗／結果頁顯示「📖 國語測驗」這種，其他頁是「📚 學科測驗」
+    var u = /^(unitPage|quiz|result)$/.test(id) && cur && cur.unit, t = u && u.subjName ? (SUBJ_EMOJI[u.subject] || "📚") + " " + u.subjName + "測驗" : "📚 學科測驗";
+    if ($("pageTitle")) $("pageTitle").textContent = t; document.title = t;
+  }
 
   // ── 首頁 ──
   function renderHome(){
