@@ -433,7 +433,9 @@
         a[0] === "p" ? {t: a[1], type: "sent", q: "照樣造句：" + a[2], word: a[3][0], words: a[3], pattern: a[2], ans: a[4], exp: "例句：" + a[4] + (a[5] ? "（" + a[5] + "）" : "")} :   // 照樣造句：["p",主題,句型,[一定要用到的詞],例句,說明]
         a[0] === "c" ? {t: a[1], type: "multi", q: a[2] + "（複選）", o: a[3], ansIdx: a[4], ans: a[4].map(function(i){ return a[3][i]; }).join("、"), exp: a[5]} :   // 複選題：["c",主題,題目,[選項],[正確序號…],解說]
         a[0] === "o" ? {t: a[1], type: "order", q: a[2], items: a[3], ans: a[3].join(" → "), exp: a[4]} :   // 排序題：["o",主題,題目,[照正確順序的項目],解說]
-        a[0] === "l" ? Object.assign(M(a[1], "🎧 " + a[3], a[4], a[5], a[6]), {say: a[2]}) : null;   // 英語聽力：["l",主題,要唸的英文,題目,[選項],答案序號,解說]   // 造句：["s",主題,詞語,例句,詞義提示]
+        a[0] === "l" ? Object.assign(M(a[1], "🎧 " + a[3], a[4], a[5], a[6]), {say: a[2]}) :
+        a[0] === "g" ? {t: a[1], type: "match", q: a[2] + "（配合題）", pairs: a[3], ans: a[3].map(function(p){ return p[0] + "—" + p[1]; }).join("、"), exp: a[4]} :   // 配合題：["g",主題,題目,[[左,右],…],解說]
+        a[0] === "d" ? {t: a[1], type: "draw", q: a[2], rubric: a[3], ans: a[4] || "", exp: a[5] || "", sayZh: a[6] || ""} : null;   // 畫圖題：["d",主題,題目,AI 批改標準,參考答案,解說,(聽寫要唸的中文)]   // 英語聽力：["l",主題,要唸的英文,題目,[選項],答案序號,解說]   // 造句：["s",主題,詞語,例句,詞義提示]
       var fg = a[0] === "t" ? a[5] : a[6];
       if (typeof fg === "string" && fg.charAt(0) === "@") fg = (window.XFIG || {})[fg.slice(1)];   // 共用的圖放在 XFIG（subj-fig.js）
       if (q && fg) q.fig = typeof fg === "string" ? {svg: fg} : fg;   // 看圖題：最後多一格圖（SVG 字串）
@@ -1509,10 +1511,12 @@
     $("qExp").innerHTML = ""; $("nextBtn").classList.add("hide");
     setupHint(q);
     var box = $("qOpts"); box.innerHTML = ""; box.className = q.type === "tf" ? "tf" : "";
-    $("workArea").classList.toggle("hide", q.type !== "w");
+    $("workArea").classList.toggle("hide", q.type !== "w"); var dg0 = $("drawGo"); if (dg0) dg0.remove();
     if (q.type === "w"){ startWork(q); return; }
     if (q.type === "fill" || q.type === "sent"){ renderTextQ(q, box); return; }
     if (q.type === "multi"){ renderMulti(q, box); return; }
+    if (q.type === "match"){ renderMatch(q, box); return; }
+    if (q.type === "draw"){ renderDraw(q, box); return; }
     if (q.type === "order"){ renderOrder(q, box); return; }
     if (q.say) $("qText").innerHTML += ' <button class="b" id="sayBtn" style="font-size:18px;padding:6px 14px;background:#e3f2fd;border:2px solid #64b5f6;color:#0d47a1">🔊 再聽一次</button>', setTimeout(function(){ sayIt(q.say); var sb = $("sayBtn"); if (sb) sb.onclick = function(){ sayIt(q.say); }; }, 300);
     var choices = q.type === "tf" ? [{label:"⭕", v:true}, {label:"❌", v:false}] : q.o.map(function(t, i){ return {label: "①②③④".charAt(i) + " " + t, v:i}; });
@@ -1528,6 +1532,8 @@
   function hintOf(q){
     if (q.type === "fill"){ var a = String(q.acc[0]); return "答案有 " + a.length + " 個字" + (a.length > 1 ? "，第一個字是「" + a.charAt(0) + "」" : "") + "。" + (q.exp ? "<br>想一想：" + esc(maskAns(q.exp, q)) : ""); }
     if (q.type === "sent" && q.pattern) return "這是照樣造句，句子裡一定要有「" + esc(q.words.join("」「")) + "」。<br>先看例句：「" + esc(q.ans) + "」，換成你自己的人、事、物來寫。";
+    if (q.type === "match") return "先挑你最確定的配起來，剩下的再慢慢想。";
+    if (q.type === "draw") return q.sayZh ? "先想想這個詞是什麼意思，再一個字一個字寫。" : "看清楚題目要畫什麼，可以先用方格數一數格數。";
     if (q.type === "multi") return "正確答案有 " + q.ansIdx.length + " 個，要全部選對才算對喔。";
     if (q.type === "order") return "第一個是「" + esc(q.items[0]) + "」。";
     if (q.type === "sent"){ var ex = String(q.ans || ""), i = ex.indexOf(q.word), start = i > 0 ? ex.slice(0, Math.min(i, 6)) : ""; var m = String(q.exp || "").match(/（(.+)）$/); return (m ? "「" + esc(q.word) + "」的意思是：" + esc(m[1]) + "。<br>" : "") + "想一想：什麼時候會用到這個詞？誰、在哪裡、做了什麼？" + (start ? "<br>可以這樣開頭：「" + esc(start) + "……」" : ""); }
@@ -1556,6 +1562,74 @@
   function sayIt(txt){
     try{ var sy = window.speechSynthesis; if (!sy) return; sy.cancel(); var u = new SpeechSynthesisUtterance(txt); u.lang = "en-US"; u.rate = 0.85;
       var v = (sy.getVoices() || []).filter(function(x){ return /^en(-|_)US/i.test(x.lang); })[0]; if (v) u.voice = v; sy.speak(u); }catch(_){}
+  }
+  // ── 配合題（2026-11-28）：每一個左邊的項目選一個右邊的答案；對幾組得幾分之幾 ──
+  function renderMatch(q, box){
+    var rights = shuffle(q.pairs.map(function(p){ return p[1]; })), L = "ABCDEFGH";
+    var key = document.createElement("div"); key.style.cssText = "display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px";
+    rights.forEach(function(r, i){ key.innerHTML += '<span style="background:#eef3ff;border:2px solid #9fb4e8;border-radius:10px;padding:4px 10px;font-size:19px"><b>' + L[i] + "</b>　" + fmt(r) + "</span>"; });
+    box.appendChild(key);
+    var pick = {};
+    q.pairs.forEach(function(p, i){
+      var row = document.createElement("div"); row.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;font-size:20px";
+      row.innerHTML = '<span style="min-width:40%">' + (i + 1) + ". " + fmt(p[0]) + "</span>";
+      rights.forEach(function(_, j){
+        var b = document.createElement("button"); b.className = "b"; b.textContent = L[j]; b.style.cssText = "padding:6px 14px;font-size:18px";
+        b.onclick = function(){ pick[i] = j; Array.prototype.forEach.call(row.querySelectorAll("button"), function(x){ x.style.background = ""; x.style.color = ""; }); b.style.background = "#ff8a3d"; b.style.color = "#fff"; };
+        row.appendChild(b);
+      });
+      row.dataset.i = i; box.appendChild(row);
+    });
+    var go = document.createElement("button"); go.className = "b"; go.textContent = "✅ 送出"; go.style.cssText = "width:100%;margin-top:8px"; box.appendChild(go);
+    go.onclick = function(){
+      if (Object.keys(pick).length < q.pairs.length){ go.textContent = "⚠️ 每一題都要選一個英文字母"; return; }
+      Array.prototype.forEach.call(box.querySelectorAll("button"), function(x){ x.disabled = true; });
+      var right = 0, picks = [];
+      q.pairs.forEach(function(p, i){ var ok = rights[pick[i]] === p[1]; if (ok) right++; picks.push(p[0] + "→" + rights[pick[i]]); });
+      var sc = Math.round(right / q.pairs.length * 100) / 100;
+      finishText(q, sc, picks.join("、"), right === q.pairs.length ? "" : "對了 " + right + " / " + q.pairs.length + " 組。正確配對：" + esc(q.ans));
+    };
+  }
+  // ── 畫圖題、國語聽寫（2026-11-28）：用寫字板（Apple Pencil）畫，AI 老師看圖批改 ──
+  function renderDraw(q, box){
+    $("workArea").classList.remove("hide");
+    [".modes", ".ansrow", "#keys", "#submitW", "#photoBox"].forEach(function(sel){ var el = document.querySelector("#workArea " + sel); if (el) el.classList.add("hide"); });
+    Array.prototype.forEach.call(document.querySelectorAll("#workArea > .note"), function(el){ el.classList.add("hide"); });
+    $("padBox").classList.remove("hide"); pad.reset();
+    var note = document.querySelector("#padBox > .note"); if (note) note.textContent = q.sayZh ? "聽到的詞語寫在格子裡，一格寫一個字，寫大一點、寫清楚。" : "用筆在方格上畫，畫好按「交出」。畫錯可以用橡皮擦或復原。";
+    if (q.sayZh){
+      var sb = document.createElement("button"); sb.className = "b"; sb.textContent = "🔊 再聽一次"; sb.style.cssText = "margin-bottom:8px;background:#e3f2fd;border:2px solid #64b5f6;color:#0d47a1";
+      sb.onclick = function(){ sayZh(q.sayZh); }; box.appendChild(sb); setTimeout(function(){ sayZh(q.sayZh); }, 300);
+    }
+    var go = document.createElement("button"); go.className = "btn"; go.id = "drawGo"; go.textContent = "✅ 交出這題"; go.style.cssText = "width:100%;margin-top:12px";
+    $("workArea").appendChild(go);
+    go.onclick = function(){
+      var img = pad.exportFull(); if (!img){ go.textContent = "⚠️ 先畫（寫）在上面的格子裡"; return; }
+      go.remove(); $("qExp").innerHTML = '<div class="exp"><b>🧑‍🏫 AI 老師正在看你' + (q.sayZh ? "寫的字" : "畫的圖") + "…</b></div>";
+      var tok = cur.token, idx = cur.i;
+      gradeDraw(q, img).then(function(r){ if (tok !== cur.token || idx !== cur.i) return; $("workArea").classList.add("hide"); finishText(q, r.sc, r.seen || "（畫圖）", r.comment); });
+    };
+  }
+  function sayZh(txt){
+    if (/^en:/.test(txt)) return sayIt(txt.slice(3));   // 英語聽寫
+    try{ var sy = window.speechSynthesis; if (!sy) return; sy.cancel(); var u = new SpeechSynthesisUtterance(txt); u.lang = "zh-TW"; u.rate = 0.75;
+      var v = (sy.getVoices() || []).filter(function(x){ return /zh[-_]TW/i.test(x.lang); })[0]; if (v) u.voice = v; sy.speak(u); }catch(_){}
+  }
+  function gradeDraw(q, img){
+    var g = (cur.unit && cur.unit.grade) || 4;
+    var prompt = /^en:/.test(q.sayZh || "")
+      ? "你是台灣國小英語老師，在批改英文單字聽寫。正確單字是「" + q.ans + "」。圖片是學生在 iPad 上手寫的字母。請辨識學生寫的字母，拼字完全正確給 1（大小寫不拘）；錯一個字母給 0.5；錯更多或看不出來給 0。\n只回傳 JSON：{\"seen\":\"你看到學生寫的\",\"sc\":1,\"comment\":\"1 句講評，拼錯要寫出正確拼法\"}"
+      : q.sayZh
+      ? "你是台灣國小" + g + "年級的國語老師，在批改聽寫。老師唸的詞語是「" + q.sayZh + "」，正確寫法是「" + q.ans + "」（繁體字）。圖片是學生在 iPad 方格上手寫的字。\n" +
+        "請辨識學生寫的每個字，判斷是不是正確的繁體字：字醜沒關係，看得出是對的字就算對；少筆畫、多筆畫、寫成別的字、寫成簡體字都算錯。\n" +
+        "給分：1＝全部寫對；0.5＝一半以上的字寫對；0＝大部分錯或看不出來。\n只回傳 JSON：{\"seen\":\"你看到學生寫的字\",\"sc\":1,\"comment\":\"1～2 句講評，寫錯的字要指出正確寫法\"}"
+      : "你是台灣國小" + g + "年級的" + ((cur.unit && cur.unit.subjName) || "數學") + "老師，在批改學生在 iPad 方格紙上畫的圖（方格每一格大小一樣，可以用來數格數）。\n題目：" + q.q + "\n批改標準：" + q.rubric + "\n" +
+        "手畫的線不會很直、角度和長度有一點誤差（大約 10% 或 10 度以內）都算對。看得出來符合標準就給分。\n" +
+        "給分：1＝符合標準；0.5＝大致對但有一個明顯的小錯；0＝不符合或看不出來。\n只回傳 JSON：{\"seen\":\"你看到學生畫了什麼，簡短\",\"sc\":1,\"comment\":\"1～2 句具體講評，用小學生看得懂的字\"}";
+    return callGemini([{inlineData:{mimeType:"image/jpeg", data: img}}, {text: prompt}], {think: "low", temp: 0.2, timeout: 40000}).then(function(j){
+      var sc = +j.sc; if (!(sc === 0 || sc === 0.5 || sc === 1)) sc = sc >= 0.75 ? 1 : sc >= 0.25 ? 0.5 : 0;
+      return {sc: sc, seen: String(j.seen || "").slice(0, 60), comment: String(j.comment || "").slice(0, 200)};
+    }).catch(function(){ return {sc: 0.5, seen: "（AI 沒連上）", comment: "AI 老師這次沒連上，沒辦法看你的" + (q.sayZh ? "字" : "圖") + "，先給 0.5 分。請拿給爸爸媽媽看看對不對喔！"}; });
   }
   function renderMulti(q, box){
     var sel = {};
@@ -1597,7 +1671,7 @@
     box.appendChild(line); box.appendChild(bank); box.appendChild(row); draw();
   }
   function normTxt(x){ return String(x || "").replace(/[\s，。、！？；：「」『』（）()《》〈〉,.!?;:'"…—-]/g, "").replace(/臺/g, "台"); }
-  function correctTxt(q){ return q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : q.type === "fill" ? q.acc.join(" 或 ") : q.type === "sent" ? "（造句）" + q.ans : q.type === "multi" || q.type === "order" ? q.ans : q.o ? q.o[q.ans] : q.ans; }
+  function correctTxt(q){ return q.type === "tf" ? (q.ans ? "⭕ 對" : "❌ 錯") : q.type === "fill" ? q.acc.join(" 或 ") : q.type === "sent" ? "（造句）" + q.ans : q.type === "draw" ? (q.ans ? "參考：" + q.ans : q.rubric) : q.type === "multi" || q.type === "order" || q.type === "match" ? q.ans : q.o ? q.o[q.ans] : q.ans; }
   function renderTextQ(q, box){
     var sent = q.type === "sent";
     box.innerHTML = (sent ? '<textarea id="txtAns" rows="3" placeholder="在這裡寫你的句子（要用到「' + esc(q.word) + '」）" style="width:100%;font-size:21px;padding:10px;border:3px solid var(--line);border-radius:14px;font-family:inherit"></textarea>'
@@ -1789,6 +1863,18 @@
     addEventListener("resize", function(){ if (!$("workArea").classList.contains("hide")) size(); });
     updFinger();
     return {
+      // 畫圖題：整張畫布連方格一起輸出（方格每格 32px，AI 才數得出格數）
+      exportFull: function(){
+        if (!strokes.some(function(s){ return s.tool === "pen"; })) return null;
+        var k = Math.min(1.5, 1000 / Math.max(W, H)), out = document.createElement("canvas"); out.width = Math.round(W * k); out.height = Math.round(H * k);
+        var c2 = out.getContext("2d"); c2.fillStyle = "#fff"; c2.fillRect(0, 0, out.width, out.height);
+        c2.strokeStyle = "#c9d3e3"; c2.lineWidth = 1;
+        for (var x = 0; x <= W; x += 32){ c2.beginPath(); c2.moveTo(x * k, 0); c2.lineTo(x * k, H * k); c2.stroke(); }
+        for (var y = 0; y <= H; y += 32){ c2.beginPath(); c2.moveTo(0, y * k); c2.lineTo(W * k, y * k); c2.stroke(); }
+        var off = document.createElement("canvas"); off.width = out.width; off.height = out.height;
+        strokes.forEach(function(s){ seg(off.getContext("2d"), s, k, 0); }); c2.drawImage(off, 0, 0);
+        return out.toDataURL("image/jpeg", 0.85).split(",")[1];
+      },
       reset: function(){ strokes = []; curS = null; H = H0; setTool("pen"); size(); },
       hasInk: function(){ return strokes.some(function(s){ return s.tool === "pen"; }); },
       // 輸出成白底 JPEG（只裁有寫字的範圍），回傳 base64
@@ -1861,6 +1947,10 @@
     });
   })();
   function startWork(q){
+    ["#workArea .modes", "#workArea .ansrow", "#keys", "#submitW"].forEach(function(sel){ var el = document.querySelector(sel); if (el) el.classList.remove("hide"); });
+    Array.prototype.forEach.call(document.querySelectorAll("#workArea > .note"), function(el){ el.classList.remove("hide"); });
+    var nt = document.querySelector("#padBox > .note"); if (nt) nt.textContent = "直式、橫式都可以，算式寫清楚，AI 老師會一步一步看。";
+    var dg = $("drawGo"); if (dg) dg.remove();
     ans = ""; showAns();
     $("ansUnit").textContent = q.u || "";
     photo.b64 = null; $("photoPrev").classList.add("hide"); $("photoBtn").textContent = "📷 拍照 / 選照片";
@@ -2070,7 +2160,7 @@
       var e = cur.res[i] || {}, w = cur.wrong.filter(function(x){ return x.q === q; })[0];
       var line = (i + 1) + ". [" + (cur.unit.topicName[q.t] || "") + "] " + String(q.q).replace(/\s+/g, " ").slice(0, 70) + " → " + (e.sc || 0) + " 分";
       if (e.w) line += "（填 " + e.pick + "，答案 " + q.ans + (e.r && e.r.errorStep ? "；算式問題：" + e.r.errorStep : "") + (e.r && e.r.errType && e.r.errType !== "none" ? "；錯誤類型 " + e.r.errType : "") + "）";
-      else if (w) line += (/^(fill|sent|multi|order)$/.test(q.type) ? "（寫「" + String(w.pick || "").slice(0, 40) + "」，" + (q.type === "fill" ? "答案 " : "") + correctTxt(q) + "）" : "（選錯，正確是 " + (q.type === "tf" ? (q.ans ? "對" : "錯") : q.o[q.ans]) + "）");
+      else if (w) line += (/^(fill|sent|multi|order|match|draw)$/.test(q.type) ? "（寫「" + String(w.pick || "").slice(0, 40) + "」，" + (q.type === "fill" ? "答案 " : "") + correctTxt(q) + "）" : "（選錯，正確是 " + (q.type === "tf" ? (q.ans ? "對" : "錯") : q.o[q.ans]) + "）");
       return line;
     }).join("\n");
   }
@@ -2250,7 +2340,7 @@
     var q = w.q, d = document.createElement("div"); d.className = "rev";
     if (q.type !== "w"){
       var a = correctTxt(q);
-      d.innerHTML = "<b>" + fmt(q.q) + "</b>" + (w.pick != null && /^(fill|sent|multi|order)$/.test(q.type) ? '<div class="muted">你寫：' + esc(String(w.pick)) + "</div>" : "") + '<div style="color:var(--ok)">' + (q.type === "sent" ? "參考" : "正確：") + fmt(a) + '</div><div class="muted">' + fmt(q.exp || "") + "</div>";
+      d.innerHTML = "<b>" + fmt(q.q) + "</b>" + (w.pick != null && /^(fill|sent|multi|order|match|draw)$/.test(q.type) ? '<div class="muted">你寫：' + esc(String(w.pick)) + "</div>" : "") + '<div style="color:var(--ok)">' + (q.type === "sent" ? "參考" : "正確：") + fmt(a) + '</div><div class="muted">' + fmt(q.exp || "") + "</div>";
       return d;
     }
     var e = w.e;
