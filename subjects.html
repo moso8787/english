@@ -302,6 +302,7 @@
 </div>
 
 <script src="sub-sync.js"></script>
+<script src="subj-bank.js"></script>
 <script>
 (function(){
   "use strict";
@@ -413,6 +414,15 @@
   }];
 
   // ── 數學 6 上（翰林）：題目都是依單元重點自己出的練習題，不是課本原題 ──
+  // 擴充題庫（subj-bank.js 的 window.XBANK[單元id]）：["m",主題,題目,[選項],答案序號,解說]／["t",主題,題目,true|false,解說]／["w",主題,題目,答案,單位,解說]
+  function xbAdd(id, c){
+    var X = (window.XBANK || {})[id]; if (!X || !c.bank) return;
+    var seen = {}; c.bank.forEach(function(q){ seen[q.q] = 1; });
+    X.forEach(function(a){
+      var q = a[0] === "m" ? M(a[1], a[2], a[3], a[4], a[5]) : a[0] === "t" ? T(a[1], a[2], a[3], a[4]) : a[0] === "w" ? W(a[1], a[2], a[3], a[4], a[5]) : null;
+      if (q && !seen[q.q] && (!c.topicName || c.topicName[q.t])){ seen[q.q] = 1; c.bank.push(q); }
+    });
+  }
   function W(t, q, ans, u, sol, fig){ return {t:t, type:"w", q:q, ans:ans, u:u || "", sol:sol, fig:fig}; }
   function M(t, q, o, ans, exp){ return {t:t, type:"mc", q:q, o:o, ans:ans, exp:exp}; }
   function T(t, q, ans, exp){ return {t:t, type:"tf", q:q, ans:ans, exp:exp}; }
@@ -533,6 +543,7 @@
   // 每題記住原本的單元和主題（綜合複習也找得回來），統計強弱用
   var TOPICS = {};
   MATH6A.forEach(function(c){
+    xbAdd("m6a-" + c.no, c);
     c.bank.forEach(function(q){ q.uid = "m6a-" + c.no; q.ot = q.t; });
     Object.keys(c.topicName).forEach(function(t){ TOPICS["m6a-" + c.no + ":" + t] = {no:c.no, unit:c.title, name:c.topicName[t]}; });
   });
@@ -609,6 +620,7 @@
      ]}
   ];
   ENG6A.forEach(function(c){
+    xbAdd(c.id, c);
     c.bank.forEach(function(q){ q.uid = c.id; q.ot = q.t; });
     UNITS.push({id:c.id, grade:6, subject:"eng", subjName:"英語", book:"翰林 Here We Go 7", n:10,
       title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
@@ -869,7 +881,7 @@
   ];
   SUBJ6A.forEach(function(S){
     S.units.forEach(function(c){
-      var id = S.pre + "-" + c.no;
+      var id = S.pre + "-" + c.no; xbAdd(id, c);
       c.bank.forEach(function(q){ q.uid = id; q.ot = q.t; });
       UNITS.push({id:id, grade:6, subject:S.subject, subjName:S.subjName, book:S.book, n:10,
         title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
@@ -1294,6 +1306,7 @@
         var src = UNITS.filter(function(u){ return u.id === c.fromUnit; })[0];
         c.topicName = src.topicName; c.bank = src.bank.map(function(q){ return Object.assign({}, q); }); src.hidden = true;
       }
+      xbAdd(id, c);
       c.bank.forEach(function(q){ q.uid = id; q.ot = q.t; });
       UNITS.push({id:id, grade:4, subject:S.subject, subjName:S.subjName, book:S.book, n:10,
         title:c.title, desc:c.desc, topicName:c.topicName, scopes:autoScopes(c.topicName), bank:c.bank});
