@@ -1783,6 +1783,7 @@
   function record(q, sc, extra){
     try{ wrongLogAdd(q, sc, extra); }catch(_){}
     cur.score += sc;
+    payRunning(q);
     if (sc < 1) cur.wrong.push(Object.assign({q: q, sc: sc}, extra || {}));
     // 錯題本：沒拿滿分加入、拿滿分移除（AI 題目不記）
     if (!cur.ai){
@@ -1792,6 +1793,23 @@
       if (sc >= 1 && at >= 0) list.splice(at, 1);
       wrongBook[wbKey()] = list; store.set("subWrong", wrongBook); syncSoon();
     }
+  }
+  // 地圖關卡：每答對一題馬上給點（2026-11-28）。一樣是每個單元每天只有第一次那一輪給點；中途離開，已經拿到的點數還是算
+  function payRunning(q){
+    if (!cur.unit || cur.ai || !isMapLevel()) return;
+    var key = refBase() + ":q", rate = qRate(cur.unit.subject);
+    if (cur.qTok !== cur.token){
+      if (earned[key] || (earned[key + ":tok"] && earned[key + ":tok"] !== cur.token)) return;   // 今天這關已經有一輪拿過點
+      cur.qTok = cur.token; cur.qPaid = 0; cur.qN = 0; earned[key + ":tok"] = cur.token; store.set("subEarned", earned);
+    }
+    var amt = r1(cur.score * rate);
+    if (amt <= cur.qPaid) return;
+    var add = r1(amt - cur.qPaid); cur.qPaid = amt; cur.qN = (cur.qN || 0) + 1; cur.gain = r1((cur.gain || 0) + add);
+    earned[key] = amt; store.set("subEarned", earned);
+    send({action:"earn", name: kidName(), amt: add, why: cur.unit.subjName + "「" + cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "") + "」第 " + (cur.qs.indexOf(q) + 1) + " 題答對 " + (SUBJ_EMOJI[cur.unit.subject] || "📚"), ref: key + ":" + cur.qN});
+    var t = document.createElement("div"); t.textContent = "+" + add + " 點";
+    t.style.cssText = "position:fixed;top:14px;right:14px;z-index:99;background:#ff8a3d;color:#fff;font-weight:700;font-size:22px;padding:6px 16px;border-radius:20px;box-shadow:0 3px 10px #0003;animation:pop .4s";
+    document.body.appendChild(t); setTimeout(function(){ t.remove(); }, 1600);
   }
   function showNext(){
     if ($("qHintBox")) $("qHintBox").classList.add("hide");
