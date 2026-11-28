@@ -197,7 +197,10 @@
       <h2>📝 每題點數、做完獎勵</h2>
       <div class="muted">每個單元每天只有「第一次」考完會給點：答對幾題就給幾題的點數（數學計算題對一半算 0.5 題），再加上「做完一次測驗」的獎勵。同一天再考同一個單元不會再給。</div>
       <div id="qPtSet"></div>
-      <div class="starRow"><span style="width:110px;color:var(--ink);font-size:19px">🏁 做完測驗</span><input type="number" min="0" step="0.5" id="qpDone"> 點／次</div>
+      <div class="starRow"><span style="width:auto;color:var(--ink);font-size:19px">🏁 做完測驗</span><input type="number" min="0" step="0.5" id="qpDone"> 點／次</div>
+      <div class="muted">地圖上的學科關卡，做完測驗的點數看這次的愛心：黃心（答對 90% 以上）給上面的點數，紅心和沒拿到心給下面的點數。</div>
+      <div class="starRow"><span style="width:auto;color:var(--ink);font-size:19px">　<span style="color:#ff4d6d">♥</span> 拿到紅心</span><input type="number" min="0" step="0.5" id="qpDoneRed"> 點／次</div>
+      <div class="starRow"><span style="width:auto;color:var(--ink);font-size:19px">　🤍 沒拿到心</span><input type="number" min="0" step="0.5" id="qpDoneNone"> 點／次</div>
       <button class="btn" id="qPtSave">儲存每題點數</button>
       <div class="note" id="qPtNote"></div>
     </div>
@@ -341,10 +344,13 @@
   var cloudOn = function(){ return !!(cloud.url && cloud.key); };
 
   // ── 給點規則：每題點數 qPt（依科目），每個單元每天只有第一次考完給點；pass 是「10 題要對幾題」的及格比例 ──
-  var rules = Object.assign({pass:8, qPt:{math:0.1, chi:0.1, sci:0.1, soc:0.1, eng:0.1}, donePt:2}, store.get("subRules", {}));
+  var rules = Object.assign({pass:8, qPt:{math:0.1, chi:0.1, sci:0.1, soc:0.1, eng:0.1}, donePt:2, donePtRed:1, donePtNone:1}, store.get("subRules", {}));
   var SUBJ_ZH = {math:"數學", chi:"國語", sci:"自然", soc:"社會", eng:"英語"};
   function qRate(subj){ var v = +((rules.qPt || {})[subj]); return isFinite(v) && v >= 0 ? v : 0.1; }
-  function donePt(){ var v = +rules.donePt; return rules.donePt != null && isFinite(v) && v >= 0 ? v : 2; }   // 做完一次測驗（全部題目答完）的獎勵，每個單元每天第一次
+  function donePt(kind){   // 做完一次測驗的獎勵；地圖關卡依愛心：y 黃心（預設 2）、r 紅心（預設 1）、none 沒拿到心（預設 1）
+    var k = kind === "r" ? "donePtRed" : kind === "none" ? "donePtNone" : "donePt", d = kind === "r" || kind === "none" ? 1 : 2, v = +rules[k];
+    return rules[k] != null && rules[k] !== "" && isFinite(v) && v >= 0 ? v : d;
+  }   // 做完一次測驗（全部題目答完）的獎勵，每個單元每天第一次
   var r1 = function(n){ return Math.round(n * 100) / 100; };
   var SUBJ_EMOJI = {sci:"🔬", math:"📐"};
 
@@ -1897,6 +1903,7 @@
     }
     // 做完一次測驗的獎勵（每個單元每天第一次）
     var dkey = base + ":done", dp = donePt();
+    if (fromMap() && MAP_RE.test(cur.unit.id)) dp = 0;   // 地圖關卡：等 AI 老師打完星星、知道是黃心紅心再給（saveLevel）
     if (dp > 0 && !earned[dkey]){
       earned[dkey] = dp; cur.gain = r1(cur.gain + dp);
       send({action:"earn", name: kidName(), amt: dp, why: cur.unit.subjName + "「" + cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "") + "」做完測驗 🏁", ref: dkey});
@@ -1977,7 +1984,17 @@
       else if (col === "y" && H.indexOf("r") >= 0){ H[H.indexOf("r")] = "y"; heart = "up"; }
     }
     rec.hearts = H; rec.passN = H.length; rec.pass = H.length >= PASS_N; rec.chest = H.length >= 5; rec.chest2 = H.length >= 10;
-    rv.heart = heart; rv.hearts = H.length; rv.newChest = (cur.prevHearts.length < 5 && H.length >= 5) ? "green" : (cur.prevHearts.length < 10 && H.length >= 10) ? "blue" : "";
+    rv.heart = heart; rv.hearts = H.length;
+    // 做完測驗的點數（每個單元每天第一次）：黃心 donePt、紅心 donePtRed、沒拿到心 donePtNone；申訴後變好會補差額
+    if (!cur.ai){
+      var kind = rv.stars >= 4 ? col : "none", dAmt = donePt(kind), dKey = refBase() + ":done", had = +earned[dKey] || 0;
+      var sameRun = earned[dKey + ":tok"] === cur.token;   // 同一次測驗（申訴升星）才補差額；同一天第二次考不再給
+      if (dAmt > had && (sameRun || !earned[dKey + ":day"])){
+        var add = r1(dAmt - had); earned[dKey] = dAmt; earned[dKey + ":day"] = 1; earned[dKey + ":tok"] = cur.token; store.set("subEarned", earned);
+        send({action:"earn", name: kidName(), amt: add, why: cur.unit.subjName + "「" + cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "") + "」做完測驗 🏁" + (kind === "y" ? "（黃心）" : kind === "r" ? "（紅心）" : "") + (had ? " 補差額" : ""), ref: dKey + (had ? ":up" + dAmt : "")});
+        rv.doneGain = r1((rv.doneGain || 0) + add);
+      } else if (!earned[dKey + ":day"]){ earned[dKey + ":day"] = 1; store.set("subEarned", earned); }
+    } rv.newChest = (cur.prevHearts.length < 5 && H.length >= 5) ? "green" : (cur.prevHearts.length < 10 && H.length >= 10) ? "blue" : "";
     var gain = 0, title = cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "");
     for (var t = rec.paid + 1; t <= rec.best; t++){
       var p = +starRules.pts[t] || 0;
@@ -1997,6 +2014,7 @@
     h += '<div class="exp ok" style="margin-top:10px"><p>' + esc(rv.comment) + "</p>" + (rv.good.length ? "<p>👍 " + rv.good.map(esc).join("　") + "</p>" : "") + "</div>";
     if (rv.focus.length) h += '<div class="exp mid"><b>🎯 下次加強</b><ul style="margin:4px 0 0;padding-left:22px">' + rv.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul></div>";
     if (rv.best > cur.prevBest && cur.prevBest > 0) h += '<div class="center">🆙 刷新這一關的最佳紀錄：' + cur.prevBest + " → " + rv.best + " 顆星</div>";
+    if (rv.doneGain) h += '<div class="center" style="margin-top:8px"><span class="pill pop">🏁 做完測驗 +' + rv.doneGain + " 點" + (rv.heart === "r" ? "（紅心）" : rv.heart === "y" || rv.heart === "up" ? "（黃心）" : "") + "</span></div>";
     if (rv.gain) h += '<div class="center" style="margin-top:8px"><span class="pill pop">星星獎勵 +' + rv.gain + " 點</span>" + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>') + "</div>";
     if (rv.newChest) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:' + (rv.newChest === "blue" ? "#e3efff;color:#1d4f9a" : "#e3f7ea;color:#1d7a43") + '">🎁 ' + (rv.newChest === "blue" ? "集滿 10 顆心，藍色寶箱" : "集滿 5 顆心，綠色寶箱") + '可以打開了！回地圖點寶箱抽點數</span></div>';
     if (!rv.ai) h += '<div class="note">（AI 老師暫時連不上，這次的星星只照分數算）</div>';
@@ -2048,16 +2066,17 @@
   }
   function renderQPt(){
     $("qPtSet").innerHTML = Object.keys(SUBJ_ZH).map(function(k){ return '<div class="starRow"><span style="width:110px;color:var(--ink);font-size:19px">' + (SUBJ_EMOJI[k] || "") + " " + SUBJ_ZH[k] + '</span><input type="number" min="0" step="0.05" id="qp_' + k + '" value="' + qRate(k) + '"> 點／題</div>'; }).join("");
-    $("qpDone").value = donePt();
+    $("qpDone").value = donePt(); $("qpDoneRed").value = donePt("r"); $("qpDoneNone").value = donePt("none");
     $("qPtNote").textContent = "";
   }
   $("qPtSave").onclick = function(){
     var q = {};
     Object.keys(SUBJ_ZH).forEach(function(k){ var v = Math.max(0, Math.round((+$("qp_" + k).value || 0) * 100) / 100); q[k] = v; });
     var dn = Math.max(0, Math.round((+$("qpDone").value || 0) * 10) / 10);
-    rules = Object.assign({}, rules, {qPt: q, donePt: dn}); delete rules.passPt; delete rules.fullPt;
+    var dr = Math.max(0, Math.round((+$("qpDoneRed").value || 0) * 10) / 10), dz = Math.max(0, Math.round((+$("qpDoneNone").value || 0) * 10) / 10);
+    rules = Object.assign({}, rules, {qPt: q, donePt: dn, donePtRed: dr, donePtNone: dz}); delete rules.passPt; delete rules.fullPt;
     store.set("subRules", rules); syncSoon(500);
-    $("qPtNote").textContent = "✅ 已儲存：" + Object.keys(q).map(function(k){ return SUBJ_ZH[k] + " " + q[k]; }).join("、") + "；做完測驗 " + dn + " 點";
+    $("qPtNote").textContent = "✅ 已儲存：" + Object.keys(q).map(function(k){ return SUBJ_ZH[k] + " " + q[k]; }).join("、") + "；做完測驗 黃心 " + dn + "／紅心 " + dr + "／沒拿到心 " + dz + " 點";
   };
   $("starSave").onclick = function(){
     var pts = [0];
@@ -2500,7 +2519,7 @@
   addEventListener("subsync", function(){   // 收到別台的紀錄：記憶體裡的也換成新的
     wrongBook = store.get("subWrong", {}); stats = store.get("mathStats", {}); wrongLog = store.get("subWrongLog", {});
     starRules = Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {}));
-    rules = Object.assign({pass:8, qPt:{math:0.1, chi:0.1, sci:0.1, soc:0.1, eng:0.1}, donePt:2}, store.get("subRules", {}));
+    rules = Object.assign({pass:8, qPt:{math:0.1, chi:0.1, sci:0.1, soc:0.1, eng:0.1}, donePt:2, donePtRed:1, donePtNone:1}, store.get("subRules", {}));
     if (!$("home").classList.contains("hide")) renderHome();
   });
   addEventListener("subsync-status", function(e){
