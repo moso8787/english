@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>⚙️ 點數與設定・學習大冒險</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#123c59;color:#fff;font:600 17px -apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif}
+main{max-width:860px;margin:auto;padding:12px 14px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:4px 2px 12px}
+h1{font-size:24px;margin:0}
+h2{font-size:19px;margin:0 0 10px;display:flex;align-items:center;gap:8px}
+a.back,button{font:inherit;font-weight:700;border:0;border-radius:14px;padding:10px 16px;min-height:48px;cursor:pointer;background:#ffdb56;color:#573d19;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.ghost{background:rgba(255,255,255,.14);color:#fff}
+button.minus{background:#ff8787;color:#3b0d0d}
+button.plus{background:#8ce99a;color:#0d3b18}
+button:disabled{opacity:.5}
+.card{background:rgba(0,0,0,.24);border-radius:18px;padding:16px;margin:0 0 14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0}
+label{display:block;font-size:15px;opacity:.85;margin:10px 0 4px}
+input,select,textarea{font:inherit;font-weight:500;width:100%;border:0;border-radius:12px;padding:11px 12px;background:#fffaf0;color:#3b2a14}
+textarea{min-height:70px;font-size:14px}
+.muted{font-size:14px;font-weight:500;opacity:.78;line-height:1.55}
+.note{font-size:15px;font-weight:600;margin-top:8px;line-height:1.5}
+.ok{color:#8ce99a}.bad{color:#ffc078}
+.status{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+.status b{font-weight:700;opacity:.8}
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.kid{background:rgba(255,255,255,.1);border-radius:14px;padding:12px}
+.kid .nm{font-size:19px}
+.kid .bal{font-size:28px;font-weight:800;color:#ffdb56;margin-top:4px}
+.kid .xp{font-size:13px;font-weight:500;opacity:.8}
+.log{list-style:none;margin:0;padding:0;font-size:14px;font-weight:500}
+.log li{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.12)}
+.log .t{opacity:.65;white-space:nowrap;min-width:84px}
+.log .n{white-space:nowrap;min-width:60px;font-weight:700}
+.log .a{white-space:nowrap;min-width:56px;text-align:right;font-weight:800}
+.log .a.p{color:#8ce99a}.log .a.m{color:#ff8787}
+.log .w{flex:1;min-width:0;overflow-wrap:anywhere}
+.lock{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lock input{max-width:200px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>⚙️ 點數與設定</h1>
+    <a class="back" href="math-map.html">🗺️ 回學習大冒險</a>
+  </header>
+
+  <!-- ① 這台的雲端狀態（不用密碼就看得到） -->
+  <section class="card">
+    <h2>☁️ 這台的雲端狀態</h2>
+    <div class="status" id="status"></div>
+    <div class="row">
+      <button class="ghost" id="syncNow">🔄 立即同步學習紀錄</button>
+      <button class="ghost" id="flushNow">📤 補送還沒上傳的點數</button>
+    </div>
+    <div class="note" id="syncNote"></div>
+    <p class="muted">提醒：iPad 上每個「加到主畫面」的圖示都有自己的存檔。這一頁顯示的是「現在這個畫面」的狀態；從學習大冒險點進來，就是學習大冒險那一份。</p>
+  </section>
+
+  <!-- ② 點數 -->
+  <section class="card">
+    <h2>💰 點數 <button class="ghost" id="reload" style="min-height:36px;padding:4px 12px;font-size:14px;margin-left:auto">重新整理</button></h2>
+    <div class="kids" id="kids"></div>
+    <div class="note" id="ptNote"></div>
+    <details style="margin-top:12px">
+      <summary style="cursor:pointer">📜 最近 30 筆點數紀錄</summary>
+      <ul class="log" id="log"></ul>
+    </details>
+  </section>
+
+  <!-- ③ 家長專區：解鎖後才看得到 -->
+  <section class="card">
+    <h2>🔒 家長專區</h2>
+    <div id="lockBox" class="lock">
+      <input id="pinIn" type="password" inputmode="numeric" placeholder="家長密碼" autocomplete="off">
+      <button id="pinGo">打開</button>
+      <div class="note" id="pinNote" style="flex-basis:100%"></div>
+    </div>
+
+    <div id="parent" hidden>
+      <h2 style="margin-top:4px">➕➖ 加點／扣點</h2>
+      <div class="row">
+        <select id="adjWho" style="flex:1;min-width:140px"></select>
+        <input id="adjAmt" type="number" inputmode="decimal" step="0.1" min="0" placeholder="點數，例如 100" style="flex:1;min-width:140px">
+      </div>
+      <input id="adjWhy" placeholder="原因，例如：換 Roblox 點數／幫忙做家事">
+      <div class="row">
+        <button class="minus" id="adjMinus">➖ 扣點（換獎勵）</button>
+        <button class="plus" id="adjPlus">➕ 加點（額外獎勵）</button>
+      </div>
+      <div class="note" id="adjNote"></div>
+
+      <h2 style="margin-top:22px">🔗 雲端連線設定</h2>
+      <p class="muted">跟英文口說練習家長區「連到 LINE 點數機器人」那兩格一樣。填好按「測試連線」，成功才會存起來。</p>
+      <label for="cUrl">機器人網址</label>
+      <input id="cUrl" placeholder="https://script.google.com/macros/s/……/exec" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label for="cKey">連線密碼</label>
+      <input id="cKey" type="password" autocomplete="off">
+      <label for="cG">Gemini 金鑰（選填，AI 老師講評要用）</label>
+      <input id="cG" type="password" autocomplete="off" placeholder="已經有就不用填">
+      <div class="row">
+        <button id="cTest">測試連線並儲存</button>
+        <button class="ghost" id="cShow">👁️ 顯示密碼</button>
+      </div>
+      <div class="note" id="cNote"></div>
+
+      <h2 style="margin-top:22px">📋 貼上設定碼</h2>
+      <p class="muted">在已經連上的那台打開英文口說練習 → 家長專區 →「📱 新裝置一鍵設定」，用手機相機掃那個 QR Code，長按跳出來的網址 →「拷貝」，再貼到這裡（AirDrop 或備忘錄傳過來也可以），就不用一格一格打。</p>
+      <textarea id="setupIn" placeholder="https://moso8787.github.io/english/#setup=……" autocapitalize="off" spellcheck="false"></textarea>
+      <div class="row"><button id="setupGo">套用設定碼</button></div>
+      <div class="note" id="setupNote"></div>
+
+      <div class="row" style="margin-top:18px"><button class="ghost" id="lockAgain">🔒 鎖起來</button></div>
+    </div>
+  </section>
+</main>
+<script src="sub-sync.js"></script>
+<script>
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+var store = {
+  get: function(k, d){ try{ var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+var r1 = function(n){ return Math.round((+n || 0) * 10) / 10; };
+var nameKey = function(n){ return String(n || "").toLowerCase(); };
+function cloud(){ return {url: store.get("ptCloudUrl", ""), key: store.get("ptCloudKey", "")}; }
+function cloudOn(){ var c = cloud(); return !!(c.url && c.key); }
+function hm(t){ var d = new Date(t); return (d.getMonth() + 1) + "/" + d.getDate() + " " + ("0" + d.getHours()).slice(-2) + ":" + ("0" + d.getMinutes()).slice(-2); }
+function getUrl(c, extra){ return c.url + (c.url.indexOf("?") >= 0 ? "&" : "?") + "key=" + encodeURIComponent(c.key) + (extra || "") + "&_=" + Date.now(); }
+
+// ── 雲端查詢 ──
+var last = null;
+function cloudGet(c){
+  c = c || cloud();
+  return fetch(getUrl(c)).then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.ok) throw new Error((j && j.error) || "連線失敗");
+    return j;
+  });
+}
+function adoptCloud(j){
+  last = j;
+  // 地圖用的快取，跟 math-map.html 的 acctFetch 一樣格式，回地圖就直接看得到
+  store.set("subAcctCache", {at: Date.now(), balances: j.balances || {}, earned: j.earned && j.xpv >= 2 ? j.earned : null, rules: j.settings && j.settings.rules || null, ckdays: j.ckdays || null});
+  // 這台還沒有家長密碼：用雲端那份（跟英文 App 同一個）
+  if (!store.get("ptPin", "") && j.settings && j.settings.pin) store.set("ptPin", j.settings.pin);
+}
+
+// ── ① 狀態 ──
+function renderStatus(){
+  var c = cloud(), q1 = store.get("subQueue", []).length, q2 = store.get("ptQueue", []).length, ls = store.get("subSyncLast", 0);
+  var st = window.SubSync && SubSync.state || {};
+  var rows = [
+    ["雲端連線", cloudOn() ? '<span class="ok">✅ 已設定</span>' + (last ? '<span class="ok">・連得上</span>' : "") : '<span class="bad">⚠️ 這台還沒設定（到下面家長專區設定）</span>'],
+    ["機器人網址", c.url ? esc(c.url.replace(/^(https:\/\/script\.google\.com\/macros\/s\/.{6}).*(.{8})$/, "$1……$2")) : "—"],
+    ["學習紀錄同步", st.busy ? "🔄 同步中…" : st.err && st.err !== "off" ? '<span class="bad">⚠️ ' + esc(st.err) + "</span>" : ls ? '<span class="ok">☁️ ' + hm(ls) + "</span>" : "還沒同步過"],
+    ["還沒上傳的點數", (q1 + q2) ? '<span class="bad">' + (q1 + q2) + " 筆（連上網路會自動補送）</span>" : '<span class="ok">0 筆</span>'],
+    ["這台的小朋友", (window.SubSync ? SubSync.readers() : store.get("readers", [])).map(function(r){ return esc(r.name); }).join("、") || "—"]
+  ];
+  $("status").innerHTML = rows.map(function(r){ return "<b>" + r[0] + "</b><span>" + r[1] + "</span>"; }).join("");
+}
+addEventListener("subsync-status", renderStatus);
+
+$("syncNow").onclick = function(){
+  if (!cloudOn()){ $("syncNote").textContent = "這台還沒設定雲端，請先到下面家長專區設定。"; return; }
+  if (!window.SubSync){ $("syncNote").textContent = "同步程式沒有載入，請重新整理這頁。"; return; }
+  $("syncNote").textContent = "🔄 同步中…";
+  SubSync.run().then(function(ok){
+    var s = SubSync.state;
+    $("syncNote").innerHTML = !ok && s.busy ? "🔄 正在同步，等一下再看" : ok ? '<span class="ok">✅ 同步好了：下載 ' + (s.got || 0) + " 筆、上傳 " + (s.sent || 0) + " 筆</span>" : '<span class="bad">❌ ' + esc(s.err || "同步失敗") + "</span>";
+    renderStatus();
+  });
+};
+
+// 補送點數佇列（學習大冒險／學科測驗的 subQueue；英文 App 的 ptQueue 由英文 App 自己送）
+var flushing = false;
+function flushQ(){
+  var c = cloud(), q = store.get("subQueue", []);
+  if (flushing || !cloudOn() || !q.length) return Promise.resolve(0);
+  flushing = true;
+  var n = 0;
+  function one(){
+    q = store.get("subQueue", []);
+    if (!q.length) return Promise.resolve(n);
+    return fetch(c.url, {method: "POST", body: JSON.stringify(Object.assign({}, q[0], {key: c.key}))})
+      .then(function(r){ return r.json().catch(function(){ return {}; }); })
+      .then(function(j){
+        if (j && j.ok === false) throw new Error(j.error || "雲端拒絕");
+        q = store.get("subQueue", []); q.shift(); store.set("subQueue", q); n++; return one();
+      });
+  }
+  return one().then(function(x){ flushing = false; return x; }, function(e){ flushing = false; throw e; });
+}
+$("flushNow").onclick = function(){
+  if (!cloudOn()){ $("syncNote").textContent = "這台還沒設定雲端，請先到下面家長專區設定。"; return; }
+  var q2 = store.get("ptQueue", []).length;
+  $("syncNote").textContent = "📤 補送中…";
+  flushQ().then(function(n){
+    $("syncNote").innerHTML = '<span class="ok">✅ 補送了 ' + n + " 筆</span>" + (q2 ? '<br><span class="bad">另外有 ' + q2 + " 筆是英文口說練習的，打開英文 App 就會自動送。</span>" : "");
+    renderStatus(); loadPoints();
+  }, function(e){ $("syncNote").innerHTML = '<span class="bad">❌ ' + esc(e.message) + "</span>"; });
+};
+addEventListener("online", function(){ flushQ().then(renderStatus, function(){}); });
+
+// ── ② 點數 ──
+function renderPoints(j){
+  var bal = j.balances || {}, earned = j.earned && j.xpv >= 2 ? j.earned : {};
+  var pend = store.get("subQueue", []).concat(store.get("ptQueue", [])).filter(function(q){ return q.action === "earn" || q.action === "adjust"; });
+  var names = Object.keys(bal);
+  $("kids").innerHTML = names.length ? names.map(function(n){
+    var p = pend.filter(function(q){ return nameKey(q.name) === nameKey(n); }).reduce(function(a, q){ return a + (+q.amt || 0); }, 0);
+    return '<div class="kid"><div class="nm">' + esc(n) + '</div><div class="bal">💰 ' + r1(bal[n] + p) + '</div><div class="xp">經驗值 ' + r1(earned[n] || 0) + (p ? "・含還沒上傳的 " + r1(p) + " 點" : "") + "</div></div>";
+  }).join("") : '<div class="muted">雲端還沒有點數紀錄。</div>';
+  $("log").innerHTML = (j.rows || []).slice(0, 30).map(function(r){
+    return '<li><span class="t">' + hm(r.t) + '</span><span class="n">' + esc(r.name) + '</span><span class="a ' + (r.amt >= 0 ? "p" : "m") + '">' + (r.amt > 0 ? "+" : "") + r1(r.amt) + '</span><span class="w">' + esc(r.why) + "</span></li>";
+  }).join("") || '<li class="muted">還沒有紀錄</li>';
+  var sel = $("adjWho"), cur = sel.value;
+  sel.innerHTML = names.map(function(n){ return '<option value="' + esc(n) + '">' + esc(n) + "（" + r1(bal[n]) + " 點）</option>"; }).join("");
+  if (cur && names.indexOf(cur) >= 0) sel.value = cur;
+}
+function loadPoints(){
+  if (!cloudOn()){ $("kids").innerHTML = ""; $("ptNote").innerHTML = '<span class="bad">這台還沒連上雲端，看不到點數。請到下面家長專區設定。</span>'; renderStatus(); return Promise.resolve(); }
+  $("ptNote").textContent = "🔄 讀取中…";
+  return cloudGet().then(function(j){ adoptCloud(j); renderPoints(j); $("ptNote").textContent = ""; renderStatus(); },
+    function(e){ last = null; $("ptNote").innerHTML = '<span class="bad">❌ 連不上雲端：' + esc(e.message) + "。請到家長專區按「測試連線並儲存」檢查網址和密碼。</span>"; renderStatus(); });
+}
+$("reload").onclick = loadPoints;
+
+// ── ③ 家長專區 ──
+async function pinHash(pin){   // 跟英文口說練習同一種算法，家長密碼兩邊通用
+  try{ var b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("eng-pt|" + pin)); return Array.prototype.map.call(new Uint8Array(b), function(x){ return x.toString(16).padStart(2, "0"); }).join(""); }catch(_){ return "p" + pin; }
+}
+var unlocked = false;
+function showParent(){
+  $("parent").hidden = !unlocked; $("lockBox").hidden = unlocked;
+  if (unlocked){ var c = cloud(); $("cUrl").value = c.url; $("cKey").value = c.key; }
+}
+function lockHint(){
+  $("pinNote").textContent = store.get("ptPin", "") ? "跟英文口說練習的家長密碼一樣。" : "這台還沒有家長密碼：輸入 4 位以上數字，就會設成新的家長密碼（之後連上雲端，會換成跟英文 App 一樣的那組）。";
+}
+$("pinGo").onclick = async function(){
+  var p = $("pinIn").value.trim(), saved = store.get("ptPin", "");
+  if (!saved){
+    if (!/^\d{4,}$/.test(p)){ $("pinNote").textContent = "請用 4 位以上的數字。"; return; }
+    store.set("ptPin", await pinHash(p)); unlocked = true;
+  } else if (await pinHash(p) === saved) unlocked = true;
+  else { $("pinNote").innerHTML = '<span class="bad">密碼不對</span>'; return; }
+  $("pinIn").value = ""; showParent();
+};
+$("pinIn").addEventListener("keydown", function(e){ if (e.key === "Enter") $("pinGo").click(); });
+$("lockAgain").onclick = function(){ unlocked = false; showParent(); lockHint(); };
+$("cShow").onclick = function(){ var t = $("cKey").type === "password" ? "text" : "password"; $("cKey").type = t; $("cG").type = t; };
+
+function saveAndGo(c, g, noteEl){
+  noteEl.textContent = "連線中…";
+  return cloudGet(c).then(function(j){
+    store.set("ptCloudUrl", c.url); store.set("ptCloudKey", c.key);
+    if (g) store.set("gkey", g);
+    adoptCloud(j); renderPoints(j);
+    var names = Object.keys(j.balances || {});
+    noteEl.innerHTML = '<span class="ok">✅ 連上了，已經存在這台！' + (names.length ? "雲端目前有：" + names.map(function(n){ return esc(n) + " " + r1(j.balances[n]) + " 點"; }).join("、") : "") + "</span>";
+    if (window.SubSync) SubSync.run().then(renderStatus);
+    flushQ().then(renderStatus, function(){});
+    renderStatus();
+  }, function(e){
+    noteEl.innerHTML = '<span class="bad">❌ 連不上：' + esc(e.message) + "。設定沒有存。請確認網址是「網頁應用程式」的 /exec 網址、存取權是「所有人」，密碼跟機器人程式裡的 APP_KEY 一樣。</span>";
+  });
+}
+$("cTest").onclick = function(){
+  var u = $("cUrl").value.trim(), k = $("cKey").value.trim(), g = $("cG").value.trim();
+  if (!/^https:\/\/script\.google\.com\//.test(u) || !k){ $("cNote").innerHTML = '<span class="bad">⚠️ 網址要是 https://script.google.com/ 開頭，密碼不能空白</span>'; return; }
+  saveAndGo({url: u, key: k}, g, $("cNote"));
+};
+
+// 設定碼：跟英文 App「新裝置一鍵設定」同一種格式（base64 的 JSON，app = "kousuo"）
+function readSetup(txt){
+  var m = String(txt || "").trim().match(/#setup=([^\s]+)/), code = m ? m[1] : String(txt || "").trim();
+  var o = JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(code)))));
+  if (!o || o.app !== "kousuo") throw new Error("這不是英文口說練習的設定碼");
+  return o;
+}
+$("setupGo").onclick = function(){
+  var o;
+  try{ o = readSetup($("setupIn").value); }catch(e){ $("setupNote").innerHTML = '<span class="bad">❌ 設定碼讀不出來：' + esc(e.message) + "</span>"; return; }
+  if (!o.ptCloudUrl || !o.ptCloudKey){ $("setupNote").innerHTML = '<span class="bad">❌ 設定碼裡沒有機器人網址或密碼</span>'; return; }
+  ["gkey2", "azKey", "azRegion"].forEach(function(k){ if (o[k]) store.set(k, o[k]); });
+  if (o.ptPin) store.set("ptPin", o.ptPin);
+  $("cUrl").value = o.ptCloudUrl; $("cKey").value = o.ptCloudKey;
+  saveAndGo({url: o.ptCloudUrl, key: o.ptCloudKey}, o.gkey || "", $("setupNote")).then(function(){ $("setupIn").value = ""; });
+};
+
+function adjust(sign){
+  var who = $("adjWho").value, amt = r1($("adjAmt").value), why = $("adjWhy").value.trim();
+  if (!cloudOn()){ $("adjNote").innerHTML = '<span class="bad">這台還沒連上雲端，不能加扣點。</span>'; return; }
+  if (!who){ $("adjNote").innerHTML = '<span class="bad">請先選小朋友（點數讀不到的話，先按上面的「重新整理」）。</span>'; return; }
+  if (!(amt > 0)){ $("adjNote").innerHTML = '<span class="bad">請填大於 0 的點數。</span>'; return; }
+  if (!why){ $("adjNote").innerHTML = '<span class="bad">請寫一下原因，之後查紀錄才看得懂。</span>'; return; }
+  if (!confirm((sign < 0 ? "要幫 " + who + " 扣 " : "要幫 " + who + " 加 ") + amt + " 點嗎？\n原因：" + why)) return;
+  var c = cloud(), btns = [$("adjMinus"), $("adjPlus")];
+  btns.forEach(function(b){ b.disabled = true; });
+  $("adjNote").textContent = "送出中…";
+  fetch(c.url, {method: "POST", body: JSON.stringify({key: c.key, action: "adjust", name: who, amt: sign * amt, why: why, ref: "map:adj:" + Date.now()})})
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (!j || !j.ok) throw new Error((j && j.error) || "雲端拒絕");
+      var b = j.balances || {}, k = Object.keys(b).filter(function(n){ return nameKey(n) === nameKey(who); })[0];
+      $("adjNote").innerHTML = '<span class="ok">✅ 已' + (sign < 0 ? "扣" : "加") + " " + amt + " 點，" + esc(who) + " 現在 " + r1(k ? b[k] : 0) + " 點</span>";
+      $("adjAmt").value = ""; $("adjWhy").value = "";
+      return loadPoints();
+    })
+    .catch(function(e){ $("adjNote").innerHTML = '<span class="bad">❌ 沒有送出：' + esc(e.message) + "</span>"; })
+    .then(function(){ btns.forEach(function(b){ b.disabled = false; }); });
+}
+$("adjMinus").onclick = function(){ adjust(-1); };
+$("adjPlus").onclick = function(){ adjust(1); };
+
+lockHint(); showParent(); renderStatus(); loadPoints();
+document.addEventListener("visibilitychange", function(){ if (!document.hidden){ renderStatus(); } });
+})();
+</script>
+</body>
+</html>
