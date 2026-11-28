@@ -76,8 +76,11 @@
     hist.sort(function(x, y){ return (x.t || 0) - (y.t || 0) || String(x.d).localeCompare(String(y.d)); });
     var la = a.last || {}, lb = b.last || {}, last = (lb.t || 0) > (la.t || 0) || (!(la.t || lb.t) && String(lb.d) > String(la.d)) ? lb : la;
     var best = Math.max(a.best || 0, b.best || 0);
-    var pc = function(r){ return r.passN != null ? r.passN : (r.hist || []).filter(function(h){ return (+h.st || 0) >= 4; }).length; }, pn = Math.max(pc(a), pc(b));
-    return {best: best, paid: Math.max(a.paid || 0, b.paid || 0), passN: pn, pass: pn >= 5, chest: !!(a.chest || b.chest), hist: hist.slice(-20), last: last};
+    // 集心（2026-11-28）：心比較多的那一份；一樣多就取黃心多的
+    var hs = function(r){ return Array.isArray(r.hearts) ? r.hearts : (r.hist || []).filter(function(h){ return (+h.st || 0) >= 4; }).map(function(h){ return h.n && h.s / h.n >= 0.9 ? "y" : "r"; }).slice(0, 10); };
+    var ha = hs(a), hb = hs(b), ny = function(x){ return x.filter(function(c){ return c === "y"; }).length; };
+    var H = ha.length !== hb.length ? (ha.length > hb.length ? ha : hb) : (ny(ha) >= ny(hb) ? ha : hb);
+    return {best: best, paid: Math.max(a.paid || 0, b.paid || 0), hearts: H.slice(), passN: H.length, pass: H.length >= 10, chest: H.length >= 5, chest2: H.length >= 10, hist: hist.slice(-20), last: last};
   }
   function mergeStats(a, b){
     if (!a) return b; if (!b) return a;

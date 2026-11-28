@@ -88,6 +88,9 @@ button.kid.on{border-color:#ffdb56;background:rgba(255,255,255,.28)}
 .exam .bar2 i{display:block;height:100%;background:linear-gradient(90deg,#b197fc,#7048e8);border-radius:99px}
 .exam button{min-height:48px;background:#7048e8;color:#fff;font-size:16px;white-space:nowrap}
 .exam .chico{width:2.4em;height:2em}
+.hearts10{display:flex;flex-wrap:wrap;align-items:center;gap:2px;font-size:26px;line-height:1;margin:6px 0 2px}
+.hrt{color:#d7d1c6;text-shadow:0 1px 0 #8a7a5a}.hrt.r{color:#ff4d6d}.hrt.y{color:#ffc81e}.hsep{font-size:18px;margin:0 6px}
+.rule .hrt{font-size:18px}
 .chline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#f1fbf3;border:2px solid #cdebd3;border-radius:14px;padding:8px 12px;margin:8px 0;font-weight:500;font-size:16px}
 /* 世界切換列 */
 .nav{display:flex;align-items:center;gap:10px;margin:0 0 10px}
@@ -455,7 +458,7 @@ function examMerge(saved){   // 家長存過的優先；新加的科目自動補
   return L;
 }
 function exams(){ var R = rules(), L = examMerge(R.exams), term = R.examTerm || "115-1"; return L.filter(function(e){ return e && e.uids && e.uids.length; }).map(function(e){ return Object.assign({}, e, {key: "exam:" + term + ":" + e.id, box: tierOk(e.box || "purple")}); }); }
-function examStat(ex){ var ch = chests(), got = ex.uids.filter(function(u){ return ch[u]; }).length; return {got: got, n: ex.uids.length, ready: got >= ex.uids.length, opened: ch[ex.key]}; }
+function examStat(ex){ var ch = chests(), got = 0; ex.uids.forEach(function(u){ if (ch[u]) got++; if (ch[u + "#2"]) got++; }); return {got: got, n: ex.uids.length * 2, ready: got >= ex.uids.length * 2, opened: ch[ex.key]}; }
 // 大寶箱放在這個世界裡、範圍內最後一關的左邊
 function examAnchor(ex, w){ w = w || world(); var lv = null; w.levels.forEach(function(l){ if (l.uid && ex.uids.indexOf(l.uid) >= 0) lv = l; }); return lv ? {x: lv.xy[0] - 62, y: lv.xy[1] + 2, lv: lv} : null; }
 function tryOpenExam(ex){
@@ -528,15 +531,16 @@ function flushQ(){
     .catch(function(){ sending = false; });
 }
 addEventListener("online", flushQ);
-function tryOpenChest(i){
-  var lv = world().levels[i], r = recU(lv.uid), t = boxOf(lv), opened = chests()[lv.uid], need = chestNeed();
+function tryOpenChest(i, k){
+  k = k === 2 ? 2 : 1;
+  var lv = world().levels[i], t = k === 2 ? "blue" : "green", key = chestKey(lv.uid, k), opened = chests()[key];
   if (opened){ var amt = typeof opened === "object" && opened.amt != null ? "，抽到 " + opened.amt + " 點" : ""; toast("🎁 " + lv.tag + " 的" + CHEST_TIERS[t].name + "已經打開過了" + amt); return; }
-  if (!r || !r.chest){ toast("🔒 " + lv.tag + " 拿到 " + (need || 5) + " 顆星，就能打開這個" + CHEST_TIERS[t].name + "（可能抽到 " + chestList(t).map(function(x){ return x.amt; }).join("・") + " 點）", 4000); return; }
+  if (!chestReady(lv.uid, k)){ toast("🔒 " + lv.tag + " 集滿 " + (k === 2 ? 10 : 5) + " 顆心（現在 " + passN(lv.uid) + " 顆），就能打開這個" + CHEST_TIERS[t].name + "（可能抽到 " + chestList(t).map(function(x){ return x.amt; }).join("・") + " 點）", 4000); return; }
   var pz = chestDraw(t), nm = nameKey(kid.name);
-  openChest(lv.uid, {t: t, amt: pz.amt});
-  var sent = send({action: "earn", name: kid.name, amt: pz.amt, why: "🎁 學習大冒險「" + lv.tag + " " + lv.name + "」" + CHEST_TIERS[t].name + "：抽中 " + pz.amt + " 點", ref: "chest:sub:" + lv.uid + ":" + nm});
+  openChest(key, {t: t, amt: pz.amt});
+  var sent = send({action: "earn", name: kid.name, amt: pz.amt, why: "🎁 學習大冒險「" + lv.tag + " " + lv.name + "」" + CHEST_TIERS[t].name + "（" + (k === 2 ? 10 : 5) + " 顆心）：抽中 " + pz.amt + " 點", ref: "chest:sub:" + key + ":" + nm});
   burst(lv.xy[0] + 42, lv.xy[1] - 12); ui();
-  var done = exams().filter(function(ex){ var s2 = examStat(ex); return ex.uids.indexOf(lv.uid) >= 0 && s2.ready && !s2.opened; })[0];
+  var done = exams().filter(function(ex){ var s2 = examStat(ex); return ex.uids.indexOf(lv.uid) >= 0 && s2.ready && !s2.opened; })[0];   // 範圍內每一關的綠、藍寶箱都打開
   if (done) setTimeout(function(){ toast("🎯 " + done.name + "範圍的寶箱全部打開了！地圖上的" + CHEST_TIERS[done.box].name + "可以開了 🎉", 5000); }, 2500);
   chestPop(t, pz, "🎁 " + kid.name + " 打開 " + lv.tag + " 的寶箱！");
   if (!sent) setTimeout(function(){ toast("（這台還沒設定點數雲端，點數沒有記錄）", 4000); }, 500);
@@ -752,9 +756,20 @@ function load(){ mapData = store.get("subMap", {}); }
 function recU(uid){ if (uid && uid.indexOf("eng:") === 0) return engRec(uid); var r = uid && (mapData[nameKey(kid.name)] || {})[uid]; return r && r.hist ? r : null; }
 function bestU(uid){ var r = recU(uid); return r ? (r.max && r.max !== 5 ? (r.pass ? 5 : Math.floor((r.best || 0) * 5 / r.max)) : r.best || 0) : 0; }
 // 學科關卡：累積 PASS_N 次 4 顆星以上才過關（2026-11-28）；英文關卡照原本（心／星數）
-var PASS_N = 5;
-function passN(uid){ var r = recU(uid); return !r ? 0 : r.passN != null ? r.passN : (r.hist || []).filter(function(h){ return (+h.st || 0) >= PASS; }).length; }
-function passU(uid){ return uid && uid.indexOf("eng:") === 0 ? bestU(uid) >= PASS : passN(uid) >= PASS_N; }
+// 2026-11-28 改成「集心」：每做一次測驗拿到 4 顆星以上得 1 顆心（答對 90% 以上是黃心，其他紅心），最多 10 顆。
+// 5 顆心開綠寶箱、10 顆心開藍寶箱並過關；第 5、第 10 顆心那一次以錯題為主。
+var HEART_N = 10, PASS_N = HEART_N;
+function heartsOf(r){
+  if (!r) return [];
+  if (Array.isArray(r.hearts)) return r.hearts.slice(0, HEART_N);
+  return (r.hist || []).filter(function(h){ return (+h.st || 0) >= PASS; }).map(function(h){ return h.n && h.s / h.n >= 0.9 ? "y" : "r"; }).slice(0, HEART_N);
+}
+function heartsU(uid){ return heartsOf(recU(uid)); }
+function passN(uid){ return heartsU(uid).length; }
+function passU(uid){ return uid && uid.indexOf("eng:") === 0 ? bestU(uid) >= PASS : passN(uid) >= HEART_N; }
+function chestKey(uid, k){ return k === 2 ? uid + "#2" : uid; }   // 綠寶箱沿用舊的 key，藍寶箱加 #2
+function chestReady(uid, k){ return passN(uid) >= (k === 2 ? 10 : 5); }
+function heartRow(uid){ var H = heartsU(uid), s = ""; for (var i = 0; i < HEART_N; i++) s += '<span class="hrt ' + (H[i] === "y" ? "y" : H[i] ? "r" : "e") + '">♥</span>' + (i === 4 ? '<span class="hsep">🎁</span>' : ""); return s + '<span class="hsep">🎁</span>'; }
 function rules(){ return Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {})); }
 function chests(){ return store.get("subMapChest", {})[nameKey(kid.name)] || {}; }
 function openChest(uid, info){ var a = store.get("subMapChest", {}), k = nameKey(kid.name), d = new Date(); a[k] = a[k] || {}; a[k][uid] = Object.assign({d: d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2)}, info || {}); store.set("subMapChest", a); if (window.SubSync) SubSync.soon(500); }
@@ -799,7 +814,7 @@ function refresh(){
     if (news.w !== wi) setWorld(news.w, true);
     cur = news.i;
     var r = news.r;
-    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (WORLDS[news.w].eng ? (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") : r.last.st >= PASS ? (passU(news.lv.uid) ? "，累積 " + passN(news.lv.uid) + " 次，過關！🎉" : "，算 1 次（" + passN(news.lv.uid) + " / " + PASS_N + "）") : "，再加油 💪") + (r.chest && !chests()[news.lv.uid] && !WORLDS[news.w].eng ? " 🎁 有寶箱可以開" : ""), 4200);
+    toast(news.lv.tag + " 拿到 " + r.last.st + " 顆星" + (WORLDS[news.w].eng ? (r.last.st >= PASS ? "，過關！🎉" : "，再加油 💪") : r.last.st >= PASS ? (passU(news.lv.uid) ? "，集滿 10 顆心，過關！🎉" : "，得到 1 顆心（" + passN(news.lv.uid) + " / 10）❤️") : "，沒有得到心，再加油 💪") + (!WORLDS[news.w].eng && ((chestReady(news.lv.uid, 1) && !chests()[news.lv.uid]) || (chestReady(news.lv.uid, 2) && !chests()[news.lv.uid + "#2"])) ? " 🎁 有寶箱可以開" : ""), 4200);
   }
   renderKids(); ui();
 }
@@ -972,24 +987,30 @@ function ui(){
     h += '<div class="teacher" style="background:#fff3f6;border-color:#ffd1dc">' + HH.rows.map(function(rw){ return "<div>" + (rw.ok ? "❤️" : "🤍") + " " + esc(rw.sl.label) + '<span style="color:#7a6650">　' + esc(rw.info) + "</span></div>"; }).join("") +
       (HH.noPage ? '<div style="color:#c0392b">⚠️ 有 ' + HH.noPage + " 份這個單元的課文沒有頁數，地圖不知道是哪一篇，請在英文口說練習重拍、拍到頁碼。</div>" : "") + "</div>";
   } else
-  h += '<div class="stars">' + starHTML(b) + ' <span class="cnt">最佳 ' + b + " / 5" + (lv.uid && lv.uid.indexOf("eng:") === 0 ? (b >= PASS ? "　✅ 過關" : r ? "　還差 " + (PASS - b) + " 顆星過關" : "") : (passU(lv.uid) ? "　✅ 過關" : "　過關進度 " + passN(lv.uid) + " / " + PASS_N)) + "</span></div>" +
-    (lv.uid && lv.uid.indexOf("eng:") === 0 ? "" : '<div class="rule">每次 20 題，拿到 ' + PASS + " 顆星以上算 1 次，累積 " + PASS_N + " 次才過關。</div>");
+  if (lv.uid && lv.uid.indexOf("eng:") === 0) h += '<div class="stars">' + starHTML(b) + ' <span class="cnt">最佳 ' + b + " / 5" + (b >= PASS ? "　✅ 過關" : r ? "　還差 " + (PASS - b) + " 顆星過關" : "") + "</span></div>";
+  else {
+    var hn = passN(lv.uid);
+    h += '<div class="hearts10">' + heartRow(lv.uid) + '</div><div class="stars"><span class="cnt">' + (hn >= 10 ? "✅ 集滿 10 顆心，過關！" : "❤️ " + hn + " / 10 顆心" + (hn === 4 || hn === 9 ? "　🎯 下一次以錯過的題目為主" : "")) + (b ? "　最佳 " + b + " 顆星" : "") + "</span></div>" +
+      '<div class="rule">每次 20 題。拿到 4 顆星以上得 1 顆心：答對 90% 以上是 <span class="hrt y">♥</span> 黃心，其他是 <span class="hrt r">♥</span> 紅心；沒到 4 顆星不給心。集滿 5 顆心開綠寶箱、10 顆心開藍寶箱並過關。第 5、第 10 顆心那一次，題目以前面錯過的為主。集滿以後再考拿到黃心，會把紅心升級成黃心。</div>';
+  }
   if (r){
     h += '<div class="teacher">' + teacherHTML(r) + "</div>";
     if (!r.unitHearts) h += '<div class="hist">最近幾次：' + r.hist.slice(-6).map(function(x){ return md(x.d) + " " + x.st + "★"; }).join("　") + "</div>";
   } else h += '<div class="teacher">' + (lv.engUnit ? (engById[lv.uid].list.length ? "這個單元有 " + engById[lv.uid].list.length + " 份課文／單字卡，還沒開始練。" : "還沒有這個單元的課文。") + "在英文口說練習用相機拍課本第 " + engById[lv.uid].unit.p[0] + "–" + engById[lv.uid].unit.p[1] + " 頁新增課文（一定要拍到頁碼），就會自動放進這一關。" : lv.eng ? "還沒開始練這一" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "組單字" : "課") + "。到英文口說練習" + (engById[lv.uid] && engById[lv.uid].kind === "vocab" ? "考單字小考" : "跟讀") + "，星星就會出現在這裡。" : "還沒挑戰過這一關。考完 AI 老師會講評，告訴你哪裡做得好、哪裡要加強。") + "</div>";
   if (!w.eng){
-  var bt = boxOf(lv), op = chests()[lv.uid], need = chestNeed();
-  h += '<div class="chline">' + chestIco(bt) + "<b>" + CHEST_TIERS[bt].name + "</b>　" +
-    (op ? "已經打開了（" + md(chestDate(op)) + (typeof op === "object" && op.amt != null ? "，抽到 " + op.amt + " 點" : "") + "）" :
-      r && r.chest ? "可以打開了！點地圖上的寶箱 👆" : need ? "拿到 " + need + " 顆星就能打開" : "家長還沒開放") +
-    '<span style="width:100%;font-size:14px;color:#6a8a70">可能抽到：' + chestList(bt).map(function(x){ return x.amt + " 點"; }).join("・") + "（獎品表跟英文口說練習一樣）</span></div>";
+  [1, 2].forEach(function(k){
+    var bt = k === 2 ? "blue" : "green", op = chests()[chestKey(lv.uid, k)];
+    h += '<div class="chline">' + chestIco(bt) + "<b>" + CHEST_TIERS[bt].name + "</b>（" + (k === 2 ? 10 : 5) + " 顆心）　" +
+      (op ? "已經打開了（" + md(chestDate(op)) + (typeof op === "object" && op.amt != null ? "，抽到 " + op.amt + " 點" : "") + "）" :
+        chestReady(lv.uid, k) ? "可以打開了！點地圖上的寶箱 👆" : "集滿 " + (k === 2 ? 10 : 5) + " 顆心就能打開") +
+      '<span style="width:100%;font-size:14px;color:#6a8a70">可能抽到：' + chestList(bt).map(function(x){ return x.amt + " 點"; }).join("・") + "</span></div>";
+  });
   }
   var tiers = [];
   for (var k = 1; k <= 5; k++){ var p = +ru.pts[k] || 0; if (p || k === +ru.chest) tiers.push(k + "★" + (p ? " +" + p + " 點" : "") + (k === +ru.chest ? " 🎁開寶箱" : "")); }
   h += lv.heartMax ? '<div class="rule">' + (lv.heartMax === 2 ? "Review 有 2 頁，每一頁跟讀平均 " + READ_PASS + " 星以上得 1 顆心，2 顆心過關。" : "每個單元 5 顆心：單字小考 1 顆（唸、寫都答對 " + VOC_PASS * 100 + "%）、對話／發音閱讀／歌曲跟讀各 1 顆（平均 " + READ_PASS + " 星以上）、作業小幫手訂正到全對 1 顆。4 顆心過關。") + "練習的點數在英文 App 已經給過了，這裡不重複給。</div>"
     : lv.eng ? '<div class="rule">星星來自英文口說練習（跟讀每句的星星、單字小考唸對寫對）。練習的點數在英文 App 已經給過了，這裡不重複給，也沒有寶箱。4 顆星以上過關。</div>'
-    : '<div class="rule">獎勵（每關每個星等第一次拿到時給）：' + (tiers.join("、") || "家長還沒設定") + "。4 顆星以上過關。</div>";
+    : '<div class="rule">點數：每答對 1 題、做完一次測驗都有點數（每個單元每天第一次）。星星獎勵（每個星等第一次拿到時給）：' + (tiers.filter(function(x){ return !/寶箱/.test(x); }).join("、") || "沒有") + "。</div>";
   h += '<button class="go" id="goQuiz">' + (lv.heartMax ? "🔤 去英文口說練習拿下一顆心：" : lv.eng ? "🔤 去英文口說練習：" : "✏️ 出發測驗：") + lv.tag + " " + esc(lv.name) + "</button>";
   $("panel").innerHTML = h;
   $("goQuiz").onclick = function(){ startQuiz(lv); };
@@ -1105,13 +1126,24 @@ function renderWorld(g, w, t, opt){
     g.font = "bold " + (pin.length > 1 ? 16 : 19) + "px system-ui"; g.fillText(pin, 0, -9);
     if (lv.uid) labels.push({x: x, y: yy, lv: lv, b: lv.heartMax ? (r ? r.best : 0) : b, sel: sel});
     g.restore();
-    if (lv.uid && !w.eng) drawChest(g, x + 42, y - 6, chests()[lv.uid] ? "open" : r && r.chest ? "ready" : "lock", t, i, boxOf(lv));   // 天空之城（英文）先不放寶箱
+    if (lv.uid && !w.eng){   // 天空之城（英文）不放寶箱；學科關卡：綠寶箱（5 顆心）、藍寶箱（10 顆心）
+      [1, 2].forEach(function(k){
+        var ck = chests()[chestKey(lv.uid, k)];
+        g.save(); g.translate(x + (k === 2 ? 70 : 38), y - 6); g.scale(.82, .82);
+        drawChest(g, 0, 0, ck ? "open" : chestReady(lv.uid, k) ? "ready" : "lock", t, i + k * .5, k === 2 ? "blue" : "green");
+        g.restore();
+      });
+    }
   });
   function drawLabel(o){
     var lv = o.lv, sel = o.sel;
     g.save(); g.translate(o.x, o.y); g.textAlign = "center"; g.textBaseline = "middle";
     {
-      drawStars(g, o.b, -42, lv.heartMax, !!lv.heartMax);
+      if (lv.uid && lv.uid.indexOf("eng:") !== 0 && !lv.heartMax){   // 學科關卡：顯示幾顆心
+        var Hh = heartsU(lv.uid), ny = Hh.filter(function(x){ return x === "y"; }).length, txt = "♥ " + Hh.length + "/10";
+        g.font = "bold 17px system-ui"; g.lineJoin = "round"; g.lineWidth = 4; g.strokeStyle = "#5a3a00"; g.strokeText(txt, 0, -42);
+        g.fillStyle = !Hh.length ? "#c9c2b4" : ny === Hh.length ? "#ffc81e" : "#ff5c7a"; g.fillText(txt, 0, -42);
+      } else drawStars(g, o.b, -42, lv.heartMax, !!lv.heartMax);
       g.font = "bold 18px system-ui"; var w1 = g.measureText(lv.tag).width;
       g.font = "bold 20px system-ui"; var nm = lv.name; if (g.measureText(nm).width > 150){ while (nm.length > 1 && g.measureText(nm + "…").width > 150) nm = nm.slice(0, -1); nm += "…"; } var w2 = g.measureText(nm).width;
       var tw = Math.max(w1, w2) + 20, th = 50, ly = lv.labelUp ? -70 - th : 24;
@@ -1208,7 +1240,7 @@ function xy(e){ var r = c.getBoundingClientRect(); return [(e.clientX - r.left) 
 function toMap(p){ return [(p[0] - ox) / z, (p[1] - oy) / z - world().oy]; }
 function pinAt(x, y){ var best = -1, bd = 48; world().levels.forEach(function(lv, i){ var d = Math.hypot(lv.xy[0] - x, lv.xy[1] - 25 - y); if (d < bd){ bd = d; best = i; } }); return best; }
 function examAt(x, y){ var L = exams(); for (var i = 0; i < L.length; i++){ var an = examAnchor(L[i]); if (an && Math.hypot(an.x - x, an.y - 10 - y) < 32) return L[i]; } return null; }
-function chestAt(x, y){ if (world().eng) return -1; var L = world().levels; for (var i = 0; i < L.length; i++){ if (L[i].uid && Math.hypot(L[i].xy[0] + 42 - x, L[i].xy[1] - 12 - y) < 26) return i; } return -1; }
+function chestAt(x, y){ if (world().eng) return -1; var L = world().levels; for (var i = 0; i < L.length; i++){ if (!L[i].uid) continue; if (Math.hypot(L[i].xy[0] + 70 - x, L[i].xy[1] - 11 - y) < 17) return i + 1000; if (Math.hypot(L[i].xy[0] + 38 - x, L[i].xy[1] - 11 - y) < 17) return i; } return -1; }
 function showTip(i, e){
   var tip = $("tip");
   if (i < 0 || flipping){ tip.style.display = "none"; return; }
@@ -1240,7 +1272,7 @@ c.onpointerup = function(e){
   if (Math.hypot(p[0] - drag.x, p[1] - drag.y) < 12 && !flipping){
     var m = toMap(p), ex = examAt(m[0], m[1]), ci = ex ? -1 : chestAt(m[0], m[1]), L = world().levels;
     if (ex) tryOpenExam(ex);
-    else if (ci >= 0) tryOpenChest(ci);
+    else if (ci >= 0) tryOpenChest(ci % 1000, ci >= 1000 ? 2 : 1);
     else {
       var i = pinAt(m[0], m[1]);
       if (i >= 0){

@@ -1378,9 +1378,18 @@
 
   // ── 單元頁 ──
   // 2026-11-28 家長規定：地圖上的學科關卡每次 20 題，要累積 5 次 4 顆星以上才過關
-  var MAP_Q = 20, PASS_N = 5;
+  // 2026-11-28 改成集心：拿到 4 顆星以上得 1 顆心（答對 90% 以上黃心，其他紅心），10 顆心過關；5 顆心綠寶箱、10 顆心藍寶箱（在地圖上開）
+  var MAP_Q = 20, PASS_N = 10, YELLOW = 0.9;
+  function heartsOf(r){
+    if (!r) return [];
+    if (Array.isArray(r.hearts)) return r.hearts.slice(0, PASS_N);
+    return (r.hist || []).filter(function(h){ return (+h.st || 0) >= 4; }).map(function(h){ return h.n && h.s / h.n >= YELLOW ? "y" : "r"; }).slice(0, PASS_N);
+  }
+  function mapRec(uid){ return ((store.get("subMap", {}) || {})[nameKey(kidName())] || {})[uid]; }
+  // 第 5、第 10 顆心的那一次：以前面錯過的題目為主
+  function wrongFocus(){ if (!fromMap() || !cur.unit || !MAP_RE.test(cur.unit.id)) return false; var n = heartsOf(mapRec(cur.unit.id)).length; return n === 4 || n === 9; }
   function qCount(){ return fromMap() && MAP_RE.test(cur.unit.id) ? MAP_Q : (cur.unit.n || 10); }
-  function passCount(r){ return !r ? 0 : r.passN != null ? r.passN : (r.hist || []).filter(function(h){ return (+h.st || 0) >= 4; }).length; }
+  function passCount(r){ return heartsOf(r).length; }
   function renderUnit(){
     cur.token = 0; cur.waiting = null; // 離開作答：背景還沒改完的題目不再計分
     var u = cur.unit, fm = fromMap();
@@ -1405,7 +1414,7 @@
     $("startBtn").textContent = "✏️ 開始 " + qCount() + " 題";
     var got = earnedToday(), need = needScore(qCount());
     $("ruleNote").textContent = "每" + (u.subject === "math" ? "得 1 分" : "答對 1 題") + " +" + qRate(u.subject) + " 點（每個單元每天只有第一次考完會給點）" + (got ? "。今天這個單元已經拿到 " + got + " 點 👍，再練習不會加點，但會更熟喔" : "") +
-      (fm ? (cur.scope === "all" ? "\n🗺️ 考完 AI 老師會講評、給 0～5 顆星。拿到 4 顆星以上算 1 次，累積 " + PASS_N + " 次才過關（目前 " + Math.min(PASS_N, passCount(((store.get("subMap", {}) || {})[nameKey(kidName())] || {})[u.id])) + " / " + PASS_N + "）。" : "\n🏝️ 及格就有星星（及格 1 顆、90% 以上 2 顆、滿分 3 顆）。小關全部通過會得到綠色寶箱。") : "") +
+      (fm ? (cur.scope === "all" ? "\n🗺️ 考完 AI 老師會講評、給 0～5 顆星。4 顆星以上得 1 顆心（答對 90% 以上是黃心），集滿 10 顆心過關；5 顆心開綠寶箱、10 顆心開藍寶箱。目前 " + passCount(mapRec(u.id)) + " / 10 顆心。" + (wrongFocus() ? "\n🎯 這次是第 " + (passCount(mapRec(u.id)) + 1) + " 顆心：題目以前面錯過的為主！" : "") : "\n🏝️ 及格就有星星（及格 1 顆、90% 以上 2 顆、滿分 3 顆）。小關全部通過會得到綠色寶箱。") : "") +
       (u.subject === "math" ? "\n計算題：答案對、過程也對才算 1 分；答案對但過程有問題，或方法對但算錯，算 0.5 分。" : "");
     $("ruleNote").style.whiteSpace = "pre-line";
     $("aiNote").textContent = "";
@@ -1421,6 +1430,13 @@
     var pool = u.bank.filter(function(q){ return topics.indexOf(q.t) >= 0; });
     var wrongTexts = wrongBook[wbKey()] || [];
     var picked = shuffle(pool.filter(function(q){ return wrongTexts.indexOf(q.q) >= 0; })).slice(0, Math.ceil(N * 0.4));
+    if (wrongFocus()){
+      // 錯題為主：錯題本裡的題目＋永久錯題紀錄裡「錯的次數比對的多」的題目，錯越多次越優先，最多出滿整份
+      var wl = (wrongLog[nameKey(kidName())] || {})[u.id] || {};
+      var score = function(q){ var r = wl[qKey(q)], v = r ? (r.w || 0) - (r.r || 0) : 0; if (wrongTexts.indexOf(q.q) >= 0) v = Math.max(v, 1); return v; };
+      picked = shuffle(pool.filter(function(q){ return score(q) > 0; })).sort(function(a, b){ return score(b) - score(a); }).slice(0, N);
+      cur.wrongFocusN = picked.length;
+    } else cur.wrongFocusN = 0;
     var rest = shuffle(pool.filter(function(q){ return picked.indexOf(q) < 0; }));
     var byT = {}; rest.forEach(function(q){ (byT[q.t] = byT[q.t] || []).push(q); });
     var ts = shuffle(Object.keys(byT)), k = 0, guard = 0;
@@ -1949,34 +1965,40 @@
   function saveLevel(rv, s, n){
     var all = store.get("subMap", {}), k = nameKey(kidName()), m = all[k] = all[k] || {}, key = cur.unit.id;
     var old = m[key] && m[key].hist ? m[key] : {best:0, paid:0, chest:false, hist:[]};
-    if (!cur.levelSaved){ cur.prevBest = old.best || 0; cur.prevPassN = passCount(old); }
+    if (!cur.levelSaved){ cur.prevBest = old.best || 0; cur.prevHearts = heartsOf(old); }
     var hist = old.hist.slice(); if (cur.levelSaved) hist.pop();
     hist.push({d: today(), st: rv.stars, s: s, n: n, t: Date.now()});
     var rec = {best: Math.max(cur.prevBest, rv.stars), paid: old.paid || 0, chest: !!old.chest, hist: hist.slice(-20),
       last: {d: today(), st: rv.stars, s: s, n: n, comment: rv.comment, good: rv.good, focus: rv.focus, t: Date.now()}};
-    rec.passN = cur.prevPassN + (rv.stars >= 4 ? 1 : 0);
-    rec.pass = rec.passN >= PASS_N;
+    // 集心：4 顆星以上得 1 顆心；集滿 10 顆後再拿到黃心，把最前面的紅心升級
+    var H = cur.prevHearts.slice(), col = n && s / n >= YELLOW ? "y" : "r", heart = "";
+    if (rv.stars >= 4){
+      if (H.length < PASS_N){ H.push(col); heart = col; }
+      else if (col === "y" && H.indexOf("r") >= 0){ H[H.indexOf("r")] = "y"; heart = "up"; }
+    }
+    rec.hearts = H; rec.passN = H.length; rec.pass = H.length >= PASS_N; rec.chest = H.length >= 5; rec.chest2 = H.length >= 10;
+    rv.heart = heart; rv.hearts = H.length; rv.newChest = (cur.prevHearts.length < 5 && H.length >= 5) ? "green" : (cur.prevHearts.length < 10 && H.length >= 10) ? "blue" : "";
     var gain = 0, title = cur.unit.title.replace(/^[一二三四五六七八九十]+、/, "");
     for (var t = rec.paid + 1; t <= rec.best; t++){
       var p = +starRules.pts[t] || 0;
       if (p > 0){ gain += p; send({action:"earn", name: kidName(), amt: p, why: "學習大冒險「" + title + "」" + t + " 顆星 ⭐", ref: "sub:" + cur.unit.subject + ":map:" + key + ":" + kidName() + ":star" + t}); }
     }
     rec.paid = Math.max(rec.paid, rec.best);
-    var newChest = +starRules.chest > 0 && rec.best >= +starRules.chest && !rec.chest; if (newChest) rec.chest = true;
     m[key] = rec; store.set("subMap", all); syncSoon(1000);
     cur.levelSaved = true;
-    rv.gain = (rv.gain || 0) + gain; rv.newChest = rv.newChest || newChest; rv.best = rec.best; rv.passN = rec.passN;
+    rv.gain = (rv.gain || 0) + gain; rv.best = rec.best; rv.passN = rec.passN;
   }
   function renderTeacher(){
     var rv = cur.review, box = $("rTeacher"); if (!rv) return;
     var h = '<h2>🧑‍🏫 AI 老師講評</h2><div class="tstars pop">' + "★".repeat(rv.stars) + '<span class="off">' + "★".repeat(5 - rv.stars) + "</span></div>";
-    var pn = rv.passN != null ? rv.passN : 0;
-    h += '<div class="center" style="font-weight:700">' + (rv.stars >= 4 ? "✅ " + rv.stars + " 顆星，算 1 次！" + (pn >= PASS_N ? "已經累積 " + pn + " 次，過關！🎉" : "過關進度 " + pn + " / " + PASS_N + "，再 " + (PASS_N - pn) + " 次 4 顆星以上就過關") : rv.stars + " 顆星，要 4 顆星以上才算 1 次（過關進度 " + pn + " / " + PASS_N + "），加油！") + "</div>";
+    var pn = rv.hearts != null ? rv.hearts : rv.passN || 0;
+    h += '<div class="center" style="font-weight:700">' + (rv.heart === "y" ? '得到 1 顆 <span style="color:#e0a800;font-size:1.3em">♥</span> 黃心（答對 90% 以上）！' : rv.heart === "r" ? '得到 1 顆 <span style="color:#ff4d6d;font-size:1.3em">♥</span> 紅心！答對 90% 以上可以拿黃心喔' : rv.heart === "up" ? "已經集滿 10 顆心，這次把 1 顆紅心升級成黃心 ✨" : rv.stars >= 4 ? "已經集滿 10 顆心了 👍" : "要 4 顆星以上才有愛心，再加油！") +
+      "<br>❤️ " + pn + " / 10 顆心" + (pn >= 10 ? "　✅ 過關！" : pn === 4 || pn === 9 ? "　🎯 下一次以錯過的題目為主" : "") + "</div>";
     h += '<div class="exp ok" style="margin-top:10px"><p>' + esc(rv.comment) + "</p>" + (rv.good.length ? "<p>👍 " + rv.good.map(esc).join("　") + "</p>" : "") + "</div>";
     if (rv.focus.length) h += '<div class="exp mid"><b>🎯 下次加強</b><ul style="margin:4px 0 0;padding-left:22px">' + rv.focus.map(function(f){ return "<li>" + esc(f) + "</li>"; }).join("") + "</ul></div>";
     if (rv.best > cur.prevBest && cur.prevBest > 0) h += '<div class="center">🆙 刷新這一關的最佳紀錄：' + cur.prevBest + " → " + rv.best + " 顆星</div>";
     if (rv.gain) h += '<div class="center" style="margin-top:8px"><span class="pill pop">星星獎勵 +' + rv.gain + " 點</span>" + (cloudOn() ? "" : '<div class="note">（還沒設定雲端，點數沒有記錄）</div>') + "</div>";
-    if (rv.newChest && !/^e6a-/.test(cur.unit.id)) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:#e3f7ea;color:#1d7a43">🎁 ' + BOX_NAME[boxOfUnit(cur.unit.id)] + '可以打開了！回地圖點寶箱抽點數</span></div>';
+    if (rv.newChest) h += '<div class="center" style="margin-top:8px"><span class="pill pop" style="background:' + (rv.newChest === "blue" ? "#e3efff;color:#1d4f9a" : "#e3f7ea;color:#1d7a43") + '">🎁 ' + (rv.newChest === "blue" ? "集滿 10 顆心，藍色寶箱" : "集滿 5 顆心，綠色寶箱") + '可以打開了！回地圖點寶箱抽點數</span></div>';
     if (!rv.ai) h += '<div class="note">（AI 老師暫時連不上，這次的星星只照分數算）</div>';
     box.innerHTML = h;
   }
@@ -2006,6 +2028,7 @@
     var h = "";
     for (var k = 1; k <= 5; k++) h += '<div class="starRow"><span>' + "★".repeat(k) + '</span><input type="number" min="0" step="0.5" id="sp' + k + '" value="' + (+starRules.pts[k] || 0) + '"> 點</div>';
     h += '<div class="starRow"><span>🎁 開寶箱</span><select id="spChest">' + [0,3,4,5].map(function(v){ return '<option value="' + v + '"' + (+starRules.chest === v ? " selected" : "") + ">" + (v ? "拿到 " + v + " 顆星" : "不給寶箱") + "</option>"; }).join("") + "</select></div>";
+    h += '<div class="note">🗺️ 地圖上的學科關卡（2026-11-28 起）改成集心：4 顆星以上得 1 顆心，5 顆心開綠寶箱、10 顆心開藍寶箱，不再看上面「開寶箱」和下面寶箱顏色的設定。</div>';
     var boxSel = function(id, v){ return '<select id="' + id + '" style="width:150px">' + Object.keys(BOX_NAME).map(function(k){ return '<option value="' + k + '"' + (v === k ? " selected" : "") + ">" + BOX_NAME[k] + "</option>"; }).join("") + "</select>"; };
     h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">一般單元（各科每一單元）</span>' + boxSel("spUnitBox", boxOfUnit("m6a-1")) + "</div>";
     h += '<div class="starRow"><span style="width:auto;color:var(--ink);font-size:18px">綜合單元（期中／期末複習、學力挑戰、學校英語）</span>' + boxSel("spReviewBox", boxOfUnit("m6a-r1")) + "</div>";
@@ -2497,7 +2520,7 @@
   if (window.SubSync){ SubSync.run(); document.addEventListener("visibilitychange", function(){ if (!document.hidden && Date.now() - (SubSync.state.last || 0) > 30000) SubSync.run(); }); }
 
   // 測試用
-  window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }};
+  window.__sub = {parseAns: parseAns, checkAns: checkAns, UNITS: UNITS, pad: pad, stats: function(){ return stats; }, cur: function(){ return cur; }};
 
   if (MAP.kid && readers.some(function(r){ return r.id === MAP.kid; })){ cur.kid = MAP.kid; store.set("reader", MAP.kid); }
   renderHome();
