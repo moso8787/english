@@ -248,6 +248,7 @@
     <div class="card">
       <div class="q" id="qText"></div>
       <div class="fig" id="qFig"></div>
+      <div id="qHintBox" class="hide" style="margin:-4px 0 10px"><button class="b" id="qHintBtn" style="background:#fff7d6;border:2px solid #f0c64a;color:#7a5a00;font-size:17px;padding:8px 14px">💡 提示</button><div id="qHint" class="note" style="display:none;background:#fff7d6;border-radius:12px;padding:10px 12px;margin-top:8px;color:#5a4300;font-size:18px"></div></div>
       <div id="qOpts"></div>
 
       <!-- 數學：寫算式 -->
@@ -1501,6 +1502,7 @@
     $("qText").innerHTML = (q.type === "tf" ? "（是非）" : "") + fmt(q.q);
     $("qFig").innerHTML = figSVG(q.fig);
     $("qExp").innerHTML = ""; $("nextBtn").classList.add("hide");
+    setupHint(q);
     var box = $("qOpts"); box.innerHTML = ""; box.className = q.type === "tf" ? "tf" : "";
     $("workArea").classList.toggle("hide", q.type !== "w");
     if (q.type === "w"){ startWork(q); return; }
@@ -1512,6 +1514,31 @@
       b.onclick = function(){ answer(c.v, b); };
       box.appendChild(b);
     });
+  }
+  // ── 💡 提示（2026-11-28）：不扣分。選擇題刪掉一個錯的選項；填充題說字數、遮住答案的解說；造句給詞義和句子開頭；計算題給解題方向 ──
+  function maskAns(txt, q){ var s = String(txt || ""); (q.acc || []).concat(q.word ? [q.word] : []).forEach(function(a){ if (a) s = s.split(a).join(Array(String(a).length + 1).join("○")); }); return s; }
+  function hintOf(q){
+    if (q.type === "fill"){ var a = String(q.acc[0]); return "答案有 " + a.length + " 個字" + (a.length > 1 ? "，第一個字是「" + a.charAt(0) + "」" : "") + "。" + (q.exp ? "<br>想一想：" + esc(maskAns(q.exp, q)) : ""); }
+    if (q.type === "sent"){ var ex = String(q.ans || ""), i = ex.indexOf(q.word), start = i > 0 ? ex.slice(0, Math.min(i, 6)) : ""; var m = String(q.exp || "").match(/（(.+)）$/); return (m ? "「" + esc(q.word) + "」的意思是：" + esc(m[1]) + "。<br>" : "") + "想一想：什麼時候會用到這個詞？誰、在哪裡、做了什麼？" + (start ? "<br>可以這樣開頭：「" + esc(start) + "……」" : ""); }
+    if (q.type === "w") return "這題是「" + esc(cur.unit.topicName[q.t] || "") + "」。先把題目給的數字圈起來，想一想要求什麼、要用加、減、乘、除哪一種；不確定時可以畫圖或線段圖。" + (q.u ? "答案的單位是「" + esc(q.u) + "」。" : "");
+    if (q.type === "tf") return "";   // 是非題只有兩個選項，不給提示
+    return "";   // 選擇題：刪掉一個錯的選項（在 setupHint 處理）
+  }
+  function setupHint(q){
+    var box = $("qHintBox"), h = $("qHint"), btn = $("qHintBtn");
+    if (!box) return;
+    var can = q.type === "mc" ? q.o && q.o.length > 2 : !!hintOf(q);
+    box.classList.toggle("hide", !can); h.style.display = "none"; h.innerHTML = ""; btn.disabled = false;
+    btn.onclick = function(){
+      btn.disabled = true; cur.hints = (cur.hints || 0) + 1;
+      if (q.type === "mc"){
+        var bs = $("qOpts").querySelectorAll("button"), wrong = [];
+        for (var i = 0; i < bs.length; i++) if (i !== q.ans && !bs[i].disabled) wrong.push(bs[i]);
+        if (wrong.length){ var w = wrong[Math.floor(Math.random() * wrong.length)]; w.disabled = true; w.style.opacity = ".35"; w.style.textDecoration = "line-through"; }
+        h.innerHTML = "已經幫你刪掉一個錯的選項了！"; h.style.display = "block"; return;
+      }
+      h.innerHTML = hintOf(q); h.style.display = "block";
+    };
   }
   // ── 國語填充題、造句（2026-11-28）：填充照標準答案比對；造句請 AI 老師批改，連不上時先用簡單規則 ──
   function normTxt(x){ return String(x || "").replace(/[\s，。、！？；：「」『』（）()《》〈〉,.!?;:'"…—-]/g, "").replace(/臺/g, "台"); }
@@ -1618,6 +1645,7 @@
     }
   }
   function showNext(){
+    if ($("qHintBox")) $("qHintBox").classList.add("hide");
     $("nextBtn").textContent = cur.i + 1 < cur.qs.length ? "下一題 →" : "看結果 🎉";
     $("nextBtn").classList.remove("hide");
   }
