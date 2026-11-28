@@ -1481,7 +1481,35 @@
     renderDots();
     showNext();
   }
+  // ── 永久錯題紀錄（給以後「複習以前錯的」、統計弱點用）──
+  // localStorage "subWrongLog"[名字小寫][單元id][題目代號] = {q 題目, t 主題, ty 題型, ans 正確答案, w 錯幾次, r 錯過之後又答對幾次,
+  //   d0 第一次錯的日期, dw 最近錯的日期, dr 最近答對的日期, h:[{d, p 小朋友的答案, sc 得分, e 錯誤類型}] 最近 8 次}
+  // 錯題本 subWrong 答對就拿掉；這份不會刪，只會累加。AI 出的新題不記。
+  var wrongLog = store.get("subWrongLog", {});
+  function qKey(q){ var s = String(q.q || ""), h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (q.t || "") + ":" + (h >>> 0).toString(36); }
+  function ansTxt(q, v){
+    if (v == null || v === "") return "";
+    if (q.type === "tf") return v === true || v === 0 ? "對" : "錯";
+    if (q.o && typeof v === "number") return q.o[v] != null ? String(q.o[v]) : String(v);
+    return String(v).slice(0, 80);
+  }
+  function wrongLogAdd(q, sc, extra){
+    if (cur.ai || !cur.unit) return;
+    var k = nameKey(kidName()), u = cur.unit.id, box = (wrongLog[k] = wrongLog[k] || {})[u] = (wrongLog[k][u] || {}), id = qKey(q), r = box[id], d = today();
+    if (sc >= 1){ if (r){ r.r = (r.r || 0) + 1; r.dr = d; r.h.push({d: d, sc: 1}); if (r.h.length > 8) r.h.shift(); store.set("subWrongLog", wrongLog); syncSoon(); } return; }
+    if (!r) r = box[id] = {q: String(q.q || "").slice(0, 300), t: q.t || "", ty: q.type || "", ans: q.type === "tf" ? (q.ans ? "對" : "錯") : ansTxt(q, q.ans), w: 0, r: 0, d0: d, h: []};
+    var e = extra && extra.e, et = e && e.r && e.r.errType || "";
+    r.w++; r.dw = d; r.h.push({d: d, p: ansTxt(q, extra && extra.pick), sc: sc, e: et || undefined}); if (r.h.length > 8) r.h.shift();
+    store.set("subWrongLog", wrongLog); syncSoon();
+  }
+  function wrongLogFix(q, newSc){   // 申訴成功：最近一次改成新分數，拿滿分就不算錯那一次
+    var k = nameKey(kidName()), box = cur.unit && (wrongLog[k] || {})[cur.unit.id], r = box && box[qKey(q)]; if (!r) return;
+    var last = r.h[r.h.length - 1]; if (last) last.sc = newSc;
+    if (newSc >= 1){ r.w = Math.max(0, r.w - 1); if (!r.w && !r.r) delete box[qKey(q)]; }
+    store.set("subWrongLog", wrongLog); syncSoon();
+  }
   function record(q, sc, extra){
+    try{ wrongLogAdd(q, sc, extra); }catch(_){}
     cur.score += sc;
     if (sc < 1) cur.wrong.push(Object.assign({q: q, sc: sc}, extra || {}));
     // 錯題本：沒拿滿分加入、拿滿分移除（AI 題目不記）
@@ -2062,7 +2090,7 @@
             var nsc = scoreOf(e);
             if (nsc > old){
               e.sc = nsc; cur.score += nsc - old; w.sc = nsc;
-              fixStat(e.q, old, nsc);
+              fixStat(e.q, old, nsc); try{ if (!cur.ai) wrongLogFix(e.q, nsc); }catch(_){}
               if (nsc >= 1 && !cur.ai){ var l = wrongBook[wbKey()] || [], at = l.indexOf(e.q.q); if (at >= 0){ l.splice(at, 1); store.set("subWrong", wrongBook); } }
               e.reply = "✅ 申訴成功！" + e.reply;
               renderScore(); bumpStars();
@@ -2418,7 +2446,7 @@
   // ── 學科紀錄雲端同步（sub-sync.js）──
   function syncSoon(ms){ if (window.SubSync) SubSync.soon(ms); }
   addEventListener("subsync", function(){   // 收到別台的紀錄：記憶體裡的也換成新的
-    wrongBook = store.get("subWrong", {}); stats = store.get("mathStats", {});
+    wrongBook = store.get("subWrong", {}); stats = store.get("mathStats", {}); wrongLog = store.get("subWrongLog", {});
     starRules = Object.assign({pts:[0,0,0,1,1,1], chest:5, unitBox:"green", reviewBox:"blue"}, store.get("subStarRules", {}));
     rules = Object.assign({pass:8, qPt:{math:0.2, chi:0.1, sci:0.1, soc:0.1, eng:0.1}}, store.get("subRules", {}));
     if (!$("home").classList.contains("hide")) renderHome();

@@ -6,6 +6,7 @@
      subMap   id = 名字|關卡uid   每關的星星、最高紀錄、AI 講評、考試歷史
      subChest id = 名字|關卡uid   綠色寶箱打開的日期
      subWrong id = 名字|單元id    錯題本（下次優先出的題目）
+     subWLog  id = 名字|單元id    永久錯題紀錄（每題錯幾次、答過什麼；給以後複習弱點用，不會刪）
      subStats id = 名字           學習狀況統計（各主題最近分數、常犯的錯、每天題數）
      subSet   id = starRules / rules / grades   家長設定（星星獎勵、及格標準、年級）
 
@@ -23,7 +24,7 @@
     get: function(k, d){ try{ var v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
     set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
   };
-  var KINDS = ["subMap", "subChest", "subWrong", "subStats", "subSet"];
+  var KINDS = ["subMap", "subChest", "subWrong", "subWLog", "subStats", "subSet"];
   var SET_KEYS = {starRules: "subStarRules", rules: "subRules", grades: "subGrades"};
   function hsh(s){ var h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h >>> 0) + ":" + s.length; }
   // 📱 新裝置一鍵設定：跟英文 App 同一種設定碼（網址後面帶 #setup=…），學習大冒險和學科測驗也認得
@@ -51,6 +52,8 @@
     Object.keys(c).forEach(function(nm){ Object.keys(c[nm] || {}).forEach(function(uid){ put("subChest", nm + "|" + uid, c[nm][uid]); }); });
     var w = store.get("subWrong", {});
     Object.keys(w).forEach(function(key){ put("subWrong", key, w[key]); });
+    var wl = store.get("subWrongLog", {});
+    Object.keys(wl).forEach(function(nm){ Object.keys(wl[nm] || {}).forEach(function(uid){ put("subWLog", nm + "|" + uid, wl[nm][uid]); }); });
     var s = store.get("mathStats", {});
     Object.keys(s).forEach(function(nm){ put("subStats", nm, s[nm]); });
     Object.keys(SET_KEYS).forEach(function(id){ var v = store.get(SET_KEYS[id], null); if (v != null) put("subSet", id, v); });
@@ -62,6 +65,7 @@
     if (k === "subMap"){ var m = store.get("subMap", {}); (m[p[0]] = m[p[0]] || {})[p.slice(1).join("|")] = d; store.set("subMap", m); }
     else if (k === "subChest"){ var c = store.get("subMapChest", {}); (c[p[0]] = c[p[0]] || {})[p.slice(1).join("|")] = d; store.set("subMapChest", c); }
     else if (k === "subWrong"){ var w = store.get("subWrong", {}); w[id] = d; store.set("subWrong", w); }
+    else if (k === "subWLog"){ var wl = store.get("subWrongLog", {}); (wl[p[0]] = wl[p[0]] || {})[p.slice(1).join("|")] = d; store.set("subWrongLog", wl); }
     else if (k === "subStats"){ var s = store.get("mathStats", {}); s[id] = d; store.set("mathStats", s); }
     else if (k === "subSet" && SET_KEYS[id]) store.set(SET_KEYS[id], d);
   }
@@ -84,10 +88,23 @@
     });
     return o;
   }
+  function mergeWLog(a, b){   // 每題：錯／對次數取大的，最近紀錄合在一起
+    if (!a) return b; if (!b) return a;
+    var o = {};
+    Object.keys(a).concat(Object.keys(b)).forEach(function(id){
+      var x = a[id], y = b[id]; if (!x || !y){ o[id] = x || y; return; }
+      var seen = {}, h = (x.h || []).concat(y.h || []).filter(function(e){ var s = JSON.stringify(e); if (seen[s]) return false; seen[s] = 1; return true; });
+      h.sort(function(p, q){ return String(p.d).localeCompare(String(q.d)); });
+      o[id] = Object.assign({}, x, {w: Math.max(x.w || 0, y.w || 0), r: Math.max(x.r || 0, y.r || 0),
+        d0: [x.d0, y.d0].filter(Boolean).sort()[0], dw: [x.dw, y.dw].filter(Boolean).sort().pop(), dr: [x.dr, y.dr].filter(Boolean).sort().pop(), h: h.slice(-8)});
+    });
+    return o;
+  }
   function merge(k, local, remote, localDirty){
     if (k === "subMap") return mergeMap(local, remote);
     if (k === "subStats") return mergeStats(local, remote);
     if (k === "subChest") return local || remote;
+    if (k === "subWLog") return mergeWLog(local, remote);
     return localDirty ? local : remote;
   }
 
