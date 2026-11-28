@@ -174,7 +174,7 @@ small{display:block;color:rgba(255,255,255,.8);font-weight:500;font-size:15px;ma
     <div class="loading" id="loading"></div>
     <div class="toast" id="toast"></div><div class="tip" id="tip"></div>
   </div>
-  <div class="bar"><span id="score"></span><span id="syncNote" style="font-size:14px;font-weight:500;opacity:.8"></span><button id="zoom">🔍 放大地圖</button></div>
+  <div class="bar"><span id="score"></span><span id="syncNote" style="font-size:14px;font-weight:500;opacity:.8"></span><span style="display:flex;gap:8px"><a href="points.html" id="ptLink" style="font:inherit;font-weight:700;border-radius:14px;padding:10px 16px;min-height:50px;background:rgba(255,255,255,.16);color:#fff;text-decoration:none;display:inline-flex;align-items:center">⚙️ 點數與設定</a><button id="zoom">🔍 放大地圖</button></span></div>
   <div id="examBox"></div>
   <div class="panel" id="panel"></div>
   <small>按 ◀ ▶ 或在地圖上左右滑動，可以翻到其他世界。每一關都可以直接挑戰，不用照順序。考完 AI 老師會講評、給 0～5 顆星，4 顆星以上就過關。點一下關卡看上次的講評，再點一次就去考試。用電腦時，滑鼠移到關卡上也看得到講評。</small>
@@ -1388,7 +1388,7 @@ function renderSetup(){
   box.style.display = "block";
   box.innerHTML = '<h3>☁️ 這台還沒連上雲端</h3><div>所以看不到小朋友名單、點數和別台的學習紀錄。兩種方法擇一：</div>' +
     '<div>① 在 Mac 的英文口說練習家長區打開「新裝置設定」的 QR Code，用這台的相機掃。掃完如果打開的是英文 App，在同一個瀏覽器再打開這個地圖就好。</div>' +
-    '<div>② 直接在下面填（跟英文 App 家長區「點數雲端」那兩格一樣）：</div>' +
+    '<div>② 直接在下面填（跟英文 App 家長區「點數雲端」那兩格一樣），或到 <a href="points.html" style="color:inherit">⚙️ 點數與設定</a> 貼上設定碼：</div>' +
     '<label>機器人網址<input id="suUrl" placeholder="https://script.google.com/macros/s/……/exec" autocomplete="off"></label>' +
     '<label>連線密碼<input id="suKey" type="password" autocomplete="off"></label>' +
     '<label>Gemini 金鑰（選填，AI 老師講評要用）<input id="suG" type="password" autocomplete="off"></label>' +
